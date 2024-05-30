@@ -37,7 +37,3 @@ class TgBotScript(sc.BotScript):
 
     def get_name(self):
         return "TgScript"
-
-
-a = TgBotScript()
-a.start()
