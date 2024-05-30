@@ -1,5 +1,4 @@
 import re
-from functools import wraps
 
 
 class MessageContext:
@@ -35,29 +34,45 @@ class MessageBuilder:
         return self
 
 
+class Mapper:
+    def __init__(self, commands):
+        self.commands = commands
+
+    def map(self, pattern, func):
+        self.commands[pattern] = func
+
+
 class BotScript:
     def __init__(self):
         self.commands = {}
-
-    @staticmethod
-    def mapping(regex):
-        def decorator(func):
-            @wraps(func)
-            def wrapped_func(self, *args, **kwargs):
-                for pattern in regex:
-                    if pattern not in self.commands:
-                        self.commands[pattern] = func
-                    else:
-                        raise ValueError(f"Pattern {pattern} is already in use.")
-                return func(self, *args, **kwargs)
-            return wrapped_func
-        return decorator
+        self.mapper = Mapper(self.commands)
+        self.mapper.map("тест", self.test_message)
 
     def send_message(self, message: MessageBuilder):
         pass
 
-    @mapping(regex=["тест"])
-    def main(self, context: MessageContext):
+    def get_action(self):
+        pass
+
+    def get_name(self):
+        return "BaseScript"
+
+    def handle_action(self, action):
+        if isinstance(action, MessageContext):
+            for pattern in self.commands:
+                if re.match(pattern, action.text):
+                    self.commands[pattern](action)
+                    break
+
+    def start(self):
+        while True:
+            try:
+                self.handle_action(self.get_action())
+            except Exception as e:
+                print(f"[{self.get_name()}] {e}")
+                continue
+
+    def test_message(self, context: MessageContext):
         peerId = context.peerId
         answer = MessageBuilder().setText("Тестовое сообщение").setPeerId(peerId)
         self.send_message(answer)
