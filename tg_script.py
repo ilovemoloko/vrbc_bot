@@ -4,10 +4,6 @@ from script_base import MessageBuilder, MessageContext
 import telebot
 
 
-def test(action):
-    print(action)
-
-
 class TgBotScript(sc.BotScript):
     def __init__(self):
         super().__init__()

@@ -39,14 +39,16 @@ class Mapper:
         self.commands = commands
 
     def map(self, pattern, func):
-        self.commands[pattern] = func
+        if isinstance(pattern, str):
+            pattern = [pattern]
+        for p in pattern:
+            self.commands[p] = func
 
 
 class BotScript:
     def __init__(self):
         self.commands = {}
         self.mapper = Mapper(self.commands)
-        self.mapper.map("тест", self.test_message)
 
     def send_message(self, message: MessageBuilder):
         pass
