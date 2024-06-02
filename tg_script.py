@@ -2,6 +2,7 @@ import script_base as sc
 from config import token_tg
 from script_base import MessageBuilder, MessageContext
 import telebot
+import json
 
 
 class TgBotScript(sc.BotScript):
@@ -12,7 +13,17 @@ class TgBotScript(sc.BotScript):
     def send_message(self, message: MessageBuilder):
         chat_id = message.peerId
         text = message.text
-        self.bot.send_message(chat_id=chat_id, text=text)
+        buttons = message.buttons
+        keyboard = None
+
+        if buttons:
+            keyboard = telebot.types.InlineKeyboardMarkup()
+            for b in buttons.buttons:
+                label = b["text"]
+                payload = b["payload"]
+                keyboard.add(telebot.types.InlineKeyboardButton(label, callback_data=payload))
+
+        self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
 
     def _handle_action(self, action):
         res = None
@@ -29,6 +40,14 @@ class TgBotScript(sc.BotScript):
 
     def start(self):
         self.bot.set_update_listener(self.get_actions)
+
+        @self.bot.callback_query_handler(func=lambda call: True)
+        def query_listener(call):
+            user_id = call.from_user.id
+            peer_id = call.message.chat.id
+            text = call.data
+            self.handle_action(MessageContext().setPeerId(peer_id).setUserId(user_id).setText(text))
+
         self.bot.polling(none_stop=True)
 
     def get_name(self):
