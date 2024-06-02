@@ -2,7 +2,6 @@ import script_base as sc
 from config import token_tg
 from script_base import MessageBuilder, MessageContext
 import telebot
-import json
 
 
 class TgBotScript(sc.BotScript):

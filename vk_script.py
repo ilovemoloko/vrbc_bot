@@ -2,7 +2,7 @@ import script_base as sc
 from config import token_vk, id_vk
 import vk_api
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from script_base import MessageBuilder, ButtonsBuilder
+from script_base import MessageBuilder
 import random
 import json
 
