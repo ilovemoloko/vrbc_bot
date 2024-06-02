@@ -20,10 +20,21 @@ class MessageContext:
         return self
 
 
+class ButtonsBuilder:
+    def __init__(self):
+        self.buttons = []
+        self.peerId = None
+
+    def add(self, text, payload):
+        self.buttons.append({"text": text, "payload": payload})
+        return self
+
+
 class MessageBuilder:
     def __init__(self):
         self.peerId = None
         self.text = None
+        self.buttons = None
 
     def setPeerId(self, peerId):
         self.peerId = peerId
@@ -31,6 +42,10 @@ class MessageBuilder:
 
     def setText(self, text):
         self.text = text
+        return self
+
+    def setButtons(self, buttons: ButtonsBuilder):
+        self.buttons = buttons
         return self
 
 
@@ -49,6 +64,8 @@ class BotScript:
     def __init__(self):
         self.commands = {}
         self.mapper = Mapper(self.commands)
+        self.mapper.map("тест", self.test_message)
+        self.mapper.map("payload2", self.testbutton)
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -76,5 +93,11 @@ class BotScript:
 
     def test_message(self, context: MessageContext):
         peerId = context.peerId
-        answer = MessageBuilder().setText("Тестовое сообщение").setPeerId(peerId)
+        buttons = ButtonsBuilder().add("Кнопка 1", "payload1").add("Тест кнопки", "payload2")
+        answer = MessageBuilder().setText("Тестовое сообщение").setPeerId(peerId).setButtons(buttons)
+        self.send_message(answer)
+
+    def testbutton(self, context: MessageContext):
+        peerId = context.peerId
+        answer = MessageBuilder().setText("Тестовое сообщение с нажатия кнопки").setPeerId(peerId)
         self.send_message(answer)
