@@ -64,8 +64,6 @@ class BotScript:
     def __init__(self):
         self.commands = {}
         self.mapper = Mapper(self.commands)
-        self.mapper.map("тест", self.test_message)
-        self.mapper.map("payload2", self.testbutton)
 
     def send_message(self, message: MessageBuilder):
         pass
