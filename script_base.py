@@ -81,7 +81,7 @@ class BotScript:
         pass
 
     def get_name(self):
-        return "BaseScript"
+        return "none"
 
     def handle_action(self, action):
         if isinstance(action, MessageContext):

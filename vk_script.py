@@ -69,4 +69,4 @@ class VkBotScript(sc.BotScript):
             break
 
     def get_name(self):
-        return "VKScript"
+        return "vk"

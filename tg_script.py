@@ -50,4 +50,4 @@ class TgBotScript(sc.BotScript):
         self.bot.polling(none_stop=True)
 
     def get_name(self):
-        return "TgScript"
+        return "tg"
