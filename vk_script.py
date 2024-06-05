@@ -44,16 +44,17 @@ class VkBotScript(sc.BotScript):
     def get_action(self):
         for action in self.longpoll.listen():
             if action.type == VkBotEventType.MESSAGE_NEW:
+                res = sc.MessageContext(self.get_name())
                 obj = action.object
                 peer_id = obj['peer_id']
                 user_id = obj['from_id']
                 text = obj['text']
+                res.setText(text).setPeerId(peer_id).setUserId(user_id)
+
                 if "payload" in obj:
                     payload = json.loads(obj['payload'])
                     if "button" in payload:
-                        return sc.MessageContext().setPeerId(peer_id).setText(payload["button"]).setUserId(user_id)
-
-                res = sc.MessageContext()
+                        return res.setText(payload["button"])
 
                 attachments = obj['attachments']
                 if attachments:
@@ -65,7 +66,7 @@ class VkBotScript(sc.BotScript):
                                 res.addPhoto(size['url'])
                                 break
 
-                return res.setPeerId(peer_id).setUserId(user_id).setText(text)
+                return res
             break
 
     def get_name(self):

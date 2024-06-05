@@ -3,14 +3,20 @@ import utils
 
 
 class MessageContext:
-    def __init__(self):
+    def __init__(self, source):
         self.userId = None
         self.peerId = None
         self.text = None
         self.attached_photos = []
 
+        self.fsm_level = utils.getFSMLevel(f"{source}{self.userId}")
+
     def setPeerId(self, peerId):
         self.peerId = peerId
+        return self
+
+    def setFSMLevel(self, level):
+        self.fsm_level = level
         return self
 
     def setText(self, text):
@@ -59,11 +65,13 @@ class Mapper:
     def __init__(self, commands):
         self.commands = commands
 
-    def map(self, pattern, func):
+    def map(self, pattern, func, level="*"):
         if isinstance(pattern, str):
             pattern = [pattern]
+        if level not in self.commands:
+            self.commands[level] = {}
         for p in pattern:
-            self.commands[p] = func
+            self.commands[level][p] = func
 
 
 class BotScript:
@@ -85,9 +93,10 @@ class BotScript:
 
     def handle_action(self, action):
         if isinstance(action, MessageContext):
-            for pattern in self.commands:
+            fsm_level = action.fsm_level
+            for pattern in self.commands[fsm_level]:
                 if re.match(pattern, action.text):
-                    self.commands[pattern](action)
+                    self.commands[fsm_level][pattern](action)
                     break
 
     def start(self):

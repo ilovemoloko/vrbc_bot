@@ -32,4 +32,6 @@ def extract_codes(input_string):
 
     return hex_code, numeric_code
 
+def getFSMLevel(uid):
+    return "*"
 

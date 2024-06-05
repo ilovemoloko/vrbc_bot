@@ -30,7 +30,7 @@ class TgBotScript(sc.BotScript):
             peer_id = action.chat.id
             user_id = action.from_user.id
             text = action.text
-            res = MessageContext().setPeerId(peer_id).setUserId(user_id).setText(text)
+            res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text)
         self.handle_action(res)
 
     def get_actions(self, actions):
@@ -45,7 +45,7 @@ class TgBotScript(sc.BotScript):
             user_id = call.from_user.id
             peer_id = call.message.chat.id
             text = call.data
-            self.handle_action(MessageContext().setPeerId(peer_id).setUserId(user_id).setText(text))
+            self.handle_action(MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text))
 
         self.bot.polling(none_stop=True)
 
