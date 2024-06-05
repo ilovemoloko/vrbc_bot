@@ -52,7 +52,20 @@ class VkBotScript(sc.BotScript):
                     payload = json.loads(obj['payload'])
                     if "button" in payload:
                         return sc.MessageContext().setPeerId(peer_id).setText(payload["button"]).setUserId(user_id)
-                return sc.MessageContext().setPeerId(peer_id).setUserId(user_id).setText(text)
+
+                res = sc.MessageContext()
+
+                attachments = obj['attachments']
+                if attachments:
+                    for att in attachments:
+                        if att['type'] != 'photo':
+                            continue
+                        for size in att['photo']['sizes']:
+                            if size['type'] == 'x':
+                                res.addPhoto(size['url'])
+                                break
+
+                return res.setPeerId(peer_id).setUserId(user_id).setText(text)
             break
 
     def get_name(self):

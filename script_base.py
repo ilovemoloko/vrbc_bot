@@ -1,4 +1,5 @@
 import re
+import utils
 
 
 class MessageContext:
@@ -6,6 +7,7 @@ class MessageContext:
         self.userId = None
         self.peerId = None
         self.text = None
+        self.attached_photos = []
 
     def setPeerId(self, peerId):
         self.peerId = peerId
@@ -17,6 +19,10 @@ class MessageContext:
 
     def setUserId(self, userId):
         self.userId = userId
+        return self
+
+    def addPhoto(self, photo):
+        self.attached_photos.append(photo)
         return self
 
 
@@ -64,6 +70,9 @@ class BotScript:
     def __init__(self):
         self.commands = {}
         self.mapper = Mapper(self.commands)
+        self.mapper.map("img", self.get_codes)
+        self.mapper.map("test", self.test_message)
+        self.mapper.map("payload2", self.testbutton)
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -98,4 +107,20 @@ class BotScript:
     def testbutton(self, context: MessageContext):
         peerId = context.peerId
         answer = MessageBuilder().setText("Тестовое сообщение с нажатия кнопки").setPeerId(peerId)
+        self.send_message(answer)
+
+    def get_codes(self, context: MessageContext):
+        peerId = context.peerId
+        attachments = context.attached_photos
+        if len(attachments) == 0:
+            answer = MessageBuilder().setText("Не нашлось картинок").setPeerId(peerId)
+        else:
+            url = attachments[0]
+            image = utils.get_image(url)
+            image = image.crop((235, 130, 235+135, 130+30))
+            res = utils.getText(image)
+            res = utils.extract_codes(res)
+            res = f"Ваши коды: {res}"
+            answer = MessageBuilder().setPeerId(peerId).setText(res)
+
         self.send_message(answer)
