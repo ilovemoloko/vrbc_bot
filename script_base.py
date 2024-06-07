@@ -115,7 +115,6 @@ class BotScript:
                 self.handle_action(self.get_action())
             except Exception as e:
                 print(f"[{self.get_name()}] {e}")
-                # print full traceback
                 traceback.print_exc()
                 continue
 
