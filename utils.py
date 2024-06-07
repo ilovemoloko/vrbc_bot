@@ -32,6 +32,18 @@ def extract_codes(input_string):
 
     return hex_code, numeric_code
 
-def getFSMLevel(uid):
-    return "*"
 
+def get_codes_box(photo_size):
+    x, y = photo_size
+    center_x, center_y = x / 2, y / 2
+    x_crop_1 = center_x * 0.75
+    x_crop_2 = center_x * 1.25
+    y_crop_1 = center_y * 0.9
+    y_crop_2 = center_y * 1.15
+
+    return x_crop_1, y_crop_1, x_crop_2, y_crop_2
+
+
+def getFSMLevel(uid):
+    print(uid)
+    return "test 20"

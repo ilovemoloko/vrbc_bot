@@ -1,4 +1,5 @@
 import re
+import traceback
 import utils
 
 
@@ -8,15 +9,11 @@ class MessageContext:
         self.peerId = None
         self.text = None
         self.attached_photos = []
-
-        self.fsm_level = utils.getFSMLevel(f"{source}{self.userId}")
+        self.source = source
+        self.fsm = ""
 
     def setPeerId(self, peerId):
         self.peerId = peerId
-        return self
-
-    def setFSMLevel(self, level):
-        self.fsm_level = level
         return self
 
     def setText(self, text):
@@ -30,6 +27,9 @@ class MessageContext:
     def addPhoto(self, photo):
         self.attached_photos.append(photo)
         return self
+
+    def setFSM(self, fsm):
+        self.fsm = fsm
 
 
 class ButtonsBuilder:
@@ -81,6 +81,7 @@ class BotScript:
         self.mapper.map("img", self.get_codes)
         self.mapper.map("test", self.test_message)
         self.mapper.map("payload2", self.testbutton)
+        self.mapper.map("fsmtest", self.fsmtest, level="test")
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -93,11 +94,20 @@ class BotScript:
 
     def handle_action(self, action):
         if isinstance(action, MessageContext):
-            fsm_level = action.fsm_level
+            if action.text is None:
+                action.text = ""
+            fsm_level = utils.getFSMLevel(f"{action.source}-{action.userId}")
+            context = fsm_level.split(" ")[1:]
+            fsm_level = fsm_level.split(" ")[0]
+            action.setFSM(context)
             for pattern in self.commands[fsm_level]:
                 if re.match(pattern, action.text):
                     self.commands[fsm_level][pattern](action)
-                    break
+                    return
+            for pattern in self.commands["*"]:
+                if re.match(pattern, action.text):
+                    self.commands["*"][pattern](action)
+                    return
 
     def start(self):
         while True:
@@ -105,6 +115,8 @@ class BotScript:
                 self.handle_action(self.get_action())
             except Exception as e:
                 print(f"[{self.get_name()}] {e}")
+                # print full traceback
+                traceback.print_exc()
                 continue
 
     def test_message(self, context: MessageContext):
@@ -126,10 +138,15 @@ class BotScript:
         else:
             url = attachments[0]
             image = utils.get_image(url)
-            image = image.crop((235, 130, 235+135, 130+30))
+            image = image.crop(utils.get_codes_box(image.size))
             res = utils.getText(image)
             res = utils.extract_codes(res)
             res = f"Ваши коды: {res}"
             answer = MessageBuilder().setPeerId(peerId).setText(res)
 
+        self.send_message(answer)
+
+    def fsmtest(self, context: MessageContext):
+        peerId = context.peerId
+        answer = MessageBuilder().setText(f"Тест FSM - {context.fsm}").setPeerId(peerId)
         self.send_message(answer)

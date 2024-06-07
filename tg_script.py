@@ -1,3 +1,5 @@
+import json
+
 import script_base as sc
 from config import token_tg
 from script_base import MessageBuilder, MessageContext
@@ -26,11 +28,17 @@ class TgBotScript(sc.BotScript):
 
     def _handle_action(self, action):
         res = None
+        peer_id = action.chat.id
+        user_id = action.from_user.id
+
         if action.content_type == "text":
-            peer_id = action.chat.id
-            user_id = action.from_user.id
             text = action.text
             res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text)
+        elif action.content_type == "photo":
+            text = action.caption
+            photo_url = self.bot.get_file_url(action.photo[-1].file_id)
+            res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text).addPhoto(photo_url)
+
         self.handle_action(res)
 
     def get_actions(self, actions):
