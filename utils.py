@@ -2,6 +2,7 @@ import requests
 from io import BytesIO
 from PIL import Image
 import pytesseract
+import threading
 import re
 
 tesPath = "D:/Tesseract/tesseract.exe"
@@ -44,6 +45,19 @@ def get_codes_box(photo_size):
     return x_crop_1, y_crop_1, x_crop_2, y_crop_2
 
 
+class SingletonMeta(type):
+    _instances = {}
+    _lock: threading.Lock = threading.Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls not in cls._instances:
+                instance = super().__call__(*args, **kwargs)
+                cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
 def getFSMLevel(uid):
     print(uid)
     return "test 20"
+
