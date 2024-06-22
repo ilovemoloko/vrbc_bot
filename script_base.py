@@ -1,9 +1,6 @@
 import re
 import traceback
 import utils
-from db_worker import FSMDatabase
-
-db = FSMDatabase()
 
 
 class MessageContext:
@@ -68,25 +65,31 @@ class Mapper:
     def __init__(self, commands):
         self.commands = commands
 
-    def map(self, pattern, func, level="*"):
+    def map(self, func, pattern, level="*"):
         if isinstance(pattern, str):
             pattern = [pattern]
         if level not in self.commands:
             self.commands[level] = {}
         for p in pattern:
+            p = "^" + p + "$"
             self.commands[level][p] = func
+
+    def command(self, func):
+        def wrapper(*args, **kwargs):
+            self.map(func, *args, **kwargs)
+        return wrapper
 
 
 class BotScript:
     def __init__(self):
         self.commands = {}
         self.mapper = Mapper(self.commands)
-        self.mapper.map("img", self.get_codes)
-        self.mapper.map("test", self.test_message)
-        self.mapper.map("payload2", self.testbutton)
-        self.mapper.map("fsmtest", self.fsmtest, level="test")
-        self.mapper.map("test", self.not_baza, level="first_msg")
-        self.mapper.map(".*", self.megabaza, level="first_msg")
+        import bot_script
+        for cmd in bot_script.commands:
+            level = cmd[0]
+            pattern = cmd[1]
+            func = cmd[2]
+            self.mapper.map(func, pattern, level)
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -107,7 +110,7 @@ class BotScript:
             action.setFSM(context)
             for pattern in self.commands[fsm_level]:
                 if re.match(pattern, action.text):
-                    self.commands[fsm_level][pattern](action)
+                    self.commands[fsm_level][pattern](self, action)
                     return
             for pattern in self.commands["*"]:
                 if re.match(pattern, action.text):
@@ -122,46 +125,3 @@ class BotScript:
                 print(f"[{self.get_name()}] {e}")
                 traceback.print_exc()
                 continue
-
-    def test_message(self, context: MessageContext):
-        peerId = context.peer_id
-        buttons = ButtonsBuilder().add("Кнопка 1", "payload1").add("Тест кнопки", "payload2")
-        answer = MessageBuilder().setText("Тестовое сообщение").setPeerId(peerId).setButtons(buttons)
-        self.send_message(answer)
-
-    def testbutton(self, context: MessageContext):
-        peerId = context.peer_id
-        answer = MessageBuilder().setText("Тестовое сообщение с нажатия кнопки").setPeerId(peerId)
-        self.send_message(answer)
-
-    def get_codes(self, context: MessageContext):
-        peerId = context.peer_id
-        attachments = context.attached_photos
-        if len(attachments) == 0:
-            answer = MessageBuilder().setText("Не нашлось картинок").setPeerId(peerId)
-        else:
-            url = attachments[0]
-            image = utils.get_image(url)
-            image = image.crop(utils.get_codes_box(image.size))
-            res = utils.getText(image)
-            res = utils.extract_codes(res)
-            res = f"Ваши коды: {res}"
-            answer = MessageBuilder().setPeerId(peerId).setText(res)
-
-        self.send_message(answer)
-
-    def fsmtest(self, context: MessageContext):
-        peerId = context.peer_id
-        answer = MessageBuilder().setText(f"Тест FSM - {context.fsm}").setPeerId(peerId)
-        self.send_message(answer)
-
-    def megabaza(self, context: MessageContext):
-        peerId = context.peer_id
-        answer = MessageBuilder().setText(f"иди нахуй потому что - {context.fsm}").setPeerId(peerId)
-        self.send_message(answer)
-
-    def not_baza(self, context: MessageContext):
-        peerId = context.peer_id
-        answer = MessageBuilder().setText(f"лан").setPeerId(peerId)
-        db.update_state(context, "*")
-        self.send_message(answer)
