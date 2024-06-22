@@ -1,8 +1,49 @@
-# Реализация полей для удобной работы с базой данных
+import sqlite3
+from utils import SingletonMeta
+import os
 
-# Сейчас нужно реализовать:
-#   Базу данных FSM для пользователей
 
-# В дальнейшем потребуется:
-#   База данных хранения json-файлов с автоматическим добавлением новых полей
-#   База данных аккаунтов игры с привязкой к аккаунтам бота
+class FSMDatabase(metaclass=SingletonMeta):
+    def __init__(self, db_path='db/userdata.db'):
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.create_table()
+
+    def create_table(self):
+        with self.conn:
+            self.conn.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id TEXT PRIMARY KEY,
+                    state TEXT
+                )
+            ''')
+
+    def add_user(self, context, state):
+        user_id_combined = f"{context.src}_{context.user_id}"
+        with self.conn:
+            self.conn.execute('''
+                INSERT INTO users (user_id, state) VALUES (?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET state=excluded.state
+            ''', (user_id_combined, state))
+
+    def update_state(self, context, new_state):
+        user_id_combined = f"{context.src}_{context.user_id}"
+        with self.conn:
+            self.conn.execute('''
+                UPDATE users SET state = ? WHERE user_id = ?
+            ''', (new_state, user_id_combined))
+
+    def get_state(self, context):
+        user_id_combined = f"{context.src}_{context.user_id}"
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT state FROM users WHERE user_id = ?
+        ''', (user_id_combined,))
+        result = cursor.fetchone()
+        if result is None:
+            self.add_user(context, 'first_msg')
+            return 'first_msg'
+        return result[0]
+
+    def close(self):
+        self.conn.close()

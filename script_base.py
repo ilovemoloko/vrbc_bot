@@ -1,19 +1,22 @@
 import re
 import traceback
 import utils
+from db_worker import FSMDatabase
+
+db = FSMDatabase()
 
 
 class MessageContext:
     def __init__(self, source):
-        self.userId = None
-        self.peerId = None
+        self.user_id = None
+        self.peer_id = None
         self.text = None
         self.attached_photos = []
-        self.source = source
+        self.src = source
         self.fsm = ""
 
     def setPeerId(self, peerId):
-        self.peerId = peerId
+        self.peer_id = peerId
         return self
 
     def setText(self, text):
@@ -21,7 +24,7 @@ class MessageContext:
         return self
 
     def setUserId(self, userId):
-        self.userId = userId
+        self.user_id = userId
         return self
 
     def addPhoto(self, photo):
@@ -82,6 +85,8 @@ class BotScript:
         self.mapper.map("test", self.test_message)
         self.mapper.map("payload2", self.testbutton)
         self.mapper.map("fsmtest", self.fsmtest, level="test")
+        self.mapper.map("test", self.not_baza, level="first_msg")
+        self.mapper.map(".*", self.megabaza, level="first_msg")
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -96,7 +101,7 @@ class BotScript:
         if isinstance(action, MessageContext):
             if action.text is None:
                 action.text = ""
-            fsm_level = utils.getFSMLevel(f"{action.source}-{action.userId}")
+            fsm_level = utils.getFSMLevel(action)
             context = fsm_level.split(" ")[1:]
             fsm_level = fsm_level.split(" ")[0]
             action.setFSM(context)
@@ -119,18 +124,18 @@ class BotScript:
                 continue
 
     def test_message(self, context: MessageContext):
-        peerId = context.peerId
+        peerId = context.peer_id
         buttons = ButtonsBuilder().add("Кнопка 1", "payload1").add("Тест кнопки", "payload2")
         answer = MessageBuilder().setText("Тестовое сообщение").setPeerId(peerId).setButtons(buttons)
         self.send_message(answer)
 
     def testbutton(self, context: MessageContext):
-        peerId = context.peerId
+        peerId = context.peer_id
         answer = MessageBuilder().setText("Тестовое сообщение с нажатия кнопки").setPeerId(peerId)
         self.send_message(answer)
 
     def get_codes(self, context: MessageContext):
-        peerId = context.peerId
+        peerId = context.peer_id
         attachments = context.attached_photos
         if len(attachments) == 0:
             answer = MessageBuilder().setText("Не нашлось картинок").setPeerId(peerId)
@@ -146,6 +151,17 @@ class BotScript:
         self.send_message(answer)
 
     def fsmtest(self, context: MessageContext):
-        peerId = context.peerId
+        peerId = context.peer_id
         answer = MessageBuilder().setText(f"Тест FSM - {context.fsm}").setPeerId(peerId)
+        self.send_message(answer)
+
+    def megabaza(self, context: MessageContext):
+        peerId = context.peer_id
+        answer = MessageBuilder().setText(f"иди нахуй потому что - {context.fsm}").setPeerId(peerId)
+        self.send_message(answer)
+
+    def not_baza(self, context: MessageContext):
+        peerId = context.peer_id
+        answer = MessageBuilder().setText(f"лан").setPeerId(peerId)
+        db.update_state(context, "*")
         self.send_message(answer)
