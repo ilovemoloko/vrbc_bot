@@ -145,3 +145,5 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
     @locked
     def close(self):
         self.conn.close()
+
+localuser_db = LocalUsersDatabase()

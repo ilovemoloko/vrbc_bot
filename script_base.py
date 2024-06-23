@@ -2,6 +2,8 @@ import re
 import traceback
 import utils
 
+from db_worker import fsm_db, localuser_db
+
 
 class MessageContext:
     def __init__(self, source):
@@ -104,7 +106,7 @@ class BotScript:
         if isinstance(action, MessageContext):
             if action.text is None:
                 action.text = ""
-            fsm_level = utils.getFSMLevel(action)
+            fsm_level = fsm_db.get_state(action)
             context = fsm_level.split(" ")[1:]
             fsm_level = fsm_level.split(" ")[0]
             action.setFSM(context)
