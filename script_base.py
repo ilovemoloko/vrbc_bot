@@ -83,6 +83,8 @@ class Mapper:
 
 
 class BotScript:
+    TRACEBACK = False
+
     def __init__(self):
         self.commands = {}
         self.mapper = Mapper(self.commands)
@@ -103,27 +105,27 @@ class BotScript:
         return "none"
 
     def handle_action(self, action):
-        if isinstance(action, MessageContext):
-            if action.text is None:
-                action.text = ""
-            fsm_level = fsm_db.get_state(action)
-            context = fsm_level.split(" ")[1:]
-            fsm_level = fsm_level.split(" ")[0]
-            action.setFSM(context)
-            for pattern in self.commands[fsm_level]:
-                if re.match(pattern, action.text):
-                    self.commands[fsm_level][pattern](self, action)
-                    return
-            for pattern in self.commands["*"]:
-                if re.match(pattern, action.text):
-                    self.commands["*"][pattern](action)
-                    return
+        try:
+            if isinstance(action, MessageContext):
+                if action.text is None:
+                    action.text = ""
+                fsm_level = fsm_db.get_state(action)
+                context = fsm_level.split(" ")[1:]
+                fsm_level = fsm_level.split(" ")[0]
+                action.setFSM(context)
+                for pattern in self.commands[fsm_level]:
+                    if re.match(pattern, action.text):
+                        self.commands[fsm_level][pattern](self, action)
+                        return
+                for pattern in self.commands["*"]:
+                    if re.match(pattern, action.text):
+                        self.commands["*"][pattern](action)
+                        return
+        except Exception as e:
+            print(f"[{self.get_name()}] {e}")
+            if self.TRACEBACK:
+                traceback.print_exc()
 
     def start(self):
         while True:
-            try:
-                self.handle_action(self.get_action())
-            except Exception as e:
-                print(f"[{self.get_name()}] {e}")
-                traceback.print_exc()
-                continue
+            self.handle_action(self.get_action())

@@ -53,7 +53,8 @@ class TgBotScript(sc.BotScript):
             text = call.data
             self.handle_action(MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text))
 
-        self.bot.polling(none_stop=True)
+        while True:
+            self.bot.polling(none_stop=True, skip_pending=True)
 
     def get_name(self):
         return "tg"
