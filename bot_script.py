@@ -2,14 +2,15 @@ from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
 from db_worker import FSMDatabase
 
-
 db = FSMDatabase()
 commands = []
+
 
 def command(pattern, level="*"):
     def decorator(func):
         commands.append((level, pattern, func))
         return func
+
     return decorator
 
 
