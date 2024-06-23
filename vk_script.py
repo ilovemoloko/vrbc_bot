@@ -62,7 +62,7 @@ class VkBotScript(sc.BotScript):
                         if att['type'] != 'photo':
                             continue
                         for size in att['photo']['sizes']:
-                            if size['type'] == 'x':
+                            if size['type'] == 'y':
                                 res.addPhoto(size['url'])
                                 break
 

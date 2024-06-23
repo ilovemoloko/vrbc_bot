@@ -18,7 +18,7 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-from db_worker import FSMDatabase
+from db_worker import FSMDatabase, LocalUsersDatabase
 
 tesPath = "D:/Tesseract/tesseract.exe"
 pytesseract.pytesseract.tesseract_cmd = tesPath
@@ -60,9 +60,9 @@ def get_codes_box(photo_size):
     return x_crop_1, y_crop_1, x_crop_2, y_crop_2
 
 
-db = FSMDatabase()
+fsm_db = FSMDatabase()
+localuser_db = LocalUsersDatabase()
 
 
 def getFSMLevel(uid):
-    return db.get_state(uid)
-
+    return fsm_db.get_state(uid)
