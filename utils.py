@@ -1,13 +1,15 @@
 import os.path
-
+import numpy
 import requests
 from io import BytesIO
 from PIL import Image
 import pytesseract
 import threading
 import re
+import struct
 
-#код хуйня
+
+# код хуйня
 class SingletonMeta(type):
     _instances = {}
     _lock: threading.Lock = threading.Lock()
@@ -60,3 +62,54 @@ def get_codes_box(photo_size):
     y_crop_2 = center_y * 1.15
 
     return x_crop_1, y_crop_1, x_crop_2, y_crop_2
+
+
+def randhex(len):
+    return numpy.random.bytes(len).hex()
+
+
+def getSave(t, c, ver='en'):  # Возвращает (инфо, успешно ли, версия)
+    url = f"https://nyanko-save.ponosgames.com/v1/transfers/{t}/reception"
+    jsonStr = "{\"clientInfo\":{\"client\":{\"countryCode\":\"" + ver + "\",\"version\":\"" + '120300' + "\"},\"device\":{\"model\":\"ASUS_Z01QD\"},\"os\":{\"type\":\"android\",\"version\":\"5.1.1\"}},\"nonce\":\"" + randhex(
+        16) + "\",\"pin\":\"" + c + "\"}"
+    byt = jsonStr.encode('utf-8')
+    r = requests.post(url, headers={'Content-type': 'application/json'}, data=byt, stream=True)
+    if r.status_code == 200 and len(r.content) > 400:
+        return r.content, True, ver
+    else:
+        if ver == 'en':
+            return getSave(t, c, 'ja')
+        return None, False, ver
+
+
+def search(data, Pattern, startIndex):
+    if startIndex > len(data) or len(Pattern) > (len(data) - startIndex):
+        raise IndexError('Something went wrong')
+    index = startIndex
+    limit = len(data) - len(Pattern)
+    while index <= limit:
+        j = len(Pattern) - 1
+        while j >= 0 and Pattern[j] == data[index + j]:
+            j -= 1
+        if j < 0:
+            return index
+        index += 1
+    return -1
+
+
+def getInq(data):
+    data = bytearray(data)
+    try:
+        CurrIdx = search(data, struct.pack("<I", 9), 300000) + 4
+        InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
+        for i in range(9):
+            InqBytes[i] = data[CurrIdx + i]
+        inq = ''.join(k for k in InqBytes.decode() if k in 'abcdef0123456789')
+        if len(inq) == 9: return inq
+        inq_pat = re.findall(r"(?:^|[^a-zA-Z\d])[a-f0-9]{9}(?:[^a-zA-Z\d]|$)", str(data))
+        lololo = inq_pat[0]
+        inq = ''.join(lol for lol in lololo if lol in 'abcdef0123456789')
+        return inq
+
+    except:
+        return "LOL"
