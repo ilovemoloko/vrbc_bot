@@ -277,7 +277,7 @@ def starthack(self, context: MessageContext):
     self.send_message(answer)
 
 
-@command(".*", level="starthack")
+@command(".*", level="starthack", weak=True)
 def starthack(self, context: MessageContext):
     peerId = context.peer_id
     buttons = ButtonsBuilder()
