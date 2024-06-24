@@ -2,11 +2,12 @@ import re
 
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
-from db_worker import FSMDatabase, LocalUsersDatabase
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
 import local_server as ls
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
+info_worker = DBInfoWorker()
 commands = []
 
 
@@ -38,7 +39,7 @@ def cart(self, context: MessageContext):
 
     answer = MessageBuilder().setText("выбирай че хочешь ну из каталогов").setPeerId(peerId)
     buttons = ButtonsBuilder()
-    categories = ls.get_catalog()['categories']
+    categories = ls.get_values()['categories']
     for i in categories:
         buttons.add(categories[i], f"selectcategory {i}")
     answer.setButtons(buttons)
@@ -51,8 +52,8 @@ def selectcategory(self, context: MessageContext):
     fsm_db.update_state(context, "*")
 
     category_id = int(context.text.split()[1])
-    category_items = ls.get_catalog()['categorized'][category_id]
-    category_name = ls.get_catalog()['categories'][category_id]
+    category_items = ls.get_values()['categorized'][category_id]
+    category_name = ls.get_values()['categories'][category_id]
 
     buttons = ButtonsBuilder()
     buttons.add("Добавить предмет", f"chooseitem {category_id}")
@@ -69,8 +70,18 @@ def selectcategory(self, context: MessageContext):
 @command("chooseitem \\d+")
 def chooseitem(self, context: MessageContext):
     peerId = context.peer_id
-
+    cart_size = info_worker.get_cart_size(context)
     answer = MessageBuilder().setPeerId(peerId)
+
+    if cart_size >= info_worker.get_value(context, 'cart_size'):
+        answer.addText("Корзина переполнена")
+        buttons = ButtonsBuilder()
+        buttons.add("Начать взлом", "starthack")
+        buttons.add("Убрать предмет из корзины", "removeitem")
+        buttons.add("Назад", "cart")
+        answer.setButtons(buttons)
+        return self.send_message(answer)
+
     answer.addText("Напишите ID нужного вам предмета")
 
     fsm_db.update_state(context, context.text)
@@ -94,7 +105,7 @@ def chooseitem2(self, context: MessageContext):
         return
 
     item_id = int(result.group(0))
-    items_data = ls.get_catalog()['items']
+    items_data = ls.get_values()['items']
 
     if item_id not in items_data:
         answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.")
@@ -115,10 +126,11 @@ def chooseitem2(self, context: MessageContext):
 def additem(self, context: MessageContext):
     peerId = context.peer_id
     text = context.text
-    items_data = ls.get_catalog()['items'][int(context.fsm[0])]
+    item_id = int(context.fsm[0])
+    items_data = ls.get_values()['items'][item_id]
 
     buttons = ButtonsBuilder()
-    buttons.add("Назад", f"chooseitem {items_data[2]}")
+    buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
     answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
 
     result = re.search(r"\d+", text)
@@ -133,57 +145,161 @@ def additem(self, context: MessageContext):
         if amount > items_data[0]:
             amount = items_data[0]
             answer.addText("Вы превысили лимит, поэтому в корзину будет добавлено максимальное количество\n")
-            utils.add_to_cart(items_data[1], amount, context)
 
+    info_worker.add_to_cart(context, item_id, amount)
     fsm_db.update_state(context, "*")
     answer.addText(f"Предмет {items_data[1]} ({amount}) добавлен в корзину")
+    buttons.insert(0, "Начать взлом", "starthack")
+    buttons.insert(0, "Посмотреть корзину", "viewcart")
     self.send_message(answer)
 
 
-@command("рег")
-def reg(self, context: MessageContext):
+def addCart(answer, cart, items_info, only_item=None, show_id=True):
+    for i in cart:
+        item_info = items_info[i]
+        item_name = item_info[1]
+        item_id = i
+        id_text = f" (ID: {item_id})" if show_id else ""
+        if not (item_id == only_item or only_item is None):
+            continue
+        if isinstance(cart[i], list):
+            for j in cart[i]:
+                answer.addText(f"{j} {item_name} {id_text}", start="\n --- ")
+        else:
+            answer.addText(f"{cart[i]} {item_name} {id_text}", start="\n --- ")
+
+
+@command("viewcart")
+def viewcart(self, context: MessageContext):
     peerId = context.peer_id
-    local_user_id = fsm_db.get_local_user_id(context)
-    if local_user_id is not None:
-        answer = MessageBuilder().setText("У вас уже есть аккаунт").setPeerId(peerId)
+    cart = info_worker.get_value(context, 'cart')
+    items_info = ls.get_values()['items']
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    cart_size = info_worker.get_cart_size(context)
+    max_cart_size = info_worker.get_value(context, 'cart_size')
+
+    buttons.add("Смотреть категории предметов", "cart")
+    if len(cart) == 0:
+        answer.addText("Корзина пуста")
     else:
-        local_user_id = local_user_db.create_user()
-        fsm_db.set_local_user_id(context, local_user_id)
-        answer = MessageBuilder().setText("Ваш аккаунт создан").setPeerId(peerId)
+        buttons.add("Убрать предмет", "removeitem")
+        buttons.add("Начать взлом", "starthack")
+        answer.addText("Ваша корзина:\n")
+        addCart(answer, cart, items_info)
+
+    answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов")
     self.send_message(answer)
 
 
-@command("setvalue")
-def setvalue(self, context: MessageContext):
+@command("removeitem")
+def removeitem(self, context: MessageContext):
     peerId = context.peer_id
-    fsm_db.update_state(context, "setvalue")
-    answer = MessageBuilder().setText("Введите число").setPeerId(peerId)
+    answer = MessageBuilder().setPeerId(peerId)
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
+
+    if info_worker.get_cart_size(context) == 0:
+        answer.addText("Корзина пуста")
+    else:
+        answer.addText("Напишите ID нужного вам предмета")
+        fsm_db.update_state(context, context.text)
     self.send_message(answer)
 
 
-@command("\\d+", level="setvalue")
-def setvalue2(self, context: MessageContext):
+@command(".*", level="removeitem")
+def removeitem(self, context: MessageContext):
     peerId = context.peer_id
-    value = context.text
-    local_user_db.update_info(context, value)
+    regex = re.search(r"\d+", context.text)
+    buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+
+    if not regex:
+        answer.addText("Неправильно введен ID предмета")
+        self.send_message(answer)
+        return
+
+    item_id = int(regex.group(0))
+    if item_id not in info_worker.get_value(context, 'cart'):
+        answer.addText("Такого предмета нет в корзине")
+        self.send_message(answer)
+        return
+
+    items_info = ls.get_values()['items']
+    stackable = info_worker.check_stackable(item_id)
+
+    if stackable:
+        if len(info_worker.get_value(context, 'cart')[item_id]) > 1:
+            info_worker.del_from_cart(context, item_id, 1)
+            fsm_db.update_state(context, f"removeitem2 {item_id}")
+            answer.addText("Пожалуйста, уточните какой именно предмет вы хотите удалить из корзины (Укажите число)\n")
+            addCart(answer, info_worker.get_value(context, 'cart'), items_info, item_id, show_id=False)
+            self.send_message(answer)
+            return
+
+    info_worker.del_from_cart(context, item_id)
     fsm_db.update_state(context, "*")
-    answer = MessageBuilder().setText(context.text).setPeerId(peerId)
+    answer.addText("Предмет удален из корзины")
     self.send_message(answer)
 
 
-@command(".*", level="setvalue")
-def setvalue3(self, context: MessageContext):
+@command(".*", level="removeitem2")
+def removeitem2(self, context: MessageContext):
     peerId = context.peer_id
-    answer = MessageBuilder().setText("Неверное значение. Введите число!").setPeerId(peerId)
+    regex = re.search(r"\d+", context.text)
+    buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+
+    if not regex:
+        answer.addText("Пожалуйста, введите число")
+        self.send_message(answer)
+        return
+
+    item_id = int(context.fsm[0])
+
+    res = info_worker.del_from_cart(context, item_id, int(regex.group(0)))
+    if res:
+        fsm_db.update_state(context, "*")
+        answer.addText("Предмет удален из корзины")
+    else:
+        answer.addText("Такого предмета нет в корзине")
     self.send_message(answer)
 
 
-@command(["test", "тест"])
-def test_message(self, context: MessageContext):
+@command("starthack")
+def starthack(self, context: MessageContext):
     peerId = context.peer_id
-    buttons = ButtonsBuilder().add("Кнопка 1", "payload1").add("Тест кнопки", "payload2")
-    answer = MessageBuilder().setText("Тестовое сообщение").setPeerId(peerId).setButtons(buttons)
+    answer = MessageBuilder().setPeerId(peerId)
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
+    answer.addText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").setButtons(buttons)
+    fsm_db.update_state(context, context.text)
     self.send_message(answer)
+
+
+@command(".*", level="starthack")
+def starthack(self, context: MessageContext):
+    peerId = context.peer_id
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    attachments = context.attached_photos
+    if len(attachments) == 0:
+        answer.setText("скриншота нет, так что поищу в тексте ответа")
+    else:
+        url = attachments[0]
+        image = utils.get_image(url)
+        image = image.crop(utils.get_codes_box(image.size))
+        res = utils.getText(image)
+        try:
+            res = utils.extract_codes(res)
+            res = f"Ваши коды: {res}"
+        except:
+            res = "Нет кодов"
+        answer = MessageBuilder().setPeerId(peerId).setText(res)
+
+    self.send_message(answer)
+
 
 
 @command("img")
@@ -207,46 +323,20 @@ def get_codes(self, context: MessageContext):
     self.send_message(answer)
 
 
-@command("fsmtest", level="test")
-def fsmtest(self, context: MessageContext):
-    peerId = context.peer_id
-    answer = MessageBuilder().setText(f"Тест FSM - {context.fsm}").setPeerId(peerId)
-    self.send_message(answer)
-
-
-@command("payload2")
-def testbutton(self, context: MessageContext):
-    peerId = context.peer_id
-    answer = MessageBuilder().setText("Тестовое сообщение с нажатия кнопки").setPeerId(peerId)
-    self.send_message(answer)
-
-
-@command(["test", "тест"], level="first_msg")
-def megabaza(self, context: MessageContext):
-    peerId = context.peer_id
-    answer = MessageBuilder().setText(f"лан").setPeerId(peerId)
-    fsm_db.update_state(context, "*")
-    self.send_message(answer)
+def reg(context: MessageContext):
+    local_user_id = fsm_db.get_local_user_id(context)
+    if local_user_id is None:
+        local_user_id = local_user_db.create_user()
+        fsm_db.set_local_user_id(context, local_user_id)
 
 
 @command(".*", level="first_msg")
 def not_baza(self, context: MessageContext):
     peerId = context.peer_id
-    answer = MessageBuilder().setText(f"иди нахуй потому что - {context.fsm}").setPeerId(peerId)
+    answer = MessageBuilder().setText(f"здарова").setPeerId(peerId)
+    buttons = ButtonsBuilder()
+    buttons.add("Корзина", "cart")
+    answer.setButtons(buttons)
     self.send_message(answer)
-
-
-@command("вернись")
-def backto(self, context: MessageContext):
-    peerId = context.peer_id
-    fsm_db.update_state(context, "first_msg false")
-    answer = MessageBuilder().setText(f"как скажешь").setPeerId(peerId)
-    self.send_message(answer)
-
-
-@command("вернисьTRUE")
-def backto2(self, context: MessageContext):
-    peerId = context.peer_id
-    fsm_db.update_state(context, "first_msg true")
-    answer = MessageBuilder().setText(f"как скажешь").setPeerId(peerId)
-    self.send_message(answer)
+    reg(context)
+    fsm_db.update_state(context, "*")

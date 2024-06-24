@@ -1,8 +1,10 @@
 import sqlite3
+
+import local_server
 from utils import SingletonMeta
+from local_server import get_values
 import os
 import threading
-
 
 db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -14,6 +16,7 @@ def locked(func):
     def wrapper(*args, **kwargs):
         with lock:
             return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -21,6 +24,16 @@ def connected(func):
     def wrapper(*args, **kwargs):
         with conn:
             return func(*args, **kwargs)
+
+    return wrapper
+
+
+def return_false_on_error(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except:
+            return False
     return wrapper
 
 
@@ -140,10 +153,93 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
         local_user_id = fsm_db.get_local_user_id(context)
         self.conn.execute('''
             UPDATE localusers SET info = ? WHERE local_user_id = ?
-        ''', (new_info, local_user_id))
+        ''', (str(new_info), local_user_id))
 
     @locked
     def close(self):
         self.conn.close()
 
+
 localuser_db = LocalUsersDatabase()
+
+
+class DBInfoWorker(metaclass=SingletonMeta):
+    def get_value(self, context, key):
+        info = self.get_info(context)
+        value = info.get(key, None)
+        if value is None:
+            return get_values()['default_user'][key]
+        return value
+
+    def set_value(self, context, key, value):
+        info = self.get_info(context)
+        info[key] = value
+        localuser_db.update_info(context, info)
+
+    def set_info(self, context, info):
+        info = str(info)
+        localuser_db.update_info(context, info)
+
+    def get_info(self, context):
+        return eval(localuser_db.get_info(context))
+
+    def get_cart_size(self, context):
+        size = 0
+        cart = self.get_value(context, 'cart')
+        for item in cart:
+            if isinstance(cart[item], list):
+                size += len(cart[item])
+            else:
+                size += 1
+        return size
+
+    @staticmethod
+    def check_stackable(item):
+        item_info = local_server.get_values()['items'][item]
+        stackable = False
+        if isinstance(item_info[-1], dict):
+            stackable = item_info[-1].get('stackable', False)
+        return stackable
+
+    @return_false_on_error
+    def add_to_cart(self, context, item, amount):
+        cart_size = self.get_cart_size(context)
+        cart_max_size = self.get_value(context, 'cart_size')
+        if cart_size >= cart_max_size:
+            return False
+
+        stackable = self.check_stackable(item)
+        cart = self.get_value(context, 'cart')
+        if not stackable:
+            cart[item] = amount
+        else:
+            items_array = cart.get(item, [])
+            items_array.append(amount)
+            items_array = list(set(items_array))
+            cart[item] = items_array
+
+        self.set_value(context, 'cart', cart)
+        return True
+
+    @return_false_on_error
+    def del_from_cart(self, context, item, amount=None):
+        cart = self.get_value(context, 'cart')
+        if item in cart:
+            if amount is not None:
+                if isinstance(cart[item], list):
+                    if amount not in cart[item]:
+                        return False
+                    cart[item].remove(amount)
+                    if len(cart[item]) == 0:
+                        cart.pop(item)
+                    self.set_value(context, 'cart', cart)
+                    return True
+                else:
+                    return False
+            cart.pop(item)
+            self.set_value(context, 'cart', cart)
+            return True
+        return False
+
+
+info_worker = DBInfoWorker()

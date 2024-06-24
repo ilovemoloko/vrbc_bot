@@ -13,6 +13,7 @@ class MessageContext:
         self.attached_photos = []
         self.src = source
         self.fsm = ""
+        self.fsm_full = ""
 
     def setPeerId(self, peerId):
         self.peer_id = peerId
@@ -127,6 +128,7 @@ class BotScript:
                 if action.text is None:
                     action.text = ""
                 fsm_level = fsm_db.get_state(action)
+                action.fsm_full = fsm_level
                 context = fsm_level.split(" ")[1:]
                 fsm_level = fsm_level.split(" ")[0]
                 action.setFSM(context)

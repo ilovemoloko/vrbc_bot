@@ -25,7 +25,7 @@ items = {
     24: [20, "Elder фрукт", 3],
     25: [20, "Эпическое семечко", 3],
     26: [20, "Фиолетовый фрукт", 3],
-    27: ["Нет", "Кот", 6],
+    27: ["Нет", "Кот", 6, {"stackable": True}],
     28: [4000, "NP", 6],
     29: [150, "Special Кошачьи Глаза", 5],
     30: [150, "Rare Кошачьи Глаза", 5],
@@ -77,6 +77,11 @@ categories = {
     6: "Коты, флажки и NP"
 }
 
+default_user = {
+    "cart": {},
+    "cart_size": 7
+}
+
 
 def categorize_items(items):
     res = {}
@@ -89,6 +94,6 @@ def categorize_items(items):
     return res
 
 
-def get_catalog():
+def get_values():
     categorized = categorize_items(items)
-    return {"categories": categories, "items": items, "categorized": categorized}
+    return {"categories": categories, "items": items, "categorized": categorized, "default_user": default_user}
