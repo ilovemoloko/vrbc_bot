@@ -1,5 +1,7 @@
 import re
 
+import requests
+
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
@@ -10,6 +12,7 @@ local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 commands = []
 
+api_url = "http://127.0.0.1:5000/api/hack"
 
 
 def command(pattern, level="*", weak=False):
@@ -29,7 +32,8 @@ def info(self, context: MessageContext):
     else:
         user_info = local_user_db.get_info(context)
         fsm_level = fsm_db.get_state(context)
-        answer = MessageBuilder().setText(f"Ваша информация об аккаунте:\n\n{user_info}").setPeerId(peerId).addText(f"fsmstate = {fsm_level}")
+        answer = MessageBuilder().setText(f"Ваша информация об аккаунте:\n\n{user_info}").setPeerId(peerId).addText(
+            f"fsmstate = {fsm_level}")
     self.send_message(answer)
 
 
@@ -286,40 +290,37 @@ def starthack(self, context: MessageContext):
     answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     attachments = context.attached_photos
     msg = context.text
+    codes = None
     if len(attachments) > 0:
         url = attachments[0]
         image = utils.get_image(url)
         image = image.crop(utils.get_codes_box(image.size))
         msg = utils.getText(image)
     try:
-        res = utils.extract_codes(msg)
-        res = f"Ваши коды: {res}"
+        codes = utils.extract_codes(msg)
+        res = f"Ваши коды: {codes}"
     except:
         res = "Не удалось получить коды. отправь по нормальному дебил"
     answer.setText(res)
     self.send_message(answer)
-
-
-
-@command("img")
-def get_codes(self, context: MessageContext):
-    peerId = context.peer_id
-    attachments = context.attached_photos
-    if len(attachments) == 0:
-        answer = MessageBuilder().setText("Не нашлось картинок").setPeerId(peerId)
+    if not codes: return
+    transfer, pin = codes
+    data, success, version = utils.getSave(transfer, pin)
+    if not success:
+        res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
+        answer.setText(res)
+        return self.send_message(answer)
     else:
-        url = attachments[0]
-        image = utils.get_image(url)
-        image = image.crop(utils.get_codes_box(image.size))
-        res = utils.getText(image)
-        try:
-            res = utils.extract_codes(res)
-            res = f"Ваши коды: {res}"
-        except:
-            res = "Нет кодов"
-        answer = MessageBuilder().setPeerId(peerId).setText(res)
-
-    self.send_message(answer)
+        res = "Ваше сохранение было отправлено в очередь на взлом. Примерное время ожидания: вечность"
+        answer.setText(res)
+        self.send_message(answer)
+        answer.setText(f"Брат твой инкури {utils.getInq(data)}")
+        self.send_message(answer)
+        files = {"save": data}
+        headers = {"cart": "123", "ver": version}
+        hack_request = requests.post(api_url, files=files, headers=headers)
+        answer.setText(str(hack_request.content))
+        self.send_message(answer)
 
 
 def reg(context: MessageContext):
