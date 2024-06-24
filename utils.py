@@ -58,3 +58,7 @@ def get_codes_box(photo_size):
     y_crop_2 = center_y * 1.15
 
     return x_crop_1, y_crop_1, x_crop_2, y_crop_2
+
+
+def add_to_cart(context, item_id, amount):
+    return True
