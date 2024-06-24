@@ -289,6 +289,8 @@ def starthack(self, context: MessageContext):
     msg = context.text
     codes = None
     answer = MessageBuilder().setPeerId(peerId)
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
     if len(attachments) > 0:
         url = attachments[0]
         image = utils.get_image(url)
@@ -297,8 +299,6 @@ def starthack(self, context: MessageContext):
         codes = utils.extract_codes(msg)
         res = f"Ваши коды: {codes}"
     except:
-        buttons = ButtonsBuilder()
-        buttons.add("Вернуться в корзину", "viewcart")
         answer.setButtons(buttons)
         res = "Не удалось получить коды. отправь по нормальному дебил"
     answer.setText(res)
@@ -307,8 +307,6 @@ def starthack(self, context: MessageContext):
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
     if not success:
-        buttons = ButtonsBuilder()
-        buttons.add("Вернуться в корзину", "viewcart")
         answer.setButtons(buttons)
         res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
         answer.setText(res)
