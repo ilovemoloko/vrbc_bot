@@ -5,7 +5,7 @@ import pytesseract
 import threading
 import re
 
-
+#код хуйня
 class SingletonMeta(type):
     _instances = {}
     _lock: threading.Lock = threading.Lock()
