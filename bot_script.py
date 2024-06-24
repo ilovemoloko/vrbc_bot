@@ -13,7 +13,7 @@ info_worker = DBInfoWorker()
 commands = []
 
 api_url = "http://127.0.0.1:5000/api/hack"
-
+wait_time_url = "http://127.0.0.1:5000/wait"
 
 def command(pattern, level="*", weak=False):
     def decorator(func):
@@ -285,21 +285,21 @@ def starthack(self, context: MessageContext):
 @command(".*", level="starthack", weak=True)
 def starthack(self, context: MessageContext):
     peerId = context.peer_id
-    buttons = ButtonsBuilder()
-    buttons.add("Вернуться в корзину", "viewcart")
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     attachments = context.attached_photos
     msg = context.text
     codes = None
+    answer = MessageBuilder().setPeerId(peerId)
     if len(attachments) > 0:
         url = attachments[0]
         image = utils.get_image(url)
-        image = image.crop(utils.get_codes_box(image.size))
         msg = utils.getText(image)
     try:
         codes = utils.extract_codes(msg)
         res = f"Ваши коды: {codes}"
     except:
+        buttons = ButtonsBuilder()
+        buttons.add("Вернуться в корзину", "viewcart")
+        answer.setButtons(buttons)
         res = "Не удалось получить коды. отправь по нормальному дебил"
     answer.setText(res)
     self.send_message(answer)
@@ -307,19 +307,25 @@ def starthack(self, context: MessageContext):
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
     if not success:
+        buttons = ButtonsBuilder()
+        buttons.add("Вернуться в корзину", "viewcart")
+        answer.setButtons(buttons)
         res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
         answer.setText(res)
         return self.send_message(answer)
     else:
-        res = "Ваше сохранение было отправлено в очередь на взлом. Примерное время ожидания: вечность"
+        wait_time = requests.get(wait_time_url).content.decode("utf-8")
+        res = f"Ваше сохранение было отправлено в очередь на взлом. Примерное время ожидания до получения кодов: {wait_time} секунд"
         answer.setText(res)
         self.send_message(answer)
-        answer.setText(f"Брат твой инкури {utils.getInq(data)}")
+        inq = utils.getInq(data)
+        cart = info_worker.get_value(context, 'cart')
+        answer.setText(f"Брат твой инкури {inq}")
         self.send_message(answer)
         files = {"save": data}
-        headers = {"cart": "123", "ver": version}
+        headers = {"cart": str(cart), "ver": version, 'inq': inq}
         hack_request = requests.post(api_url, files=files, headers=headers)
-        answer.setText(str(hack_request.content))
+        answer.setText(hack_request.content.decode("utf-8"))
         self.send_message(answer)
 
 
