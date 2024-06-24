@@ -11,6 +11,7 @@ info_worker = DBInfoWorker()
 commands = []
 
 
+
 def command(pattern, level="*", weak=False):
     def decorator(func):
         commands.append((level, pattern, func, weak))
@@ -284,20 +285,18 @@ def starthack(self, context: MessageContext):
     buttons.add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     attachments = context.attached_photos
-    if len(attachments) == 0:
-        answer.setText("скриншота нет, так что поищу в тексте ответа")
-    else:
+    msg = context.text
+    if len(attachments) > 0:
         url = attachments[0]
         image = utils.get_image(url)
         image = image.crop(utils.get_codes_box(image.size))
-        res = utils.getText(image)
-        try:
-            res = utils.extract_codes(res)
-            res = f"Ваши коды: {res}"
-        except:
-            res = "Нет кодов"
-        answer = MessageBuilder().setPeerId(peerId).setText(res)
-
+        msg = utils.getText(image)
+    try:
+        res = utils.extract_codes(msg)
+        res = f"Ваши коды: {res}"
+    except:
+        res = "Не удалось получить коды. отправь по нормальному дебил"
+    answer.setText(res)
     self.send_message(answer)
 
 

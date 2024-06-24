@@ -1,3 +1,5 @@
+import os.path
+
 import requests
 from io import BytesIO
 from PIL import Image
@@ -21,6 +23,8 @@ class SingletonMeta(type):
 from db_worker import FSMDatabase, LocalUsersDatabase
 
 tesPath = "D:/Tesseract/tesseract.exe"
+if "yy986" in os.path.abspath(__file__):
+    tesPath = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 pytesseract.pytesseract.tesseract_cmd = tesPath
 
 
@@ -38,13 +42,11 @@ def getText(image):
 
 
 def extract_codes(input_string):
-    lines = input_string.split('\n')
-
     hex_pattern = re.compile(r'\b[a-fA-F0-9]{9}\b')
     numeric_pattern = re.compile(r'\b\d{4}\b')
 
-    hex_code = hex_pattern.findall(lines[0])[0]
-    numeric_code = numeric_pattern.findall(lines[1])[0]
+    hex_code = hex_pattern.findall(input_string)[0]
+    numeric_code = numeric_pattern.findall(input_string)[0]
 
     return hex_code, numeric_code
 
