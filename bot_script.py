@@ -15,11 +15,12 @@ commands = []
 debug = False
 
 if not debug:
-    api_url = "http://127.0.0.1:5000/api/hack"
-    wait_time_url = "http://127.0.0.1:5000/wait"
+    base_url = "http://127.0.0.1:5000"
 else:
-    api_url = "https://lolidk111.pythonanywhere.com/api/hack"
-    wait_time_url = "https://lolidk111.pythonanywhere.com/wait"
+    base_url = "https://lolidk111.pythonanywhere.com"
+
+api_url = base_url + "/api/hack"
+wait_time_url = base_url + "/wait"
 
 
 def command(pattern, level="*", weak=False):
