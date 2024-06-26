@@ -31,7 +31,7 @@ def command(pattern, level="*", weak=False):
 
 
 @command("инфо")
-def info(self, context: MessageContext):
+def info(context: MessageContext):
     local_user_id = fsm_db.get_local_user_id(context)
     answer = MessageBuilder().setReplyMode(context)
     if local_user_id is None:
@@ -44,7 +44,7 @@ def info(self, context: MessageContext):
 
 
 @command(["корзина", "cart"])
-def cart(self, context: MessageContext):
+def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setText("выбирай че хочешь ну из каталогов").setButtons(buttons)
@@ -56,7 +56,7 @@ def cart(self, context: MessageContext):
 
 
 @command("selectcategory \\d+")
-def selectcategory(self, context: MessageContext):
+def selectcategory(context: MessageContext):
     fsm_db.update_state(context, "*")
 
     category_id = int(context.text.split()[1])
@@ -76,7 +76,7 @@ def selectcategory(self, context: MessageContext):
 
 
 @command("chooseitem \\d+")
-def chooseitem(self, context: MessageContext):
+def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
@@ -91,7 +91,7 @@ def chooseitem(self, context: MessageContext):
 
 
 @command(".*", level="chooseitem", weak=True)
-def chooseitem2(self, context: MessageContext):
+def chooseitem2(context: MessageContext):
     text = context.text
     category_id = context.fsm[0]
 
@@ -118,7 +118,7 @@ def chooseitem2(self, context: MessageContext):
 
 
 @command(".*", level="additem", weak=True)
-def additem(self, context: MessageContext):
+def additem(context: MessageContext):
     text = context.text
     item_id = int(context.fsm[0])
     items_data = ls.get_values(context)['items'][item_id]
@@ -165,7 +165,7 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
 
 
 @command("viewcart")
-def viewcart(self, context: MessageContext):
+def viewcart(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Смотреть категории предметов", "cart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -187,7 +187,7 @@ def viewcart(self, context: MessageContext):
 
 
 @command("removeitem")
-def removeitem(self, context: MessageContext):
+def removeitem(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -201,7 +201,7 @@ def removeitem(self, context: MessageContext):
 
 
 @command(".*", level="removeitem", weak=True)
-def removeitem(self, context: MessageContext):
+def removeitem(context: MessageContext):
     regex = re.search(r"\d+", context.text)
     buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -229,15 +229,13 @@ def removeitem(self, context: MessageContext):
 
 
 @command(".*", level="removeitem2", weak=True)
-def removeitem2(self, context: MessageContext):
+def removeitem2(context: MessageContext):
     regex = re.search(r"\d+", context.text)
     buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     if not regex:
-        answer.addText("Пожалуйста, введите число")
-        self.send_message(answer)
-        return
+        return answer.addText("Пожалуйста, введите число").reply()
 
     item_id = int(context.fsm[0])
 
@@ -251,7 +249,7 @@ def removeitem2(self, context: MessageContext):
 
 
 @command("starthack")
-def starthack(self, context: MessageContext):
+def starthack(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
@@ -273,7 +271,7 @@ def starthack(self, context: MessageContext):
 
 
 @command(".*", level="starthack", weak=True)
-def starthack(self, context: MessageContext):
+def starthack(context: MessageContext):
     attachments = context.attached_photos
     msg = context.text
     buttons = ButtonsBuilder()
@@ -352,7 +350,7 @@ def starthack(self, context: MessageContext):
 
 
 @command(".*", level="hack_process")
-def hack_process(self, context: MessageContext):
+def hack_process(context: MessageContext):
     MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
     fsm_db.update_state(context, "starthack")
 
@@ -365,7 +363,7 @@ def reg(context: MessageContext):
 
 
 @command(".*", level="first_msg")
-def not_baza(self, context: MessageContext):
+def not_baza(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Корзина", "cart")
     MessageBuilder().setReplyMode(context).setText(f"здарова").setButtons(buttons).reply()

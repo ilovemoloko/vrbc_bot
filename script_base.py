@@ -1,8 +1,7 @@
 import re
 import traceback
-import utils
 
-from db_worker import fsm_db, localuser_db
+from db_worker import fsm_db
 
 
 class MessageContext:
@@ -127,7 +126,7 @@ class BotScript:
     def check_command(self, fsm_level, action):
         for pattern in self.commands[fsm_level]:
             if re.match(pattern, action.text):
-                self.commands[fsm_level][pattern]['func'](self, action)
+                self.commands[fsm_level][pattern]['func'](action)
                 return True
         return False
 
