@@ -13,6 +13,7 @@ class MessageContext:
         self.attached_photos = []
         self.src = source
         self.fsm = ""
+        self.srcobj = None
         self.fsm_full = ""
 
     def setPeerId(self, peerId):
@@ -34,6 +35,9 @@ class MessageContext:
     def setFSM(self, fsm):
         self.fsm = fsm
 
+    def setSrcObject(self, obj):
+        self.srcobj = obj
+
 
 class ButtonsBuilder:
     def __init__(self):
@@ -54,6 +58,7 @@ class MessageBuilder:
         self.peerId = None
         self.text = ""
         self.buttons = None
+        self.reply_func = None
 
     def setPeerId(self, peerId):
         self.peerId = peerId
@@ -69,6 +74,16 @@ class MessageBuilder:
 
     def setButtons(self, buttons: ButtonsBuilder):
         self.buttons = buttons
+        return self
+
+    def setReplyMode(self, context: MessageContext):
+        self.reply_func = context.srcobj.send_message
+        self.peerId = context.peer_id
+        return self
+
+    def reply(self):
+        if self.reply_func is not None:
+            self.reply_func(self)
         return self
 
 
@@ -132,6 +147,7 @@ class BotScript:
                 context = fsm_level.split(" ")[1:]
                 fsm_level = fsm_level.split(" ")[0]
                 action.setFSM(context)
+                action.setSrcObject(self)
 
                 weak = self.check_weak(fsm_level, action)
 

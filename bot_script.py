@@ -12,7 +12,7 @@ fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 commands = []
-debug = True
+debug = False
 
 if not debug:
     api_url = "http://127.0.0.1:5000/api/hack"
@@ -20,6 +20,7 @@ if not debug:
 else:
     api_url = "https://lolidk111.pythonanywhere.com/api/hack"
     wait_time_url = "https://lolidk111.pythonanywhere.com/wait"
+
 
 def command(pattern, level="*", weak=False):
     def decorator(func):
@@ -31,35 +32,31 @@ def command(pattern, level="*", weak=False):
 
 @command("инфо")
 def info(self, context: MessageContext):
-    peerId = context.peer_id
     local_user_id = fsm_db.get_local_user_id(context)
+    answer = MessageBuilder().setReplyMode(context)
     if local_user_id is None:
-        answer = MessageBuilder().setText("У вас пока что нет аккаунта!").setPeerId(peerId)
+        answer.setText("У вас пока что нет аккаунта!")
     else:
         user_info = local_user_db.get_info(context)
         fsm_level = fsm_db.get_state(context)
-        answer = MessageBuilder().setText(f"Ваша информация об аккаунте:\n\n{user_info}").setPeerId(peerId).addText(
-            f"fsmstate = {fsm_level}")
-    self.send_message(answer)
+        answer.setText(f"Ваша информация об аккаунте:\n\n{user_info}").addText(f"fsmstate = {fsm_level}")
+    answer.reply()
 
 
 @command(["корзина", "cart"])
 def cart(self, context: MessageContext):
-    peerId = context.peer_id
     fsm_db.update_state(context, "*")
-
-    answer = MessageBuilder().setText("выбирай че хочешь ну из каталогов").setPeerId(peerId)
     buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setText("выбирай че хочешь ну из каталогов").setButtons(buttons)
+
     categories = ls.get_values(context)['categories']
     for i in categories:
         buttons.add(categories[i], f"selectcategory {i}")
-    answer.setButtons(buttons)
-    self.send_message(answer)
+    answer.reply()
 
 
 @command("selectcategory \\d+")
 def selectcategory(self, context: MessageContext):
-    peerId = context.peer_id
     fsm_db.update_state(context, "*")
 
     category_id = int(context.text.split()[1])
@@ -70,88 +67,71 @@ def selectcategory(self, context: MessageContext):
     buttons.add("Добавить предмет", f"chooseitem {category_id}")
     buttons.add("Назад", "cart")
 
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.addText(f"Категория \"{category_name}\"\n", start="")
     for i in category_items:
         answer.addText(f"{category_items[i][1]} (ID: {i})")
 
-    self.send_message(answer)
+    answer.reply()
 
 
 @command("chooseitem \\d+")
 def chooseitem(self, context: MessageContext):
-    peerId = context.peer_id
-    cart_size = info_worker.get_cart_size(context)
-    answer = MessageBuilder().setPeerId(peerId)
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
+    cart_size = info_worker.get_cart_size(context)
     if cart_size >= info_worker.get_value(context, 'cart_size'):
         answer.addText("Корзина переполнена")
-        buttons = ButtonsBuilder()
-        buttons.add("Начать взлом", "starthack")
-        buttons.add("Убрать предмет из корзины", "removeitem")
-        buttons.add("Назад", "cart")
-        answer.setButtons(buttons)
-        return self.send_message(answer)
+        buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
+        return answer.reply()
 
-    answer.addText("Напишите ID нужного вам предмета")
-
+    answer.addText("Напишите ID нужного вам предмета").reply()
     fsm_db.update_state(context, context.text)
-    self.send_message(answer)
 
 
 @command(".*", level="chooseitem", weak=True)
 def chooseitem2(self, context: MessageContext):
-    peerId = context.peer_id
     text = context.text
     category_id = context.fsm[0]
 
     buttons = ButtonsBuilder()
     buttons.add("Назад", f"selectcategory {category_id}")
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     result = re.search(r"\d+", text)
     if not result:
-        answer.addText("Неправильно введено ID. Пожалуйста, напишите целое число.")
-        self.send_message(answer)
-        return
+        return answer.addText("Неправильно введено ID. Пожалуйста, напишите целое число.").reply()
 
     item_id = int(result.group(0))
     items_data = ls.get_values(context)['items']
 
     if item_id not in items_data:
-        answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.")
-        self.send_message(answer)
-        return
+        return answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
 
     limit_amount = items_data[item_id][0]
-
     if limit_amount != "Нет":
         buttons.insert(0, "Добавить максимальное количество", f"{limit_amount}")
-    answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт")
-    answer.addText(f"(Лимит: {limit_amount})")
     fsm_db.update_state(context, f"additem {item_id}")
-    self.send_message(answer)
+    answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
+    answer.addText(f"Лимит: {limit_amount}").reply()
 
 
 @command(".*", level="additem", weak=True)
 def additem(self, context: MessageContext):
-    peerId = context.peer_id
     text = context.text
     item_id = int(context.fsm[0])
     items_data = ls.get_values(context)['items'][item_id]
 
     buttons = ButtonsBuilder()
     buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     result = re.search(r"\d+", text)
     if not result:
-        answer.addText("Неправильно введено количество. Пожалуйста, напишите целое число.")
-        self.send_message(answer)
-        return
+        return answer.addText("Неправильно введено количество. Пожалуйста, напишите целое число.").reply()
 
     amount = int(result.group(0))
-
     if items_data[0] != "Нет":
         if amount > items_data[0]:
             amount = items_data[0]
@@ -159,10 +139,10 @@ def additem(self, context: MessageContext):
 
     info_worker.add_to_cart(context, item_id, amount)
     fsm_db.update_state(context, "*")
-    answer.addText(f"Предмет {items_data[1]} ({amount}) добавлен в корзину")
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    self.send_message(answer)
+
+    answer.addText(f"Предмет {items_data[1]} ({amount}) добавлен в корзину").reply()
 
 
 def addCart(answer, cart, items_info, only_item=None, show_id=True):
@@ -186,15 +166,15 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
 
 @command("viewcart")
 def viewcart(self, context: MessageContext):
-    peerId = context.peer_id
+    buttons = ButtonsBuilder()
+    buttons.add("Смотреть категории предметов", "cart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
     cart = info_worker.get_value(context, 'cart')
     items_info = ls.get_values(context)['items']
-    buttons = ButtonsBuilder()
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     cart_size = info_worker.get_cart_size(context)
     max_cart_size = info_worker.get_value(context, 'cart_size')
 
-    buttons.add("Смотреть категории предметов", "cart")
     if len(cart) == 0:
         answer.addText("Корзина пуста")
     else:
@@ -203,67 +183,56 @@ def viewcart(self, context: MessageContext):
         answer.addText("Ваша корзина:\n")
         addCart(answer, cart, items_info)
 
-    answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов")
-    self.send_message(answer)
+    answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
 @command("removeitem")
 def removeitem(self, context: MessageContext):
-    peerId = context.peer_id
-    answer = MessageBuilder().setPeerId(peerId)
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     if info_worker.get_cart_size(context) == 0:
         answer.addText("Корзина пуста")
     else:
         answer.addText("Напишите ID нужного вам предмета")
         fsm_db.update_state(context, context.text)
-    self.send_message(answer)
+    answer.reply()
 
 
-@command(".*", level="removeitem")
+@command(".*", level="removeitem", weak=True)
 def removeitem(self, context: MessageContext):
-    peerId = context.peer_id
     regex = re.search(r"\d+", context.text)
     buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     if not regex:
-        answer.addText("Неправильно введен ID предмета")
-        self.send_message(answer)
-        return
+        return answer.addText("Неправильно введен ID предмета").reply()
 
     item_id = int(regex.group(0))
     if item_id not in info_worker.get_value(context, 'cart'):
-        answer.addText("Такого предмета нет в корзине")
-        self.send_message(answer)
-        return
+        return answer.addText("Такого предмета нет в корзине").reply()
 
     items_info = ls.get_values(context)['items']
-    stackable = info_worker.check_stackable(item_id)
+    stackable = info_worker.check_stackable(items_info[item_id])
 
     if stackable:
         if len(info_worker.get_value(context, 'cart')[item_id]) > 1:
-            info_worker.del_from_cart(context, item_id, 1)
-            fsm_db.update_state(context, f"removeitem2 {item_id}")
             answer.addText("Пожалуйста, уточните какой именно предмет вы хотите удалить из корзины (Укажите число)\n")
             addCart(answer, info_worker.get_value(context, 'cart'), items_info, item_id, show_id=False)
-            self.send_message(answer)
-            return
+            fsm_db.update_state(context, f"removeitem2 {item_id}")
+            return answer.reply()
 
     info_worker.del_from_cart(context, item_id)
     fsm_db.update_state(context, "*")
-    answer.addText("Предмет удален из корзины")
-    self.send_message(answer)
+    answer.addText("Предмет удален из корзины").reply()
 
 
-@command(".*", level="removeitem2")
+@command(".*", level="removeitem2", weak=True)
 def removeitem2(self, context: MessageContext):
-    peerId = context.peer_id
     regex = re.search(r"\d+", context.text)
     buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     if not regex:
         answer.addText("Пожалуйста, введите число")
@@ -278,40 +247,37 @@ def removeitem2(self, context: MessageContext):
         answer.addText("Предмет удален из корзины")
     else:
         answer.addText("Такого предмета нет в корзине")
-    self.send_message(answer)
+    answer.reply()
 
 
 @command("starthack")
 def starthack(self, context: MessageContext):
-    peerId = context.peer_id
-    answer = MessageBuilder().setPeerId(peerId)
     buttons = ButtonsBuilder()
-    buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     answer.setText("Ваша корзина:\n")
     cart = info_worker.get_value(context, 'cart')
     items_info = ls.get_values(context)['items']
+
     changed = addCart(answer, cart, items_info)
     if not changed:
         answer.addText("Корзина пуста")
         buttons.buttons = []
         buttons.add("Выбрать предметы", "cart")
-        return self.send_message(answer)
-    self.send_message(answer)
+        return answer.reply()
+    buttons.add("Обратно к выбору предметов", "cart")
+    answer.reply().setButtons(None)
 
-    answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").setButtons(buttons)
+    answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").reply()
     fsm_db.update_state(context, context.text)
-    self.send_message(answer)
 
 
 @command(".*", level="starthack", weak=True)
 def starthack(self, context: MessageContext):
-    peerId = context.peer_id
     attachments = context.attached_photos
     msg = context.text
     buttons = ButtonsBuilder()
-    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
-    buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     current_time = int(time.time())
     user_last_use = info_worker.get_value(context, 'last_use')
@@ -319,9 +285,8 @@ def starthack(self, context: MessageContext):
     next_use = user_cooldown - (current_time - user_last_use)
 
     if next_use > 0:
-        answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}")
-        self.send_message(answer)
-        return
+        buttons.add("Вернуться в корзину", "viewcart")
+        return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
 
     fsm_db.update_state(context, "hack_process")
 
@@ -335,10 +300,10 @@ def starthack(self, context: MessageContext):
         codes = utils.extract_codes(msg)
         res = "Коды получены. Начинаем процесс взлома..."
     except:
+        buttons.add("Вернуться в корзину", "viewcart")
         res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
 
-    answer.setText(res)
-    self.send_message(answer)
+    answer.setText(res).reply()
 
     if not codes:
         fsm_db.update_state(context, "starthack")
@@ -348,53 +313,48 @@ def starthack(self, context: MessageContext):
     data, success, version = utils.getSave(transfer, pin)
     if not success and not debug:
         fsm_db.update_state(context, "starthack")
-        res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
-        answer.setText(res)
-        return self.send_message(answer)
+        buttons.add("Вернуться в корзину", "viewcart")
+        return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
     else:
         inq = utils.getInq(data)
 
         if inq == "LOL":
             fsm_db.update_state(context, "starthack")
-            answer.setText("Ошибка обработки аккаунта.")
-            return self.send_message(answer)
+            return answer.setText("Ошибка обработки аккаунта.").reply()
         wait_time = requests.get(wait_time_url).content.decode("utf-8")
         answer.setText(f"Ваш аккаунт ({inq}) отправлен в очередь.")
-        answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").setButtons(None)
-        self.send_message(answer)
+        answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
 
         cart = info_worker.get_value(context, 'cart')
         files = {"save": data}
-        headers = {"cart": str(cart), "ver": version, "inq": inq, "user": str(peerId)}
+        headers = {"cart": str(cart),
+                   "ver": version,
+                   "inq": inq,
+                   "user": str(fsm_db.get_local_user_id(context))}
         hack_request = requests.post(api_url, files=files, headers=headers)
         hack_result = eval(hack_request.content.decode("utf-8"))
 
         if hack_result['status'] == 1:
             transfer, confirmation = hack_result['codes']
-            answer.setText("Взлом успешен. Ваши коды:")
-            self.send_message(answer)
-            answer.setText(transfer)
-            self.send_message(answer)
-            answer.setText(confirmation)
-            self.send_message(answer)
+            answer.setText("Взлом успешен. Ваши коды:").reply()
+            answer.setText(transfer).reply()
+            answer.setText(confirmation).reply()
 
             info_worker.clear_cart(context)
-            fsm_db.update_state(context, "first_msg")
-
             info_worker.set_value(context, 'last_use', current_time)
+            fsm_db.update_state(context, "first_msg")
             answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
         else:
             fsm_db.update_state(context, "starthack")
             answer.setText(f"Произошла ошибка. Причина: {hack_result['message']}").setButtons(buttons)
 
-        return self.send_message(answer)
+        return answer.reply()
+
 
 @command(".*", level="hack_process")
 def hack_process(self, context: MessageContext):
-    answer = MessageBuilder().setPeerId(context.peer_id)
+    MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
     fsm_db.update_state(context, "starthack")
-    answer.setText("Пожалуйста, подождите...")
-    self.send_message(answer)
 
 
 def reg(context: MessageContext):
@@ -406,11 +366,8 @@ def reg(context: MessageContext):
 
 @command(".*", level="first_msg")
 def not_baza(self, context: MessageContext):
-    peerId = context.peer_id
-    answer = MessageBuilder().setText(f"здарова").setPeerId(peerId)
     buttons = ButtonsBuilder()
     buttons.add("Корзина", "cart")
-    answer.setButtons(buttons)
-    self.send_message(answer)
+    MessageBuilder().setReplyMode(context).setText(f"здарова").setButtons(buttons).reply()
     reg(context)
     fsm_db.update_state(context, "*")

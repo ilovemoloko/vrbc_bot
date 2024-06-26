@@ -81,7 +81,7 @@ default_user = {
     "cart": {},
     "cart_size": 7,
     "last_use": 0,
-    "cooldown": 1000**3
+    "cooldown": 10
 }
 
 
