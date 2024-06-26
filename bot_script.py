@@ -321,13 +321,16 @@ def starthack(self, context: MessageContext):
         wait_time = requests.get(wait_time_url).content.decode("utf-8")
         inq = utils.getInq(data)
 
+        if inq == "LOL":
+            answer.setText("это что ещё за хуйня")
+            return self.send_message(answer)
+
         res = f"Ваш аккаунт ({inq}) отправлен в очередь."
         answer.setText(res)
         answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.")
         self.send_message(answer)
 
         cart = info_worker.get_value(context, 'cart')
-
         files = {"save": data}
         headers = {"cart": str(cart), "ver": version, 'inq': inq}
         hack_request = requests.post(api_url, files=files, headers=headers)
