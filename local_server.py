@@ -79,9 +79,41 @@ categories = {
 
 default_user = {
     "cart": {},
-    "cart_size": 7,
     "last_use": 0,
-    "cooldown": 10
+    "cart_size": 7,
+    "cooldown": 10,
+    "donate": 0,
+    "boosts": {"test_boost": 1},
+    "active_boosts": []
+}
+
+boosts = {
+    "test_boost":
+        {
+            "name": "Тестовый буст",
+            "desc": """Тестовый буст
+            Снимает 5 секунд задержки
+            Добавляет 2 слота в корзину
+            Добавляет в каталог 6 УЛЬТРАФРУКТ (Лимит 2, айди 100)
+            Добавляет к лимиту предмета 1 ещё 5000 единиц
+            Добавляет к лимиту второго каталога ещё 100 единиц""",
+            "type": "passive",
+            "effects": [
+                {"type": "change_cooldown", "params": [-5]},
+                {"type": "change_cart_size", "params": [2]},
+                {"type": "add_item", "params": [100, [2, "УЛЬТРАФРУКТ", 6]]},
+                {"type": "change_limit", "params": [1, 5000]},
+                {"type": "change_catalog_limit", "params": [2, 100]}
+            ]
+        },
+    "test_boost2": {
+        "name": "Тестовый буст 2",
+        "desc": "Тестовый буст 2",
+        "type": "usable",
+        "effects": [
+            {"type": "change_cart_size", "params": [4]},
+        ]
+    }
 }
 
 
@@ -92,10 +124,56 @@ def categorize_items(items):
         if cat not in res:
             res[cat] = {}
         res[cat][iid] = items[iid]
-
     return res
 
 
-def get_values(context):
-    categorized = categorize_items(items)
-    return {"categories": categories, "items": items, "categorized": categorized, "default_user": default_user}
+def boost_change_limit(values, effect):
+    item_id, add_limit = effect['params']
+    values['items'][item_id][0] += add_limit
+    return values
+
+
+def boost_add_item(values, effect):
+    item_id, params = effect['params']
+    values['items'][item_id] = params
+    return values
+
+
+def boost_change_catalog_limit(values, effect):
+    catalog_id, add_limit = effect['params']
+    category_items = categorize_items(values['items'])[catalog_id]
+    for iid in category_items:
+        values['items'][iid][0] += add_limit
+
+    return values
+
+
+def boost_change_cooldown(values, effect):
+    time = effect['params'][0]
+    values['default_user']['cooldown'] += time
+    return values
+
+
+def boost_change_cart_size(values, effect):
+    print(values['default_user'])
+    size = effect['params'][0]
+    values['default_user']['cart_size'] += size
+    return values
+
+
+boost_functions = {"change_limit": boost_change_limit,
+                   "add_item": boost_add_item,
+                   "change_catalog_limit": boost_change_catalog_limit,
+                   "change_cooldown": boost_change_cooldown,
+                   "change_cart_size": boost_change_cart_size}
+
+
+def mod_values(values, boost_id):
+    boost = boosts[boost_id]
+    for effect in boost['effects']:
+        boost_functions[effect['type']](values, effect)
+    return values
+
+
+def get_default_values():
+    return {"categories": categories, "items": items, "default_user": default_user, "boosts": boosts}

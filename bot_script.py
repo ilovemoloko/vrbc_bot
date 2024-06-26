@@ -1,12 +1,9 @@
 import re
 import time
-
 import requests
-
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
-import local_server as ls
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -50,7 +47,7 @@ def cart(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setText("выбирай че хочешь ну из каталогов").setButtons(buttons)
 
-    categories = ls.get_values(context)['categories']
+    categories = info_worker.get_bot_values(context)['categories']
     for i in categories:
         buttons.add(categories[i], f"selectcategory {i}")
     answer.reply()
@@ -61,8 +58,8 @@ def selectcategory(context: MessageContext):
     fsm_db.update_state(context, "*")
 
     category_id = int(context.text.split()[1])
-    category_items = ls.get_values(context)['categorized'][category_id]
-    category_name = ls.get_values(context)['categories'][category_id]
+    category_items = info_worker.get_bot_values(context)['categorized'][category_id]
+    category_name = info_worker.get_bot_values(context)['categories'][category_id]
 
     buttons = ButtonsBuilder()
     buttons.add("Добавить предмет", f"chooseitem {category_id}")
@@ -80,9 +77,10 @@ def selectcategory(context: MessageContext):
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    user_bot_values = info_worker.get_bot_values(context)['default_user']
 
     cart_size = info_worker.get_cart_size(context)
-    if cart_size >= info_worker.get_value(context, 'cart_size'):
+    if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values):
         answer.addText("Корзина переполнена")
         buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
         return answer.reply()
@@ -105,7 +103,7 @@ def chooseitem2(context: MessageContext):
         return answer.addText("Неправильно введено ID. Пожалуйста, напишите целое число.").reply()
 
     item_id = int(result.group(0))
-    items_data = ls.get_values(context)['items']
+    items_data = info_worker.get_bot_values(context)['items']
 
     if item_id not in items_data:
         return answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
@@ -122,7 +120,7 @@ def chooseitem2(context: MessageContext):
 def additem(context: MessageContext):
     text = context.text
     item_id = int(context.fsm[0])
-    items_data = ls.get_values(context)['items'][item_id]
+    items_data = info_worker.get_bot_values(context)['items'][item_id]
 
     buttons = ButtonsBuilder()
     buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
@@ -170,11 +168,12 @@ def viewcart(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Смотреть категории предметов", "cart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    user_bot_values = info_worker.get_bot_values(context)['default_user']
 
     cart = info_worker.get_value(context, 'cart')
-    items_info = ls.get_values(context)['items']
+    items_info = info_worker.get_bot_values(context)['items']
     cart_size = info_worker.get_cart_size(context)
-    max_cart_size = info_worker.get_value(context, 'cart_size')
+    max_cart_size = info_worker.get_value(context, 'cart_size', src=user_bot_values)
 
     if len(cart) == 0:
         answer.addText("Корзина пуста")
@@ -214,7 +213,7 @@ def removeitem(context: MessageContext):
     if item_id not in info_worker.get_value(context, 'cart'):
         return answer.addText("Такого предмета нет в корзине").reply()
 
-    items_info = ls.get_values(context)['items']
+    items_info = info_worker.get_bot_values(context)['items']
     stackable = info_worker.check_stackable(items_info[item_id])
 
     if stackable:
@@ -256,7 +255,7 @@ def starthack(context: MessageContext):
 
     answer.setText("Ваша корзина:\n")
     cart = info_worker.get_value(context, 'cart')
-    items_info = ls.get_values(context)['items']
+    items_info = info_worker.get_bot_values(context)['items']
 
     changed = addCart(answer, cart, items_info)
     if not changed:
@@ -277,10 +276,11 @@ def starthack(context: MessageContext):
     msg = context.text
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    user_bot_values = info_worker.get_bot_values(context)['default_user']
 
     current_time = int(time.time())
     user_last_use = info_worker.get_value(context, 'last_use')
-    user_cooldown = info_worker.get_value(context, 'cooldown')
+    user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)
     next_use = user_cooldown - (current_time - user_last_use)
 
     if next_use > 0:

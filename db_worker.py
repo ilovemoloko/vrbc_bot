@@ -1,8 +1,8 @@
+import copy
 import sqlite3
 
 import local_server
 from utils import SingletonMeta
-from local_server import get_values
 import os
 import threading
 
@@ -164,16 +164,22 @@ localuser_db = LocalUsersDatabase()
 
 
 class DBInfoWorker(metaclass=SingletonMeta):
-    def get_value(self, context, key):
+    def get_value(self, context, key, src=None):
         info = self.get_info(context)
         value = info.get(key, None)
         if value is None:
-            return get_values(context)['default_user'][key]
+            if src is not None:
+                pool_src = src
+            else:
+                pool_src = local_server.get_default_values()['default_user']
+            value = pool_src[key]
         return value
 
     def set_value(self, context, key, value):
         info = self.get_info(context)
         info[key] = value
+        if value == local_server.get_default_values()['default_user'][key]:
+            info.pop(key)
         localuser_db.update_info(context, info)
 
     def set_info(self, context, info):
@@ -205,7 +211,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
         cart_size = self.get_cart_size(context)
         cart_max_size = self.get_value(context, 'cart_size')
         cart = self.get_value(context, 'cart')
-        item_info = local_server.get_values(context)['items'][item]
+        item_info = self.get_bot_values(context)['items'][item]
         if cart_size >= cart_max_size:
             return False
 
@@ -243,6 +249,30 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
     def clear_cart(self, context):
         self.set_value(context, 'cart', {})
+
+    def get_bot_values(self, context):
+        default_values = local_server.get_default_values()
+        default_values = copy.deepcopy(default_values)
+        boosts_ids = self.get_value(context, 'boosts')
+        active_boosts = self.get_value(context, 'active_boosts')
+        boosts_server = local_server.get_default_values()['boosts']
+        passive_boosts = []
+
+        for bid in boosts_ids:
+            boost = boosts_server[bid]
+            active = False
+            if boost['type'] == 'passive':
+                active = True
+            if active:
+                passive_boosts.append(bid)
+        passive_boosts.extend(active_boosts)
+
+        for bid in passive_boosts:
+            local_server.mod_values(default_values, bid)
+
+        categorized = local_server.categorize_items(default_values['items'])
+        default_values['categorized'] = categorized
+        return default_values
 
 
 info_worker = DBInfoWorker()
