@@ -241,5 +241,8 @@ class DBInfoWorker(metaclass=SingletonMeta):
             return True
         return False
 
+    def clear_cart(self, context):
+        self.set_value(context, 'cart', {})
+
 
 info_worker = DBInfoWorker()

@@ -162,6 +162,7 @@ def additem(self, context: MessageContext):
 
 
 def addCart(answer, cart, items_info, only_item=None, show_id=True):
+    changed = False
     for i in cart:
         item_info = items_info[i]
         item_name = item_info[1]
@@ -172,8 +173,11 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
         if isinstance(cart[i], list):
             for j in cart[i]:
                 answer.addText(f"{j} {item_name} {id_text}", start="\n --- ")
+                changed = True
         else:
             answer.addText(f"{cart[i]} {item_name} {id_text}", start="\n --- ")
+            changed = True
+    return changed
 
 
 @command("viewcart")
@@ -279,7 +283,19 @@ def starthack(self, context: MessageContext):
     answer = MessageBuilder().setPeerId(peerId)
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
-    answer.addText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").setButtons(buttons)
+
+    answer.setText("Ваша корзина:\n")
+    cart = info_worker.get_value(context, 'cart')
+    items_info = ls.get_values(context)['items']
+    changed = addCart(answer, cart, items_info)
+    if not changed:
+        answer.addText("Корзина пуста")
+        buttons.buttons = []
+        buttons.add("Выбрать предметы", "cart")
+        return self.send_message(answer)
+    self.send_message(answer)
+
+    answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").setButtons(buttons)
     fsm_db.update_state(context, context.text)
     self.send_message(answer)
 
@@ -289,7 +305,6 @@ def starthack(self, context: MessageContext):
     peerId = context.peer_id
     attachments = context.attached_photos
     msg = context.text
-    codes = None
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     buttons.add("Вернуться в корзину", "viewcart")
@@ -304,11 +319,14 @@ def starthack(self, context: MessageContext):
         self.send_message(answer)
         return
 
+    fsm_db.update_state(context, "hack_process")
+
     if len(attachments) > 0:
         url = attachments[0]
         image = utils.get_image(url)
         msg = utils.getText(image)
 
+    codes = None
     try:
         codes = utils.extract_codes(msg)
         res = f"Вы прислали коды: {' '.join(codes)}"
@@ -319,11 +337,13 @@ def starthack(self, context: MessageContext):
     self.send_message(answer)
 
     if not codes:
+        fsm_db.update_state(context, "starthack")
         return
 
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
     if not success:
+        fsm_db.update_state(context, "starthack")
         res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
         answer.setText(res)
         return self.send_message(answer)
@@ -332,7 +352,8 @@ def starthack(self, context: MessageContext):
         inq = utils.getInq(data)
 
         if inq == "LOL":
-            answer.setText("это что ещё за хуйня")
+            fsm_db.update_state(context, "starthack")
+            answer.setText("Ошибка обработки аккаунта.")
             return self.send_message(answer)
 
         answer.setText(f"Ваш аккаунт ({inq}) отправлен в очередь.")
@@ -352,12 +373,22 @@ def starthack(self, context: MessageContext):
             answer.setText(confirmation)
             self.send_message(answer)
 
+            info_worker.clear_cart(context)
+            fsm_db.update_state(context, "first_msg")
+
             info_worker.set_value(context, 'last_use', current_time)
             answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
         except:
+            fsm_db.update_state(context, "starthack")
             answer.setText(hack_result).setButtons(buttons)
 
         return self.send_message(answer)
+
+@command(".*", level="hack_process")
+def hack_process(self, context: MessageContext):
+    answer = MessageBuilder().setPeerId(context.peer_id)
+    answer.setText("Пожалуйста, подождите...")
+    self.send_message(answer)
 
 
 def reg(context: MessageContext):
