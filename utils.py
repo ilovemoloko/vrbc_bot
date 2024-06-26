@@ -76,12 +76,12 @@ def getSave(t, c, ver='en'):  # Возвращает (инфо, успешно �
     else:
         if ver == 'en':
             return getSave(t, c, 'ja')
-        return None, False, ver
+        return "КОДГОВНО!aaabbbccc!АВТОРГЕНИЙ".encode("utf-8"), False, ver
 
 
 def search(data, Pattern, startIndex):
     if startIndex > len(data) or len(Pattern) > (len(data) - startIndex):
-        raise IndexError('Something went wrong')
+        return -100
     index = startIndex
     limit = len(data) - len(Pattern)
     while index <= limit:
@@ -91,18 +91,19 @@ def search(data, Pattern, startIndex):
         if j < 0:
             return index
         index += 1
-    return -1
+    return -100
 
 
 def getInq(data):
     data = bytearray(data)
     try:
         CurrIdx = search(data, struct.pack("<I", 9), 300000) + 4
-        InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
-        for i in range(9):
-            InqBytes[i] = data[CurrIdx + i]
-        inq = ''.join(k for k in InqBytes.decode() if k in 'abcdef0123456789')
-        if len(inq) == 9: return inq
+        if CurrIdx > 0:
+            InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
+            for i in range(9):
+                InqBytes[i] = data[CurrIdx + i]
+            inq = ''.join(k for k in InqBytes.decode() if k in 'abcdef0123456789')
+            if len(inq) == 9: return inq
         inq_pat = re.findall(r"(?:^|[^a-zA-Z\d])[a-f0-9]{9}(?:[^a-zA-Z\d]|$)", str(data))
         lololo = inq_pat[0]
         inq = ''.join(lol for lol in lololo if lol in 'abcdef0123456789')

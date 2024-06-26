@@ -12,10 +12,14 @@ fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 commands = []
+debug = True
 
-api_url = "http://127.0.0.1:5000/api/hack"
-wait_time_url = "http://127.0.0.1:5000/wait"
-
+if not debug:
+    api_url = "http://127.0.0.1:5000/api/hack"
+    wait_time_url = "http://127.0.0.1:5000/wait"
+else:
+    api_url = "https://lolidk111.pythonanywhere.com/api/hack"
+    wait_time_url = "https://lolidk111.pythonanywhere.com/wait"
 
 def command(pattern, level="*", weak=False):
     def decorator(func):
@@ -329,7 +333,7 @@ def starthack(self, context: MessageContext):
     codes = None
     try:
         codes = utils.extract_codes(msg)
-        res = f"Вы прислали коды: {' '.join(codes)}"
+        res = "Коды получены. Начинаем процесс взлома..."
     except:
         res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
 
@@ -342,32 +346,33 @@ def starthack(self, context: MessageContext):
 
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
-    if not success:
+    if not success and not debug:
         fsm_db.update_state(context, "starthack")
         res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
         answer.setText(res)
         return self.send_message(answer)
     else:
-        wait_time = requests.get(wait_time_url).content.decode("utf-8")
         inq = utils.getInq(data)
 
         if inq == "LOL":
             fsm_db.update_state(context, "starthack")
             answer.setText("Ошибка обработки аккаунта.")
             return self.send_message(answer)
-
+        wait_time = requests.get(wait_time_url).content.decode("utf-8")
         answer.setText(f"Ваш аккаунт ({inq}) отправлен в очередь.")
         answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").setButtons(None)
         self.send_message(answer)
 
         cart = info_worker.get_value(context, 'cart')
         files = {"save": data}
-        headers = {"cart": str(cart), "ver": version, 'inq': inq}
+        headers = {"cart": str(cart), "ver": version, "inq": inq, "user": str(peerId)}
         hack_request = requests.post(api_url, files=files, headers=headers)
-        hack_result = hack_request.content.decode("utf-8")
+        hack_result = eval(hack_request.content.decode("utf-8"))
 
-        try:
-            transfer, confirmation = utils.extract_codes(hack_result)
+        if hack_result['status'] == 1:
+            transfer, confirmation = hack_result['codes']
+            answer.setText("Взлом успешен. Ваши коды:")
+            self.send_message(answer)
             answer.setText(transfer)
             self.send_message(answer)
             answer.setText(confirmation)
@@ -378,15 +383,16 @@ def starthack(self, context: MessageContext):
 
             info_worker.set_value(context, 'last_use', current_time)
             answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
-        except:
+        else:
             fsm_db.update_state(context, "starthack")
-            answer.setText(hack_result).setButtons(buttons)
+            answer.setText(f"Произошла ошибка. Причина: {hack_result['message']}").setButtons(buttons)
 
         return self.send_message(answer)
 
 @command(".*", level="hack_process")
 def hack_process(self, context: MessageContext):
     answer = MessageBuilder().setPeerId(context.peer_id)
+    fsm_db.update_state(context, "starthack")
     answer.setText("Пожалуйста, подождите...")
     self.send_message(answer)
 
