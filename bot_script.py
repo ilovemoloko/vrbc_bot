@@ -291,19 +291,25 @@ def starthack(self, context: MessageContext):
     answer = MessageBuilder().setPeerId(peerId)
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
+
     if len(attachments) > 0:
         url = attachments[0]
         image = utils.get_image(url)
         msg = utils.getText(image)
+
     try:
         codes = utils.extract_codes(msg)
-        res = f"Ваши коды: {codes}"
+        res = f"Вы прислали коды: {' '.join(codes)}"
     except:
         answer.setButtons(buttons)
-        res = "Не удалось получить коды. отправь по нормальному дебил"
+        res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
+
     answer.setText(res)
     self.send_message(answer)
-    if not codes: return
+
+    if not codes:
+        return
+
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
     if not success:
@@ -313,16 +319,19 @@ def starthack(self, context: MessageContext):
         return self.send_message(answer)
     else:
         wait_time = requests.get(wait_time_url).content.decode("utf-8")
-        res = f"Ваше сохранение было отправлено в очередь на взлом. Примерное время ожидания до получения кодов: {wait_time} секунд"
-        answer.setText(res)
-        self.send_message(answer)
         inq = utils.getInq(data)
-        cart = info_worker.get_value(context, 'cart')
-        answer.setText(f"Брат твой инкури {inq}")
+
+        res = f"Ваш аккаунт ({inq}) отправлен в очередь."
+        answer.setText(res)
+        answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.")
         self.send_message(answer)
+
+        cart = info_worker.get_value(context, 'cart')
+
         files = {"save": data}
         headers = {"cart": str(cart), "ver": version, 'inq': inq}
         hack_request = requests.post(api_url, files=files, headers=headers)
+
         answer.setText(hack_request.content.decode("utf-8"))
         self.send_message(answer)
 
