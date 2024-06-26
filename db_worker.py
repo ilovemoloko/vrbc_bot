@@ -62,6 +62,7 @@ class FSMDatabase(metaclass=SingletonMeta):
             INSERT INTO users (user_id, state, local_uid) VALUES (?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET state=excluded.state
         ''', (user_id_combined, state, None))
+        self.conn.commit()
 
     @locked
     @connected
@@ -70,6 +71,7 @@ class FSMDatabase(metaclass=SingletonMeta):
         self.conn.execute('''
             UPDATE users SET state = ? WHERE user_id = ?
         ''', (new_state, user_id_combined))
+        self.conn.commit()
 
     @locked
     def get_state(self, context):
@@ -91,6 +93,7 @@ class FSMDatabase(metaclass=SingletonMeta):
         self.conn.execute('''
             UPDATE users SET local_uid = ? WHERE user_id = ?
         ''', (local_user_id, user_id_combined))
+        self.conn.commit()
 
     @locked
     def get_local_user_id(self, context):
@@ -126,6 +129,7 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
                 info TEXT DEFAULT '{}'
             )
         ''')
+        self.conn.commit()
 
     @locked
     @connected
@@ -150,10 +154,12 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
     @locked
     @connected
     def update_info(self, context, new_info):
+        print(new_info)
         local_user_id = fsm_db.get_local_user_id(context)
         self.conn.execute('''
             UPDATE localusers SET info = ? WHERE local_user_id = ?
         ''', (str(new_info), local_user_id))
+        self.conn.commit()
 
     @locked
     def close(self):
@@ -171,14 +177,14 @@ class DBInfoWorker(metaclass=SingletonMeta):
             if src is not None:
                 pool_src = src
             else:
-                pool_src = local_server.get_default_values()['default_user']
+                pool_src = copy.deepcopy(local_server.get_default_values()['default_user'])
             value = pool_src[key]
         return value
 
     def set_value(self, context, key, value):
         info = self.get_info(context)
         info[key] = value
-        if value == local_server.get_default_values()['default_user'][key]:
+        if local_server.get_default_values()['default_user'][key] == value:
             info.pop(key)
         localuser_db.update_info(context, info)
 
@@ -250,6 +256,9 @@ class DBInfoWorker(metaclass=SingletonMeta):
     def clear_cart(self, context):
         self.set_value(context, 'cart', {})
 
+    def clear_boosts(self, context):
+        self.set_value(context, 'active_boosts', [])
+
     def get_bot_values(self, context):
         default_values = local_server.get_default_values()
         default_values = copy.deepcopy(default_values)
@@ -273,6 +282,20 @@ class DBInfoWorker(metaclass=SingletonMeta):
         categorized = local_server.categorize_items(default_values['items'])
         default_values['categorized'] = categorized
         return default_values
+
+    def use_boost(self, context, boost_id):
+        boosts = self.get_value(context, 'boosts')
+        active_boosts = self.get_value(context, 'active_boosts')
+        amount = boosts[boost_id]
+        if amount > 0:
+            if boost_id in active_boosts:
+                return False
+            boosts[boost_id] -= 1
+            active_boosts.append(boost_id)
+            self.set_value(context, 'boosts', boosts)
+            self.set_value(context, 'active_boosts', active_boosts)
+            return True
+        return False
 
 
 info_worker = DBInfoWorker()

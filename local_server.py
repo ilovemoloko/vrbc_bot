@@ -83,7 +83,7 @@ default_user = {
     "cart_size": 7,
     "cooldown": 10,
     "donate": 0,
-    "boosts": {"test_boost": 1},
+    "boosts": {"test_boost": 1, "test_boost2": 2, "test_boost3": 3},
     "active_boosts": []
 }
 
@@ -91,17 +91,16 @@ boosts = {
     "test_boost":
         {
             "name": "Тестовый буст",
-            "desc": """Тестовый буст
-            Снимает 5 секунд задержки
-            Добавляет 2 слота в корзину
-            Добавляет в каталог 6 УЛЬТРАФРУКТ (Лимит 2, айди 100)
-            Добавляет к лимиту предмета 1 ещё 5000 единиц
-            Добавляет к лимиту второго каталога ещё 100 единиц""",
+            "desc": """Снимает 5 секунд задержки
+Добавляет 2 слота в корзину
+Добавляет в каталог 6 русскийбот (Лимит 2, айди 100)
+Добавляет к лимиту предмета 1 ещё 5000 единиц
+Добавляет к лимиту второго каталога ещё 100 единиц""",
             "type": "passive",
             "effects": [
                 {"type": "change_cooldown", "params": [-5]},
                 {"type": "change_cart_size", "params": [2]},
-                {"type": "add_item", "params": [100, [2, "УЛЬТРАФРУКТ", 6]]},
+                {"type": "add_item", "params": [100, [2, "русскийбот", 6]]},
                 {"type": "change_limit", "params": [1, 5000]},
                 {"type": "change_catalog_limit", "params": [2, 100]}
             ]
@@ -112,6 +111,14 @@ boosts = {
         "type": "usable",
         "effects": [
             {"type": "change_cart_size", "params": [4]},
+        ]
+    },
+    "test_boost3": {
+        "name": "Тестовый буст 3",
+        "desc": "Тестовый буст 2",
+        "type": "usable",
+        "effects": [
+            {"type": "change_cart_size", "params": [6]},
         ]
     }
 }
@@ -155,7 +162,6 @@ def boost_change_cooldown(values, effect):
 
 
 def boost_change_cart_size(values, effect):
-    print(values['default_user'])
     size = effect['params'][0]
     values['default_user']['cart_size'] += size
     return values

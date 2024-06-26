@@ -1,6 +1,7 @@
 import re
 import time
 import requests
+import local_server
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
@@ -183,6 +184,7 @@ def viewcart(context: MessageContext):
         answer.addText("Ваша корзина:\n")
         addCart(answer, cart, items_info)
 
+    buttons.add("Бусты", "boosts")
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
@@ -340,6 +342,7 @@ def starthack(context: MessageContext):
             answer.setText(confirmation).reply()
 
             info_worker.clear_cart(context)
+            info_worker.clear_boosts(context)
             info_worker.set_value(context, 'last_use', current_time)
             fsm_db.update_state(context, "first_msg")
             answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
@@ -370,3 +373,114 @@ def not_baza(context: MessageContext):
     MessageBuilder().setReplyMode(context).setText(f"здарова").setButtons(buttons).reply()
     reg(context)
     fsm_db.update_state(context, "*")
+
+
+def addBoost(message: MessageBuilder, boost, boost_id, amount=None, desc=False):
+    boost_name = boost['name']
+    boost_desc = boost['desc']
+
+    message.addText(f"{boost_name} (ID: {boost_id})", start="")
+    if desc:
+        message.addText(f"Описание: {boost_desc}")
+    if amount is not None:
+        message.addText(f"Осталось использований: {amount}")
+
+
+@command("boosts")
+def boosts(context: MessageContext):
+    boosts = info_worker.get_value(context, 'boosts')
+    boosts_server = local_server.get_default_values()['boosts']
+    passive_boosts = []
+    usable_boosts = []
+
+    for boost_id in boosts:
+        if boosts_server[boost_id]['type'] == "passive":
+            passive_boosts.append(boost_id)
+        else:
+            usable_boosts.append(boost_id)
+
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText(f"Список ваших бустов:\n\n")
+    for boost in usable_boosts:
+        amount = boosts[boost]
+        if amount <= 0:
+            continue
+        addBoost(answer, boosts_server[boost], boost, amount)
+        answer.addText("\n")
+    if len(usable_boosts) == 0:
+        answer.addText("У вас пока нет активируемых бустов")
+
+    buttons.add("Использовать буст", "selectboost")
+    if len(passive_boosts) > 0:
+        buttons.add("Посмотреть пассивные бусты", "passiveboosts")
+    buttons.add("Перейти в корзину", "viewcart")
+    answer.reply()
+
+
+@command("passiveboosts")
+def passiveboosts(context: MessageContext):
+    boosts = info_worker.get_value(context, 'boosts')
+    boosts_server = local_server.get_default_values()['boosts']
+
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText(f"Список пассивных бустов:\n\n")
+    for boost in boosts:
+        if boosts_server[boost]['type'] == "passive":
+            addBoost(answer, boosts_server[boost], boost, desc=True)
+            answer.addText("\n")
+    if len(boosts) == 0:
+        answer.addText("У вас пока нет активируемых бустов")
+
+    buttons.add("Назад", "boosts")
+    answer.reply()
+
+
+@command("selectboost")
+def selectboost(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться", "boosts")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Напишите ID нужного буста").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@command(".*", level="selectboost", weak=True)
+def selectboost2(context: MessageContext):
+    boosts = info_worker.get_value(context, 'boosts')
+    boosts_server = local_server.get_default_values()['boosts']
+
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться", "boosts")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    boost_id = context.text
+    if boost_id not in boosts or boosts[boost_id] <= 0:
+        answer.addText("У вас нет этого буста в списке")
+        answer.reply()
+        return
+
+    buttons.add("Да, это нужный буст", f"useboost {boost_id}")
+    buttons.add("Нет, вернуться назад", "boosts")
+
+    answer.addText(f"Вы хотите использовать этот буст?\n\n")
+    addBoost(answer, boosts_server[boost_id], boost_id, desc=True)
+    answer.reply()
+
+
+@command("useboost .*")
+def useboost(context: MessageContext):
+    boost_id = context.text.split(" ", 1)[1]
+    status = info_worker.use_boost(context, boost_id)
+    answer = MessageBuilder().setReplyMode(context)
+    if status:
+        answer.addText("Буст использован!")
+    else:
+        answer.addText("Ошибка при использовании буста. Возможно вы уже его используете")
+    fsm_db.update_state(context, "first_msg")
+    answer.reply()
+
+
+
+
