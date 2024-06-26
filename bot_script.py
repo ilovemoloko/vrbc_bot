@@ -46,7 +46,7 @@ def cart(self, context: MessageContext):
 
     answer = MessageBuilder().setText("выбирай че хочешь ну из каталогов").setPeerId(peerId)
     buttons = ButtonsBuilder()
-    categories = ls.get_values()['categories']
+    categories = ls.get_values(context)['categories']
     for i in categories:
         buttons.add(categories[i], f"selectcategory {i}")
     answer.setButtons(buttons)
@@ -59,8 +59,8 @@ def selectcategory(self, context: MessageContext):
     fsm_db.update_state(context, "*")
 
     category_id = int(context.text.split()[1])
-    category_items = ls.get_values()['categorized'][category_id]
-    category_name = ls.get_values()['categories'][category_id]
+    category_items = ls.get_values(context)['categorized'][category_id]
+    category_name = ls.get_values(context)['categories'][category_id]
 
     buttons = ButtonsBuilder()
     buttons.add("Добавить предмет", f"chooseitem {category_id}")
@@ -112,7 +112,7 @@ def chooseitem2(self, context: MessageContext):
         return
 
     item_id = int(result.group(0))
-    items_data = ls.get_values()['items']
+    items_data = ls.get_values(context)['items']
 
     if item_id not in items_data:
         answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.")
@@ -134,7 +134,7 @@ def additem(self, context: MessageContext):
     peerId = context.peer_id
     text = context.text
     item_id = int(context.fsm[0])
-    items_data = ls.get_values()['items'][item_id]
+    items_data = ls.get_values(context)['items'][item_id]
 
     buttons = ButtonsBuilder()
     buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
@@ -180,7 +180,7 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
 def viewcart(self, context: MessageContext):
     peerId = context.peer_id
     cart = info_worker.get_value(context, 'cart')
-    items_info = ls.get_values()['items']
+    items_info = ls.get_values(context)['items']
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     cart_size = info_worker.get_cart_size(context)
@@ -232,7 +232,7 @@ def removeitem(self, context: MessageContext):
         self.send_message(answer)
         return
 
-    items_info = ls.get_values()['items']
+    items_info = ls.get_values(context)['items']
     stackable = info_worker.check_stackable(item_id)
 
     if stackable:

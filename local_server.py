@@ -96,6 +96,6 @@ def categorize_items(items):
     return res
 
 
-def get_values():
+def get_values(context):
     categorized = categorize_items(items)
     return {"categories": categories, "items": items, "categorized": categorized, "default_user": default_user}

@@ -168,7 +168,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
         info = self.get_info(context)
         value = info.get(key, None)
         if value is None:
-            return get_values()['default_user'][key]
+            return get_values(context)['default_user'][key]
         return value
 
     def set_value(self, context, key, value):
@@ -194,8 +194,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
         return size
 
     @staticmethod
-    def check_stackable(item):
-        item_info = local_server.get_values()['items'][item]
+    def check_stackable(item_info):
         stackable = False
         if isinstance(item_info[-1], dict):
             stackable = item_info[-1].get('stackable', False)
@@ -205,11 +204,12 @@ class DBInfoWorker(metaclass=SingletonMeta):
     def add_to_cart(self, context, item, amount):
         cart_size = self.get_cart_size(context)
         cart_max_size = self.get_value(context, 'cart_size')
+        cart = self.get_value(context, 'cart')
+        item_info = local_server.get_values(context)['items'][item]
         if cart_size >= cart_max_size:
             return False
 
-        stackable = self.check_stackable(item)
-        cart = self.get_value(context, 'cart')
+        stackable = self.check_stackable(item_info)
         if not stackable:
             cart[item] = amount
         else:
