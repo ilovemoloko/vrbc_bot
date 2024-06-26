@@ -79,7 +79,9 @@ categories = {
 
 default_user = {
     "cart": {},
-    "cart_size": 7
+    "cart_size": 7,
+    "last_use": 0,
+    "cooldown": 100
 }
 
 

@@ -42,7 +42,7 @@ def getText(image):
 
 
 def extract_codes(input_string):
-    regex = r'([a-fA-F0-9]{9})((.|\n)*)([0-9]{4})'
+    regex = r'([a-fA-F0-9]{9})[\s\S]*([0-9]{4})'
     pattern = re.compile(regex)
 
     hex_code, numeric_code = re.findall(pattern, input_string)[0]
@@ -110,3 +110,18 @@ def getInq(data):
 
     except:
         return "LOL"
+
+
+def humanize_time(seconds):
+    seconds = int(seconds)
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    if days > 0:
+        return f"{days} дн. {hours} ч. {minutes} мин. {seconds} сек."
+    elif hours > 0:
+        return f"{hours} ч. {minutes} мин. {seconds} сек."
+    elif minutes > 0:
+        return f"{minutes} мин. {seconds} сек."
+    else:
+        return f"{seconds} сек."

@@ -1,4 +1,5 @@
 import re
+import time
 
 import requests
 
@@ -14,6 +15,7 @@ commands = []
 
 api_url = "http://127.0.0.1:5000/api/hack"
 wait_time_url = "http://127.0.0.1:5000/wait"
+
 
 def command(pattern, level="*", weak=False):
     def decorator(func):
@@ -288,9 +290,19 @@ def starthack(self, context: MessageContext):
     attachments = context.attached_photos
     msg = context.text
     codes = None
-    answer = MessageBuilder().setPeerId(peerId)
     buttons = ButtonsBuilder()
+    answer = MessageBuilder().setPeerId(peerId).setButtons(buttons)
     buttons.add("Вернуться в корзину", "viewcart")
+
+    current_time = int(time.time())
+    user_last_use = info_worker.get_value(context, 'last_use')
+    user_cooldown = info_worker.get_value(context, 'cooldown')
+    next_use = user_cooldown - (current_time - user_last_use)
+
+    if next_use > 0:
+        answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}")
+        self.send_message(answer)
+        return
 
     if len(attachments) > 0:
         url = attachments[0]
@@ -301,7 +313,6 @@ def starthack(self, context: MessageContext):
         codes = utils.extract_codes(msg)
         res = f"Вы прислали коды: {' '.join(codes)}"
     except:
-        answer.setButtons(buttons)
         res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
 
     answer.setText(res)
@@ -313,7 +324,6 @@ def starthack(self, context: MessageContext):
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
     if not success:
-        answer.setButtons(buttons)
         res = "Не удалось получить сохранение. Убедитесь в правильности кодов."
         answer.setText(res)
         return self.send_message(answer)
@@ -325,18 +335,29 @@ def starthack(self, context: MessageContext):
             answer.setText("это что ещё за хуйня")
             return self.send_message(answer)
 
-        res = f"Ваш аккаунт ({inq}) отправлен в очередь."
-        answer.setText(res)
-        answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.")
+        answer.setText(f"Ваш аккаунт ({inq}) отправлен в очередь.")
+        answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").setButtons(None)
         self.send_message(answer)
 
         cart = info_worker.get_value(context, 'cart')
         files = {"save": data}
         headers = {"cart": str(cart), "ver": version, 'inq': inq}
         hack_request = requests.post(api_url, files=files, headers=headers)
+        hack_result = hack_request.content.decode("utf-8")
 
-        answer.setText(hack_request.content.decode("utf-8"))
-        self.send_message(answer)
+        try:
+            transfer, confirmation = utils.extract_codes(hack_result)
+            answer.setText(transfer)
+            self.send_message(answer)
+            answer.setText(confirmation)
+            self.send_message(answer)
+
+            info_worker.set_value(context, 'last_use', current_time)
+            answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
+        except:
+            answer.setText(hack_result).setButtons(buttons)
+
+        return self.send_message(answer)
 
 
 def reg(context: MessageContext):
