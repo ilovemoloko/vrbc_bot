@@ -118,11 +118,17 @@ def humanize_time(seconds):
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
+    result = ""
     if days > 0:
-        return f"{days} дн. {hours} ч. {minutes} мин. {seconds} сек."
-    elif hours > 0:
-        return f"{hours} ч. {minutes} мин. {seconds} сек."
-    elif minutes > 0:
-        return f"{minutes} мин. {seconds} сек."
-    else:
-        return f"{seconds} сек."
+        result += f"{days} дн."
+    if hours > 0:
+        result += f"{hours} ч."
+    if minutes > 0:
+        result += f"{minutes} мин."
+    if seconds > 0:
+        result += f"{seconds} сек."
+    return result
+
+
+def get_donate_url(user_id, amount):
+    return f"[ссылка]"

@@ -316,7 +316,10 @@ class DBInfoWorker(metaclass=SingletonMeta):
     def add_donate(self, context, amount):
         donate = self.get_value(context, 'donate')
         donate += amount
+        if donate < 0:
+            return False
         self.set_value(context, 'donate', donate)
+        return True
 
 
 info_worker = DBInfoWorker()

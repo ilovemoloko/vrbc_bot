@@ -345,6 +345,7 @@ def starthack(context: MessageContext):
             info_worker.clear_boosts(context)
             info_worker.set_value(context, 'last_use', current_time)
             fsm_db.update_state(context, "first_msg")
+            buttons.add("Уменьшить время ожидания", "reducecd")
             answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
         else:
             fsm_db.update_state(context, "starthack")
@@ -414,6 +415,7 @@ def boosts(context: MessageContext):
     buttons.add("Использовать буст", "selectboost")
     if len(passive_boosts) > 0:
         buttons.add("Посмотреть пассивные бусты", "passiveboosts")
+    buttons.add("Магазин бустов", "boostshop")
     buttons.add("Перейти в корзину", "viewcart")
     answer.reply()
 
@@ -482,5 +484,126 @@ def useboost(context: MessageContext):
     answer.reply()
 
 
+@command("reducecd")
+def reducecd(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Задержку можно уменьшить двумя способами:\n\n")
+    buttons.add("1) Донат", "donate")
+    buttons.add("2) Реферальная система", "referral")
+    buttons.add("Перейти к выбору предметов", "cart")
+    answer.reply()
 
 
+@command("donate")
+def donate(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    balance = info_worker.get_value(context, 'donate')
+    answer.addText(f"""Вы задонатили {balance}₽
+    
+Чтобы поддержать разработку бота, Вы можете пожертвовать любую сумму. 
+Сумма пожертвований может использоваться для покупки бустов.
+ 
+У донатеров есть следующие преимущества:
+1. 35 - 75руб.: 8 предметов в корзине, 27 часов между использованием бота
+2. 75 - 125руб.: 10 предметов в корзине, 23 часов между использованием бота
+3. 125 - 175руб.: 12 предметов в корзине, 19 часов между использованием бота
+4. 175 - 250руб.: 14 предметов в корзине, 17 часов между использованием бота
+5. 250+руб.: 17 предметов в корзине, 9 часов между использованием бота""")
+    buttons.add("Пожертвовать", "donate2")
+    buttons.add("Магазин бустов", "boostshop")
+    buttons.add("Назад", "reducecd")
+    answer.reply()
+
+
+@command("donate2")
+def donate2(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "reducecd")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Напишите сумму пожертвования").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@command(r"\d+", level="donate2", weak=True)
+def donate3(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "reducecd")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    regex = re.search(r"\d+", context.text)
+    if not regex:
+        return answer.addText("Введите число").reply()
+
+    local_user_id = fsm_db.get_local_user_id(context)
+    donate_url = utils.get_donate_url(local_user_id, int(regex.group(0)))
+    answer.addText("Ссылка на пожертвование: " + donate_url).reply()
+    fsm_db.update_state(context, "first_msg")
+
+
+@command("boostshop")
+def boostshop(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Купить", "boostshop2")
+    buttons.add("Назад", "reducecd")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Список бустов для покупки:\n\n")
+    boosts_server = local_server.get_default_values()['boosts']
+    boosts_store = local_server.get_default_values()['boosts_store']
+
+    for boost_id in boosts_store:
+        addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
+        answer.addText(f"Цена: {boosts_store[boost_id]}₽\n")
+    answer.reply()
+
+
+@command("boostshop2")
+def boostshop2(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "boostshop")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Введите ID буста из магазина").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@command(r"buyboost .*", level="boostshop2", weak=True)
+def buyboost(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    boost_id = context.text.split(" ", 1)[1]
+    fsm_db.update_state(context, "first_msg")
+    boosts_store = local_server.get_default_values()['boosts_store']
+    if boost_id not in boosts_store:
+        return answer.addText("Такого буста нет в магазине").reply()
+
+    boost_cost = boosts_store[boost_id]
+    status = info_worker.add_donate(context, -boost_cost)
+    if not status:
+        return answer.addText(f"Произошла ошибка").reply()
+
+    user_boosts = info_worker.get_value(context, 'boosts')
+    if boost_id not in user_boosts:
+        user_boosts[boost_id] = 0
+    user_boosts[boost_id] += 1
+    info_worker.set_value(context, 'boosts', user_boosts)
+    answer.addText("Спасибо за покупку!").reply()
+
+
+@command(r".*", level="boostshop2", weak=True)
+def boostshop3(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "boostshop")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    boost_id = context.text
+
+    boosts_store = local_server.get_default_values()['boosts_store']
+    if boost_id not in boosts_store:
+        return answer.addText("Такого буста нет в магазине").reply()
+
+    boost_cost = boosts_store[boost_id]
+    balance = info_worker.get_value(context, 'donate')
+    if balance < boost_cost:
+        return answer.addText(f"Недостаточно средств ({balance}₽)").reply()
+
+    buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
+    answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()

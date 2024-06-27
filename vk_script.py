@@ -37,7 +37,7 @@ class VkBotScript(sc.BotScript):
         self.vk.messages.send(
             peer_id=message.peerId,
             message=message.text,
-            random_id=random.randint(0, 1000),
+            random_id=random.randint(-100000000, 10000000),
             keyboard=keyboard
         )
 

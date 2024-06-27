@@ -81,7 +81,7 @@ default_user = {
     "cart": {},
     "last_use": 0,
     "cart_size": 7,
-    "cooldown": 10,
+    "cooldown": 30*60*60,
     "donate": 170,
     "boosts": {"test_boost2": 2},
     "active_boosts": []
@@ -102,6 +102,14 @@ boosts = {
             {"type": "add_item", "params": [100, [2, "русскийбот", 6]]},
             {"type": "change_limit", "params": [1, 5000]},
             {"type": "change_catalog_limit", "params": [2, 100]}
+        ]
+    },
+    "skip_cooldown": {
+        "name": "Пропуск задержки",
+        "desc": "Мгновенно снимает 30 часов задержки",
+        "type": "usable",
+        "effects": [
+            {"type": "change_cooldown", "params": [-30*60*60]}
         ]
     },
     "test_boost2": {
@@ -175,6 +183,10 @@ donate_rules = {
     250: "donate_5"
 }
 
+boosts_store = {
+    "skip_cooldown": 50
+}
+
 
 def categorize_items(items):
     res = {}
@@ -238,4 +250,5 @@ def get_default_values():
             "items": items,
             "default_user": default_user,
             "boosts": boosts,
-            "donate_rules": donate_rules}
+            "donate_rules": donate_rules,
+            "boosts_store": boosts_store}
