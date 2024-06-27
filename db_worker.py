@@ -154,7 +154,6 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
     @locked
     @connected
     def update_info(self, context, new_info):
-        print(new_info)
         local_user_id = fsm_db.get_local_user_id(context)
         self.conn.execute('''
             UPDATE localusers SET info = ? WHERE local_user_id = ?
@@ -259,6 +258,16 @@ class DBInfoWorker(metaclass=SingletonMeta):
     def clear_boosts(self, context):
         self.set_value(context, 'active_boosts', [])
 
+    @staticmethod
+    def get_donate_boost_id(donate_amount, donate_server):
+        msq = 0
+        for k in donate_server:
+            if donate_amount >= k:
+                msq = k
+        if msq == 0:
+            return None
+        return donate_server[msq]
+
     def get_bot_values(self, context):
         default_values = local_server.get_default_values()
         default_values = copy.deepcopy(default_values)
@@ -266,6 +275,13 @@ class DBInfoWorker(metaclass=SingletonMeta):
         active_boosts = self.get_value(context, 'active_boosts')
         boosts_server = local_server.get_default_values()['boosts']
         passive_boosts = []
+
+        donate = self.get_value(context, 'donate')
+        donate_server = local_server.get_default_values()['donate_rules']
+        donate_boost_id = self.get_donate_boost_id(donate, donate_server)
+
+        if donate_boost_id:
+            passive_boosts.append(donate_boost_id)
 
         for bid in boosts_ids:
             boost = boosts_server[bid]

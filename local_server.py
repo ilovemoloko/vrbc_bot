@@ -82,29 +82,28 @@ default_user = {
     "last_use": 0,
     "cart_size": 7,
     "cooldown": 10,
-    "donate": 0,
-    "boosts": {"test_boost": 1, "test_boost2": 2, "test_boost3": 3},
+    "donate": 170,
+    "boosts": {"test_boost2": 2},
     "active_boosts": []
 }
 
 boosts = {
-    "test_boost":
-        {
-            "name": "Тестовый буст",
-            "desc": """Снимает 5 секунд задержки
+    "test_boost": {
+        "name": "Тестовый буст",
+        "desc": """Снимает 5 секунд задержки
 Добавляет 2 слота в корзину
 Добавляет в каталог 6 русскийбот (Лимит 2, айди 100)
 Добавляет к лимиту предмета 1 ещё 5000 единиц
 Добавляет к лимиту второго каталога ещё 100 единиц""",
-            "type": "passive",
-            "effects": [
-                {"type": "change_cooldown", "params": [-5]},
-                {"type": "change_cart_size", "params": [2]},
-                {"type": "add_item", "params": [100, [2, "русскийбот", 6]]},
-                {"type": "change_limit", "params": [1, 5000]},
-                {"type": "change_catalog_limit", "params": [2, 100]}
-            ]
-        },
+        "type": "passive",
+        "effects": [
+            {"type": "change_cooldown", "params": [-5]},
+            {"type": "change_cart_size", "params": [2]},
+            {"type": "add_item", "params": [100, [2, "русскийбот", 6]]},
+            {"type": "change_limit", "params": [1, 5000]},
+            {"type": "change_catalog_limit", "params": [2, 100]}
+        ]
+    },
     "test_boost2": {
         "name": "Тестовый буст 2",
         "desc": "Тестовый буст 2",
@@ -120,7 +119,60 @@ boosts = {
         "effects": [
             {"type": "change_cart_size", "params": [6]},
         ]
+    },
+    "donate_1": {
+        "name": "Donate1",
+        "desc": "Donate1",
+        "type": "passive",
+        "effects": [
+            {"type": "change_cooldown", "params": [-3 * 60 * 60]},
+            {"type": "change_cart_size", "params": [1]},
+        ]
+    },
+    "donate_2": {
+        "name": "Donate2",
+        "desc": "Donate2",
+        "type": "passive",
+        "effects": [
+            {"type": "change_cooldown", "params": [-7 * 60 * 60]},
+            {"type": "change_cart_size", "params": [3]},
+        ]
+    },
+    "donate_3": {
+        "name": "Donate3",
+        "desc": "Donate3",
+        "type": "passive",
+        "effects": [
+            {"type": "change_cooldown", "params": [-11 * 60 * 60]},
+            {"type": "change_cart_size", "params": [5]},
+        ]
+    },
+    "donate_4": {
+        "name": "Donate4",
+        "desc": "Donate4",
+        "type": "passive",
+        "effects": [
+            {"type": "change_cooldown", "params": [-13 * 60 * 60]},
+            {"type": "change_cart_size", "params": [7]},
+        ]
+    },
+    "donate_5": {
+        "name": "Donate5",
+        "desc": "Donate5",
+        "type": "passive",
+        "effects": [
+            {"type": "change_cooldown", "params": [-21 * 60 * 60]},
+            {"type": "change_cart_size", "params": [10]},
+        ]
     }
+}
+
+donate_rules = {
+    35: "donate_1",
+    75: "donate_2",
+    125: "donate_3",
+    175: "donate_4",
+    250: "donate_5"
 }
 
 
@@ -182,4 +234,8 @@ def mod_values(values, boost_id):
 
 
 def get_default_values():
-    return {"categories": categories, "items": items, "default_user": default_user, "boosts": boosts}
+    return {"categories": categories,
+            "items": items,
+            "default_user": default_user,
+            "boosts": boosts,
+            "donate_rules": donate_rules}

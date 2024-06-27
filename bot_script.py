@@ -369,7 +369,7 @@ def reg(context: MessageContext):
 @command(".*", level="first_msg")
 def not_baza(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Корзина", "cart")
+    buttons.add("Корзина", "cart").add("Бусты", "boosts")
     MessageBuilder().setReplyMode(context).setText(f"здарова").setButtons(buttons).reply()
     reg(context)
     fsm_db.update_state(context, "*")
