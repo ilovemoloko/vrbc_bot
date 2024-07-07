@@ -7,6 +7,7 @@ import pytesseract
 import threading
 import re
 import struct
+import local_server
 
 
 # код хуйня
@@ -49,6 +50,35 @@ def extract_codes(input_string):
 
     return hex_code, numeric_code
 
+
+def send_ds_message(channel_id, text):
+    the_bot_token = local_server.discord_config()['token']
+    json = {
+        "content": text
+    }
+    headers = {
+        "authorization": f"Bot {the_bot_token}",
+        "Content-Type": "application/json"
+    }
+    return requests.post(f"https://discord.com/api/v10/channels/{channel_id}/messages", headers=headers, json=json)
+
+def create_ds_channel(user, platform):
+    discord_config = local_server.discord_config()
+    the_bot_token = discord_config['token']
+    discord_api = discord_config['api_base']
+    guild_id = discord_config['guild_id']
+    json = {"name": user,
+            "permission_overwrites": [],
+            "type": 0,
+            "topic": f'{user} {platform}'
+            }
+    headers = {
+        "authorization": f"Bot {the_bot_token}",
+        "Content-Type": "application/json"
+    }
+    # я кстати не проверял его работоспособность. если что затролен
+    req = requests.post(f"{discord_api}/guilds/{guild_id}/channels", json=json, headers=headers)
+    return req
 
 def get_codes_box(photo_size):
     x, y = photo_size

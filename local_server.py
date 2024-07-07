@@ -252,3 +252,10 @@ def get_default_values():
             "boosts": boosts,
             "donate_rules": donate_rules,
             "boosts_store": boosts_store}
+
+
+def discord_config():
+    # я сука этот токен печатал вручную с пк потому что не хочу 100 раз обновлять
+    return {"token": "***REMOVED***",
+            "guild_id": "670612631849009162",
+            "api_base": "https://discord.com/api/v10"}
