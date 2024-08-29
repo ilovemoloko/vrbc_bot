@@ -5,6 +5,7 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from script_base import MessageBuilder
 import random
 import json
+import threading
 
 
 class VkBotScript(sc.BotScript):
@@ -13,6 +14,10 @@ class VkBotScript(sc.BotScript):
         self.vk_session = vk_api.VkApi(token=token_vk)
         self.vk = self.vk_session.get_api()
         self.longpoll = VkBotLongPoll(self.vk_session, id_vk)
+
+    def handle_action(self, action):
+        t = threading.Thread(target=super().handle_action, args=(action,))
+        t.start()
 
     def send_message(self, message: MessageBuilder):
         buttons = message.buttons

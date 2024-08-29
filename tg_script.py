@@ -54,7 +54,11 @@ class TgBotScript(sc.BotScript):
             self.handle_action(MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text))
 
         while True:
-            self.bot.polling(none_stop=True, skip_pending=True)
+            print("tg polling...")
+            try:
+                self.bot.polling(none_stop=True, skip_pending=True)
+            except Exception as e:
+                print(e)
 
     def get_name(self):
         return "tg"

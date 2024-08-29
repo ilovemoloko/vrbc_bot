@@ -29,6 +29,19 @@ def command(pattern, level="*", weak=False):
     return decorator
 
 
+def level_on_error(level):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                fsm_db.update_state(args[0], level)
+                raise e
+
+        return wrapper
+    return decorator
+
+
 @command("инфо")
 def info(context: MessageContext):
     local_user_id = fsm_db.get_local_user_id(context)
@@ -273,7 +286,9 @@ def starthack(context: MessageContext):
 
 
 @command(".*", level="starthack", weak=True)
-def starthack(context: MessageContext):
+@level_on_error("starthack")
+def starthack(context: MessageContext, retry=False):
+    fsm_db.update_state(context, "hack_process")
     attachments = context.attached_photos
     msg = context.text
     buttons = ButtonsBuilder()
@@ -287,9 +302,8 @@ def starthack(context: MessageContext):
 
     if next_use > 0:
         buttons.add("Вернуться в корзину", "viewcart")
+        fsm_db.update_state(context, "starthack")
         return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
-
-    fsm_db.update_state(context, "hack_process")
 
     if len(attachments) > 0:
         url = attachments[0]
@@ -300,11 +314,12 @@ def starthack(context: MessageContext):
     try:
         codes = utils.extract_codes(msg)
         res = "Коды получены. Начинаем процесс взлома..."
+        if not retry:
+            answer.setText(res).reply()
     except:
         buttons.add("Вернуться в корзину", "viewcart")
         res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
-
-    answer.setText(res).reply()
+        answer.setText(res).reply()
 
     if not codes:
         fsm_db.update_state(context, "starthack")
@@ -322,8 +337,19 @@ def starthack(context: MessageContext):
         if inq == "LOL":
             fsm_db.update_state(context, "starthack")
             return answer.setText("Ошибка обработки аккаунта.").reply()
-        wait_time = requests.get(wait_time_url).content.decode("utf-8")
-        answer.setText(f"Ваш аккаунт ({inq}) отправлен в очередь.")
+
+        status, msg = utils.inq_checker((inq, version), context)
+        answer.setText(msg)
+        if status != True:
+            fsm_db.update_state(context, "starthack")
+            if status == "retry":
+                answer.reply()
+                return starthack(context, retry=True)
+            buttons.add("Вернуться в корзину", "viewcart")
+            return answer.reply()
+
+        # wait_time = requests.get(wait_time_url).content.decode("utf-8")
+        wait_time = "-2"
         answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
 
         cart = info_worker.get_value(context, 'cart')
@@ -332,8 +358,10 @@ def starthack(context: MessageContext):
                    "ver": version,
                    "inq": inq,
                    "user": str(fsm_db.get_local_user_id(context))}
-        hack_request = requests.post(api_url, files=files, headers=headers)
-        hack_result = eval(hack_request.content.decode("utf-8"))
+
+        # hack_request = requests.post(api_url, files=files, headers=headers)
+        # hack_result = eval(hack_request.content.decode("utf-8"))
+        hack_result = {"status": 1, "codes": ("13371337d", "1444")}
 
         if hack_result['status'] == 1:
             transfer, confirmation = hack_result['codes']
@@ -357,7 +385,6 @@ def starthack(context: MessageContext):
 @command(".*", level="hack_process")
 def hack_process(context: MessageContext):
     MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
-    fsm_db.update_state(context, "starthack")
 
 
 def reg(context: MessageContext):
@@ -631,7 +658,14 @@ def start_fight(context: MessageContext):
     #код дс бота кстати полностью готов нужно просто чут чут поиграться с изображениями (и здесь тоже)
 
 
-@command(r".*")  # интересно а как сделать так чтоб любое сообщение не принадлежащее к основному протоколу шло в дискорд
+@command(r"find .*")
+def find_cat(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    query = context.text.split(" ", 1)[1]
+    answer.setText(str(utils.search_cat(query))).reply()
+
+
+@command(r".*", level="fight")  # интересно а как сделать так чтоб любое сообщение не принадлежащее к основному протоколу шло в дискорд
 def complain(context: MessageContext):
     # я подозреваю что нужно подобную ноунейм команду просто в конец пихнуть
     # я не очень хочу тебе весь код сносить и менять как мне удобно и понятно потому что он сука твой

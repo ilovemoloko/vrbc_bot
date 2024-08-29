@@ -4,24 +4,13 @@ import requests
 from io import BytesIO
 from PIL import Image
 import pytesseract
-import threading
 import re
 import struct
 import local_server
-
-
-# код хуйня
-class SingletonMeta(type):
-    _instances = {}
-    _lock: threading.Lock = threading.Lock()
-
-    def __call__(cls, *args, **kwargs):
-        with cls._lock:
-            if cls not in cls._instances:
-                instance = super().__call__(*args, **kwargs)
-                cls._instances[cls] = instance
-        return cls._instances[cls]
-
+from fuzzywuzzy import process
+from unidecode import unidecode
+from db_worker import bca_db, info_worker, fsm_db, localuser_db
+from script_base import MessageContext
 
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
@@ -62,6 +51,7 @@ def send_ds_message(channel_id, text):
     }
     return requests.post(f"https://discord.com/api/v10/channels/{channel_id}/messages", headers=headers, json=json)
 
+
 def create_ds_channel(user, platform):
     discord_config = local_server.discord_config()
     the_bot_token = discord_config['token']
@@ -79,16 +69,6 @@ def create_ds_channel(user, platform):
     # я кстати не проверял его работоспособность. если что затролен
     req = requests.post(f"{discord_api}/guilds/{guild_id}/channels", json=json, headers=headers)
     return req
-
-def get_codes_box(photo_size):
-    x, y = photo_size
-    center_x, center_y = x / 2, y / 2
-    x_crop_1 = center_x * 0.75
-    x_crop_2 = center_x * 1.25
-    y_crop_1 = center_y * 0.9
-    y_crop_2 = center_y * 1.15
-
-    return x_crop_1, y_crop_1, x_crop_2, y_crop_2
 
 
 def randhex(len):
@@ -162,3 +142,96 @@ def humanize_time(seconds):
 
 def get_donate_url(user_id, amount):
     return f"[ссылка]"
+
+
+def to_latin(text):
+    return unidecode(text)
+
+
+def fuzzy_search(query, data, threshold=70):
+    query_latin = to_latin(query)
+    data_latin = {to_latin(key): value for key, value in data.items()}
+    keys = list(data_latin.keys())
+    results = process.extract(query_latin, keys, limit=5)
+    print(results)
+    best_matches = [result for result in results if result[1] >= threshold]
+    return [(key, data_latin[key]) for key, score in best_matches]
+
+
+def search_cat(query):
+    return fuzzy_search(query, local_server.cats)
+
+
+def add_account(context, user_id, account):
+    inq, is_jp = account
+
+    user_bot_values = info_worker.get_bot_values(context)['default_user']
+    accounts_limit = info_worker.get_value(context, 'accounts_limit', src=user_bot_values)
+    user_accounts_number = bca_db.count_accounts(user_id)
+
+    if user_accounts_number >= accounts_limit:
+        return False, "Вы достигли лимита аккаунтов"
+
+    bca_db.add_account(user_id, inq, is_jp, "")
+
+    return True, (f"Аккаунт привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
+                  f"Ваш аккаунт {inq} добавлен в очередь")
+
+
+def merge_accounts(context: MessageContext, uid, uid_fin):
+    src = context.src
+    fin_userids = fsm_db.get_all_by_local_user_id(uid_fin)
+
+    for fin_userid in fin_userids:
+        if fin_userid[0].startswith(src):
+            return False, "Вы не можете накручивать на аккаунт, принадлежащий другому пользователю"
+
+    info_fin = eval(localuser_db.get_info_by_lid(uid_fin))
+    info = eval(localuser_db.get_info_by_lid(uid))
+
+    if "cart" in info:
+        info_fin["cart"] = info["cart"]
+
+    if "donate" in info:
+        if "donate" not in info_fin:
+            info_fin["donate"] = 0
+        info_fin["donate"] += info["donate"]
+
+    if "boosts" in info:
+        if "boosts" not in info_fin:
+            info_fin["boosts"] = {}
+        for boost in info["boosts"]:
+            if boost not in info_fin["boosts"]:
+                info_fin["boost"][boost] = info["boosts"][boost]
+            else:
+                info_fin["boosts"][boost] += info["boosts"][boost]
+
+    if "active_boosts" in info:
+        if "active_boosts" not in info_fin:
+            info_fin["active_boosts"] = []
+
+        info_fin["active_boosts"].extend(info["active_boosts"])
+
+    localuser_db.update_info_by_lid(uid_fin, info_fin)
+    fsm_db.set_local_user_id(context, uid_fin)
+
+    return "retry", "Теперь этот профиль привязан к аккаунту, на котором вы ранее использовали бота."
+
+
+def inq_checker(account, context: MessageContext):
+    inq, is_jp = account
+    user_id = fsm_db.get_local_user_id(context)
+
+    accinfo = bca_db.get_account_info(inq)
+    if accinfo is not None:
+        a_user_id, a_isjp, a_originalcode = accinfo
+        if a_user_id == user_id:
+            return True, f"Ваш аккаунт {inq} добавлен в очередь"
+
+        if len(bca_db.get_user_accounts(user_id)) != 0:
+            return False, f"Вы не можете накручивать на аккаунт, принадлежащий другому пользователю"
+
+        return merge_accounts(context, user_id, a_user_id)
+
+    else:
+        return add_account(context, user_id, account)

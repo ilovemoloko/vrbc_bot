@@ -2,7 +2,6 @@ import copy
 import sqlite3
 
 import local_server
-from utils import SingletonMeta
 import os
 import threading
 
@@ -10,6 +9,18 @@ db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 conn = sqlite3.connect(db_path, check_same_thread=False)
 lock = threading.RLock()
+
+
+class SingletonMeta(type):
+    _instances = {}
+    _lock: threading.Lock = threading.Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls not in cls._instances:
+                instance = super().__call__(*args, **kwargs)
+                cls._instances[cls] = instance
+        return cls._instances[cls]
 
 
 def locked(func):
@@ -34,6 +45,7 @@ def return_false_on_error(func):
             return func(*args, **kwargs)
         except:
             return False
+
     return wrapper
 
 
@@ -108,11 +120,98 @@ class FSMDatabase(metaclass=SingletonMeta):
         return result[0]
 
     @locked
+    def get_all_by_local_user_id(self, local_user_id):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT user_id, state FROM users WHERE local_uid = ?
+        ''', (local_user_id,))
+        result = cursor.fetchall()
+        return result
+
+    @locked
     def close(self):
         self.conn.close()
 
 
 fsm_db = FSMDatabase()
+
+
+# unique string account code, int userid, boolean isjp, string originalcode
+
+class BCAccountDB(metaclass=SingletonMeta):
+    def __init__(self):
+        self.conn = conn
+        self.create_table()
+
+    @locked
+    @connected
+    def create_table(self):
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS accounts (
+                account_code TEXT PRIMARY KEY,
+                user_id INTEGER,
+                isjp BOOLEAN,
+                originalcode TEXT
+            )
+        ''')
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_account(self, user_id, account_code, isjp, originalcode):
+        self.conn.execute('''
+            INSERT INTO accounts (account_code, user_id, isjp, originalcode) VALUES (?, ?, ?, ?)
+            ON CONFLICT(account_code) DO UPDATE SET user_id=excluded.user_id, isjp=excluded.isjp, originalcode=excluded.originalcode
+        ''', (account_code, user_id, isjp, originalcode))
+        self.conn.commit()
+
+    @locked
+    def get_user_id(self, account_code):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT user_id FROM accounts WHERE account_code = ?
+        ''', (account_code,))
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        return result[0]
+
+    @locked
+    def get_account_info(self, account_code):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT user_id, isjp, originalcode FROM accounts WHERE account_code = ?
+        ''', (account_code,))
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        return result
+
+    @locked
+    def count_accounts(self, user_id):
+        user_accounts = bca_db.get_user_accounts(user_id)
+        c = 0
+        for a in user_accounts:
+            print(a)
+            if a[-1] != "":
+                c += 1
+        return c
+
+    @locked
+    def get_user_accounts(self, user_id):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT account_code, isjp, originalcode FROM accounts WHERE user_id = ?
+        ''', (user_id,))
+        result = cursor.fetchall()
+        return result
+
+    @locked
+    def close(self):
+        self.conn.close()
+
+
+bca_db = BCAccountDB()
 
 
 class LocalUsersDatabase(metaclass=SingletonMeta):
@@ -144,6 +243,10 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
     @locked
     def get_info(self, context):
         local_user_id = fsm_db.get_local_user_id(context)
+        return localuser_db.get_info_by_lid(local_user_id)
+
+    @locked
+    def get_info_by_lid(self, local_user_id):
         cursor = self.conn.cursor()
         cursor.execute('''
             SELECT info FROM localusers WHERE local_user_id = ?
@@ -155,6 +258,11 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
     @connected
     def update_info(self, context, new_info):
         local_user_id = fsm_db.get_local_user_id(context)
+        self.update_info_by_lid(local_user_id, new_info)
+
+    @locked
+    @connected
+    def update_info_by_lid(self, local_user_id, new_info):
         self.conn.execute('''
             UPDATE localusers SET info = ? WHERE local_user_id = ?
         ''', (str(new_info), local_user_id))
