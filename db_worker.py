@@ -61,7 +61,8 @@ class FSMDatabase(metaclass=SingletonMeta):
             CREATE TABLE IF NOT EXISTS users (
                 user_id TEXT PRIMARY KEY,
                 state TEXT, 
-                local_uid INTEGER
+                local_uid INTEGER,
+                brawl_data INTEGER
             )
         ''')
         self.conn.commit()
@@ -71,10 +72,31 @@ class FSMDatabase(metaclass=SingletonMeta):
     def add_user(self, context, state):
         user_id_combined = f"{context.src}_{context.user_id}"
         self.conn.execute('''
-            INSERT INTO users (user_id, state, local_uid) VALUES (?, ?, ?)
+            INSERT INTO users (user_id, state, local_uid, brawl_data) VALUES (?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET state=excluded.state
-        ''', (user_id_combined, state, None))
+        ''', (user_id_combined, state, None, -1))
         self.conn.commit()
+
+    @locked
+    @connected
+    def set_brawl_data(self, context, brawl_data):
+        user_id_combined = f"{context.src}_{context.user_id}"
+        self.conn.execute('''
+            UPDATE users SET brawl_data = ? WHERE user_id = ?
+        ''', (brawl_data, user_id_combined))
+        self.conn.commit()
+
+    @locked
+    def get_brawl_data(self, context):
+        user_id_combined = f"{context.src}_{context.user_id}"
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT brawl_data FROM users WHERE user_id = ?
+        ''', (user_id_combined,))
+        result = cursor.fetchone()
+        if result is None:
+            return -1
+        return result[0]
 
     @locked
     @connected
