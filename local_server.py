@@ -262,3 +262,15 @@ def discord_config():
     return {"token": "***REMOVED***",
             "guild_id": "670612631849009162",
             "api_base": "https://discord.com/api/v10"}
+
+
+def get_user_backups(user_id):
+    return ["122813371"]
+
+
+def recovery_backup(user_id, inq):
+    return True, "Ваши коды:", "000000000", "0000"
+
+
+def backup_account(user_id, inq, data):
+    return True, f"Ваш аккаунт {inq} успешно сохранен"

@@ -184,7 +184,7 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
 
     for fin_userid in fin_userids:
         if fin_userid[0].startswith(src):
-            return False, "Вы не можете накручивать на аккаунт, принадлежащий другому пользователю"
+            return False, "Вы не можете использовать аккаунт, принадлежащий другому пользователю"
 
     info_fin = eval(localuser_db.get_info_by_lid(uid_fin))
     info = eval(localuser_db.get_info_by_lid(uid))
@@ -226,10 +226,10 @@ def inq_checker(account, context: MessageContext):
     if accinfo is not None:
         a_user_id, a_isjp, a_originalcode = accinfo
         if a_user_id == user_id:
-            return True, f"Ваш аккаунт {inq} добавлен в очередь"
+            return True, f"Ваш аккаунт {inq} сохранён"
 
         if len(bca_db.get_user_accounts(user_id)) != 0:
-            return False, f"Вы не можете накручивать на аккаунт, принадлежащий другому пользователю"
+            return False, f"Вы не можете использовать аккаунт, принадлежащий другому пользователю"
 
         return merge_accounts(context, user_id, a_user_id)
 

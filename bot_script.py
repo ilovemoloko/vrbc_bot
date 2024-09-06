@@ -331,60 +331,148 @@ def starthack(context: MessageContext, retry=False):
         fsm_db.update_state(context, "starthack")
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
-    else:
-        inq = utils.getInq(data)
 
-        if inq == "LOL":
-            fsm_db.update_state(context, "starthack")
-            return answer.setText("Ошибка обработки аккаунта.").reply()
+    inq = utils.getInq(data)
 
-        status, msg = utils.inq_checker((inq, version), context)
-        answer.setText(msg)
-        if status != True:
-            fsm_db.update_state(context, "starthack")
-            if status == "retry":
-                answer.reply()
-                return starthack(context, retry=True)
-            buttons.add("Вернуться в корзину", "viewcart")
-            return answer.reply()
+    if inq == "LOL":
+        fsm_db.update_state(context, "starthack")
+        return answer.setText("Ошибка обработки аккаунта.").reply()
 
-        # wait_time = requests.get(wait_time_url).content.decode("utf-8")
-        wait_time = "-2"
-        answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
-
-        cart = info_worker.get_value(context, 'cart')
-        files = {"save": data}
-        headers = {"cart": str(cart),
-                   "ver": version,
-                   "inq": inq,
-                   "user": str(fsm_db.get_local_user_id(context))}
-
-        # hack_request = requests.post(api_url, files=files, headers=headers)
-        # hack_result = eval(hack_request.content.decode("utf-8"))
-        hack_result = {"status": 1, "codes": ("13371337d", "1444")}
-
-        if hack_result['status'] == 1:
-            transfer, confirmation = hack_result['codes']
-            answer.setText("Взлом успешен. Ваши коды:").reply()
-            answer.setText(transfer).reply()
-            answer.setText(confirmation).reply()
-
-            info_worker.clear_cart(context)
-            info_worker.clear_boosts(context)
-            info_worker.set_value(context, 'last_use', current_time)
-            fsm_db.update_state(context, "first_msg")
-            buttons.add("Уменьшить время ожидания", "reducecd")
-            answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
-        else:
-            fsm_db.update_state(context, "starthack")
-            answer.setText(f"Произошла ошибка. Причина: {hack_result['message']}").setButtons(buttons)
-
+    status, msg = utils.inq_checker((inq, version), context)
+    answer.setText(msg)
+    if status != True:
+        fsm_db.update_state(context, "starthack")
+        if status == "retry":
+            answer.reply()
+            return starthack(context, retry=True)
+        buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
+
+    # wait_time = requests.get(wait_time_url).content.decode("utf-8")
+    wait_time = "-2"
+    answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
+
+    cart = info_worker.get_value(context, 'cart')
+    files = {"save": data}
+    headers = {"cart": str(cart),
+               "ver": version,
+               "inq": inq,
+               "user": str(fsm_db.get_local_user_id(context))}
+
+    # hack_request = requests.post(api_url, files=files, headers=headers)
+    # hack_result = eval(hack_request.content.decode("utf-8"))
+    hack_result = {"status": 1, "codes": ("13371337d", "1444")}
+
+    if hack_result['status'] == 1:
+        transfer, confirmation = hack_result['codes']
+        answer.setText("Взлом успешен. Ваши коды:").reply()
+        answer.setText(transfer).reply()
+        answer.setText(confirmation).reply()
+
+        info_worker.clear_cart(context)
+        info_worker.clear_boosts(context)
+        info_worker.set_value(context, 'last_use', current_time)
+        fsm_db.update_state(context, "first_msg")
+        buttons.add("Уменьшить время ожидания", "reducecd")
+        answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
+    else:
+        fsm_db.update_state(context, "starthack")
+        answer.setText(f"Произошла ошибка. Причина: {hack_result['message']}").setButtons(buttons)
+
+    return answer.reply()
 
 
 @command(".*", level="hack_process")
 def hack_process(context: MessageContext):
     MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
+
+
+@command("save_account")
+def save_account(context: MessageContext):
+    pass
+
+
+@command(".*", level="save_account", weak=True)
+def save_account_input(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    attachments = context.attached_photos
+    msg = context.text
+
+    buttons.add("Вернуться в корзину", "viewcart")
+
+    if len(attachments) > 0:
+        url = attachments[0]
+        image = utils.get_image(url)
+        msg = utils.getText(image)
+
+    try:
+        codes = utils.extract_codes(msg)
+    except:
+        res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
+        return answer.setText(res).reply()
+
+    transfer, pin = codes
+    data, success, version = utils.getSave(transfer, pin)
+    if not success and not debug:
+        return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
+
+    inq = utils.getInq(data)
+    if inq == "LOL":
+        return answer.setText("Ошибка обработки аккаунта.").reply()
+    status, msg = utils.inq_checker((inq, version), context)
+    if not status:
+        return answer.setText(msg).reply()
+
+    user_id = fsm_db.get_local_user_id(context)
+    status, msg = local_server.backup_account(user_id, inq, data)
+    answer.setText(msg).reply()
+
+
+@command("recovery_account")
+def recovery_account(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    user_id = fsm_db.get_local_user_id(context)
+    accounts = local_server.get_user_backups(user_id)
+
+    if len(accounts) == 0:
+        return answer.setText("У вас еще нет сохранений.").reply()
+    elif len(accounts) == 1:
+        answer.setText(f"Восстанавливаем аккаунт {accounts[0]}").reply()
+        status, msg, tc, cc = local_server.recovery_backup(user_id, accounts[0])
+        if not status:
+            return answer.setText(msg).reply()
+        answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+    else:
+        text = "Выберите аккаунт для восстановления\n"
+        for account in accounts:
+            text += f" - - {account}\n"
+        answer.setText(text).reply()
+        fsm_db.update_state(context, "select_account")
+
+
+
+@command(".*", level="select_account")
+def select_account(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    inq_regex = r"([\da-fA-F]{9})"
+    result = re.search(inq_regex, context.text)
+
+    if not result:
+        return answer.setText("Вам нужно ввести 9-значный код из списка").reply()
+
+    user_id = fsm_db.get_local_user_id(context)
+    status, msg, tc, cc = local_server.recovery_backup(user_id, result.group(0))
+    if not status:
+        return answer.setText(msg).reply()
+    answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+    fsm_db.update_state(context, "first_msg")
 
 
 def reg(context: MessageContext):
