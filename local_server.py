@@ -84,7 +84,7 @@ default_user = {
     "last_use": 0,
     "cart_size": 7,
     "cooldown": 1000,
-    "donate": 0,
+    "donate": 229,
     "boosts": {"test_boost2": 2},
     "active_boosts": [],
     "accounts_limit": 2

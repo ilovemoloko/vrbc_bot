@@ -342,10 +342,11 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
     @return_false_on_error
     def add_to_cart(self, context, item, amount):
+        user_bot_values = self.get_bot_values(context)
         cart_size = self.get_cart_size(context)
-        cart_max_size = self.get_value(context, 'cart_size')
+        cart_max_size = self.get_value(context, 'cart_size', src=user_bot_values['default_user'])
         cart = self.get_value(context, 'cart')
-        item_info = self.get_bot_values(context)['items'][item]
+        item_info = user_bot_values['items'][item]
         if cart_size >= cart_max_size:
             return False
 

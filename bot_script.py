@@ -12,10 +12,10 @@ info_worker = DBInfoWorker()
 commands = []
 debug = False
 
-if not debug:
-    base_url = "http://127.0.0.1:5000"
-else:
-    base_url = "https://lolidk111.pythonanywhere.com"
+# if not debug:
+base_url = "http://127.0.0.1:5000"
+# else:
+#     base_url = "https://lolidk111.pythonanywhere.com"
 
 api_url = base_url + "/api/hack"
 wait_time_url = base_url + "/wait"
@@ -171,16 +171,17 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
             continue
         if isinstance(cart[i], list):
             for j in cart[i]:
-                answer.addText(f"{j} {item_name} {id_text}", start="\n -- -- ")
+                answer.addText(f"{j} {item_name} {id_text}", start="\n -- ")
                 changed = True
         else:
-            answer.addText(f"{cart[i]} {item_name} {id_text}", start="\n -- -- ")
+            answer.addText(f"{cart[i]} {item_name} {id_text}", start="\n -- ")
             changed = True
     return changed
 
 
 @command("viewcart")
 def viewcart(context: MessageContext):
+    fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
     buttons.add("Смотреть категории предметов", "cart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -350,8 +351,8 @@ def starthack(context: MessageContext, retry=False):
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
 
-    # wait_time = requests.get(wait_time_url).content.decode("utf-8")
-    wait_time = "-2"
+    wait_time = requests.get(wait_time_url).content.decode("utf-8")
+    # wait_time = "-2"
     answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
 
     cart = info_worker.get_value(context, 'cart')
@@ -361,9 +362,9 @@ def starthack(context: MessageContext, retry=False):
                "inq": inq,
                "user": str(fsm_db.get_local_user_id(context))}
 
-    # hack_request = requests.post(api_url, files=files, headers=headers)
-    # hack_result = eval(hack_request.content.decode("utf-8"))
-    hack_result = {"status": 1, "codes": ("13371337d", "1444")}
+    hack_request = requests.post(api_url, files=files, headers=headers)
+    hack_result = eval(hack_request.content.decode("utf-8"))
+    # hack_result = {"status": 1, "codes": ("13371337d", "1444")}
 
     if hack_result['status'] == 1:
         transfer, confirmation = hack_result['codes']
@@ -405,7 +406,7 @@ def save_account_input(context: MessageContext):
     attachments = context.attached_photos
     msg = context.text
 
-    buttons.add("Перейти в корзину", "viewcart")
+    buttons.add("Перейти в главное меню", "начать")
 
     if len(attachments) > 0:
         url = attachments[0]
@@ -419,6 +420,7 @@ def save_account_input(context: MessageContext):
         return answer.setText(res).reply()
 
     transfer, pin = codes
+    answer.setText(codes).reply()
     data, success, version = utils.getSave(transfer, pin)
     if not success and not debug:
         return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
@@ -443,7 +445,7 @@ def save_account_input(context: MessageContext):
 @command("recovery_account")
 def recovery_account(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Перейти в корзину", "viewcart")
+    buttons.add("Перейти в главное меню", "начать")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     user_id = fsm_db.get_local_user_id(context)
@@ -452,11 +454,11 @@ def recovery_account(context: MessageContext):
     if len(accounts) == 0:
         return answer.setText("У вас еще нет сохранений.").reply()
     elif len(accounts) == 1:
-        answer.setText(f"Восстанавливаем аккаунт {accounts[0]}").reply()
+        answer.setText(f"Восстанавливаем аккаунт {accounts[0]}").reply().setButtons(None)
         status, msg, tc, cc = local_server.recovery_backup(user_id, accounts[0])
         if not status:
             return answer.setText(msg).reply()
-        answer.setText("Ваши коды: ").reply().setButtons(None).setText(tc).reply().setText(cc).reply()
+        answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
     else:
         text = "Выберите аккаунт для восстановления\n"
         for account in accounts:
@@ -698,6 +700,7 @@ def donate3(context: MessageContext):
 
 @command("boostshop")
 def boostshop(context: MessageContext):
+    fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
     buttons.add("Купить", "boostshop2")
     buttons.add("Назад", "reducecd")
