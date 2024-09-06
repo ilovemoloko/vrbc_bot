@@ -174,8 +174,7 @@ def add_account(context, user_id, account):
 
     bca_db.add_account(user_id, inq, is_jp, "")
 
-    return True, (f"Аккаунт привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
-                  f"Ваш аккаунт {inq} добавлен в очередь")
+    return "success", f"Аккаунт привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
 
 
 def merge_accounts(context: MessageContext, uid, uid_fin):

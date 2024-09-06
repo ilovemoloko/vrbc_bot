@@ -90,14 +90,14 @@ class Mapper:
     def __init__(self, commands):
         self.commands = commands
 
-    def map(self, func, pattern, level="*", weak=False):
+    def map(self, func, pattern, level="*", weak=False, ignore_case=False):
         if isinstance(pattern, str):
             pattern = [pattern]
         if level not in self.commands:
             self.commands[level] = {}
         for p in pattern:
             p = "^" + p + "$"
-            self.commands[level][p] = {"func": func, "weak": weak}
+            self.commands[level][p] = {"func": func, "weak": weak, "ignore_case": ignore_case}
 
 
 class BotScript:
@@ -112,7 +112,8 @@ class BotScript:
             pattern = cmd[1]
             func = cmd[2]
             weak = cmd[3]
-            self.mapper.map(func, pattern, level, weak)
+            ignore_case = cmd[4]
+            self.mapper.map(func, pattern, level, weak, ignore_case)
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -124,8 +125,12 @@ class BotScript:
         return "none"
 
     def check_command(self, fsm_level, action):
+        lowercase_text = action.text.lower()
         for pattern in self.commands[fsm_level]:
-            if re.match(pattern, action.text):
+            check_text = action.text
+            if self.commands[fsm_level][pattern]['ignore_case']:
+                check_text = lowercase_text
+            if re.match(pattern, check_text):
                 self.commands[fsm_level][pattern]['func'](action)
                 return True
         return False

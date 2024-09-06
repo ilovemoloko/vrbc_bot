@@ -21,9 +21,9 @@ api_url = base_url + "/api/hack"
 wait_time_url = base_url + "/wait"
 
 
-def command(pattern, level="*", weak=False):
+def command(pattern, level="*", weak=False, ignore_case=False):
     def decorator(func):
-        commands.append((level, pattern, func, weak))
+        commands.append((level, pattern, func, weak, ignore_case))
         return func
 
     return decorator
@@ -39,6 +39,7 @@ def level_on_error(level):
                 raise e
 
         return wrapper
+
     return decorator
 
 
@@ -59,7 +60,8 @@ def info(context: MessageContext):
 def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
-    answer = MessageBuilder().setReplyMode(context).setText("выбирай че хочешь ну из каталогов").setButtons(buttons)
+    answer = (MessageBuilder().setReplyMode(context)
+              .setText("Вы можете выбрать предметы из представленных категорий").setButtons(buttons))
 
     categories = info_worker.get_bot_values(context)['categories']
     for i in categories:
@@ -340,7 +342,7 @@ def starthack(context: MessageContext, retry=False):
 
     status, msg = utils.inq_checker((inq, version), context)
     answer.setText(msg)
-    if status != True:
+    if not status or status == "retry":
         fsm_db.update_state(context, "starthack")
         if status == "retry":
             answer.reply()
@@ -403,7 +405,7 @@ def save_account_input(context: MessageContext):
     attachments = context.attached_photos
     msg = context.text
 
-    buttons.add("Вернуться в корзину", "viewcart")
+    buttons.add("Перейти в корзину", "viewcart")
 
     if len(attachments) > 0:
         url = attachments[0]
@@ -424,19 +426,24 @@ def save_account_input(context: MessageContext):
     inq = utils.getInq(data)
     if inq == "LOL":
         return answer.setText("Ошибка обработки аккаунта.").reply()
+
     status, msg = utils.inq_checker((inq, version), context)
+    if status is not True:
+        answer.setText(msg)
     if not status:
-        return answer.setText(msg).reply()
+        fsm_db.update_state(context, "first_msg")
+        return answer.reply()
 
     user_id = fsm_db.get_local_user_id(context)
     status, msg = local_server.backup_account(user_id, inq, data)
-    answer.setText(msg).reply()
+    answer.addText(msg).reply()
+    fsm_db.update_state(context, "first_msg")
 
 
 @command("recovery_account")
 def recovery_account(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Вернуться в корзину", "viewcart")
+    buttons.add("Перейти в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     user_id = fsm_db.get_local_user_id(context)
@@ -449,14 +456,13 @@ def recovery_account(context: MessageContext):
         status, msg, tc, cc = local_server.recovery_backup(user_id, accounts[0])
         if not status:
             return answer.setText(msg).reply()
-        answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+        answer.setText("Ваши коды: ").reply().setButtons(None).setText(tc).reply().setText(cc).reply()
     else:
         text = "Выберите аккаунт для восстановления\n"
         for account in accounts:
             text += f" - - {account}\n"
         answer.setText(text).reply()
         fsm_db.update_state(context, "select_account")
-
 
 
 @command(".*", level="select_account")
@@ -487,12 +493,41 @@ def reg(context: MessageContext):
 
 
 @command(".*", level="first_msg")
-def not_baza(context: MessageContext):
+def start_message(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Корзина", "cart").add("Бусты", "boosts")
-    MessageBuilder().setReplyMode(context).setText(f"здарова").setButtons(buttons).reply()
+    buttons.add("Увидеть каталог предметов", "cart").add("Меню функций", "menu")
+    MessageBuilder().setReplyMode(context).setText(
+        f"Здравствуй! В этом боте ты можешь получить различные предметы в игре The Battle Cats бесплатно.\n"
+        f"Ты всегда можешь вернуться к этому сообщению, написав Начать\n\n"
+        f"Если вам нужна помощь/техническая поддержка, то нажмите кнопку Меню").setButtons(buttons).reply()
     reg(context)
     fsm_db.update_state(context, "*")
+
+
+@command("начать", ignore_case=True)
+def start_message_2(context: MessageContext):
+    start_message(context)
+
+
+@command("menu")
+def menu_message(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Бусты", "boosts")
+    buttons.add("Донаты", "donate")
+    buttons.add("Пресеты", "presets")
+    buttons.add("Восстановление/Сохранение аккаунтов", "recovery_menu")
+    buttons.add("Помощь", "help")
+
+    MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
+
+
+@command("recovery_menu")
+def recovery_menu(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Восстановить аккаунт", "recovery_account")
+    buttons.add("Сохранить аккаунт", "save_account")
+    buttons.add("Вернуться в меню", "menu")
+    MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
 
 
 def addBoost(message: MessageBuilder, boost, boost_id, amount=None, desc=False):
@@ -757,12 +792,13 @@ def find_cat(context: MessageContext):
     answer.setText(str(utils.search_cat(query))).reply()
 
 
-@command(r".*", level="fight")  # интересно а как сделать так чтоб любое сообщение не принадлежащее к основному протоколу шло в дискорд
+@command(r".*",
+         level="fight")  # интересно а как сделать так чтоб любое сообщение не принадлежащее к основному протоколу шло в дискорд
 def complain(context: MessageContext):
     # я подозреваю что нужно подобную ноунейм команду просто в конец пихнуть
     # я не очень хочу тебе весь код сносить и менять как мне удобно и понятно потому что он сука твой
     # поэтому если что просто подправь я думаю это не так сложно и думаю это можно отдельно вынести
-    if "ты не общаешься с админами еблан"*0: return
+    if "ты не общаешься с админами еблан" * 0: return
     answer = MessageBuilder().setReplyMode(context)
     attempt = utils.send_ds_message("тут должен быть айди канала дискорда из дб", context.text)
     if attempt.status_code == 200:
