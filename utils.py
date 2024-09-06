@@ -16,7 +16,7 @@ tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
     tesPath = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 pytesseract.pytesseract.tesseract_cmd = tesPath
-custom_config = r'-c tessedit_char_whitelist=:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+custom_config = r'-c tessedit_char_whitelist=:abcdefTransferCodeConfirmation0123456789'
 
 
 def get_image(url):
