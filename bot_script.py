@@ -389,7 +389,11 @@ def hack_process(context: MessageContext):
 
 @command("save_account")
 def save_account(context: MessageContext):
-    pass
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться в корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").reply()
+    fsm_db.update_state(context, "save_account")
 
 
 @command(".*", level="save_account", weak=True)
@@ -458,7 +462,7 @@ def recovery_account(context: MessageContext):
 @command(".*", level="select_account")
 def select_account(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Вернуться в корзину", "viewcart")
+    buttons.add("Посмотреть список аккаунтов", "recovery_account")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     inq_regex = r"([\da-fA-F]{9})"
