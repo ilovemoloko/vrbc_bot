@@ -269,7 +269,12 @@ def get_user_backups(user_id):
 
 
 def recovery_backup(user_id, inq):
-    return True, "Ваши коды:", "000000000", "0000"
+    status = True
+    new_inq = "010101010"
+    msg = "Ваши коды:"
+    tc = "000000000"
+    cc = "0000"
+    return status, new_inq, msg, tc, cc
 
 
 def backup_account(user_id, inq, data):

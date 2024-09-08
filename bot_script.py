@@ -458,7 +458,7 @@ def recovery_account(context: MessageContext):
         return answer.setText("У вас еще нет сохранений.").reply()
     elif len(accounts) == 1:
         answer.setText(f"Восстанавливаем аккаунт {accounts[0]}").reply().setButtons(None)
-        status, msg, tc, cc = local_server.recovery_backup(user_id, accounts[0])
+        status, new_inq, msg, tc, cc = local_server.recovery_backup(user_id, accounts[0])
         if not status:
             return answer.setText(msg).reply()
         answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
@@ -483,7 +483,7 @@ def select_account(context: MessageContext):
         return answer.setText("Вам нужно ввести 9-значный код из списка").reply()
 
     user_id = fsm_db.get_local_user_id(context)
-    status, msg, tc, cc = local_server.recovery_backup(user_id, result.group(0))
+    status, new_inq, msg, tc, cc = local_server.recovery_backup(user_id, result.group(0))
     if not status:
         return answer.setText(msg).reply()
     answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
