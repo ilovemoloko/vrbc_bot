@@ -79,6 +79,7 @@ def selectcategory(context: MessageContext):
 
     buttons = ButtonsBuilder()
     buttons.add("Добавить предмет", f"chooseitem {category_id}")
+    buttons.add("Корзина", "viewcart")
     buttons.add("Назад", "cart")
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -195,12 +196,13 @@ def viewcart(context: MessageContext):
     if len(cart) == 0:
         answer.addText("Корзина пуста")
     else:
-        buttons.add("Убрать предмет", "removeitem")
         buttons.add("Начать взлом", "starthack")
+        buttons.add("Убрать предмет", "removeitem")
         answer.addText("Ваша корзина:\n")
         addCart(answer, cart, items_info)
 
     buttons.add("Бусты", "boosts")
+    buttons.add("Главное меню", "начать")
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
@@ -406,6 +408,8 @@ def save_account_input(context: MessageContext):
     attachments = context.attached_photos
     msg = context.text
 
+    answer.setText("Начинаем сохранять ваш аккаунт").reply().setText("")
+
     buttons.add("Перейти в главное меню", "начать")
 
     if len(attachments) > 0:
@@ -420,7 +424,6 @@ def save_account_input(context: MessageContext):
         return answer.setText(res).reply()
 
     transfer, pin = codes
-    answer.setText(codes).reply()
     data, success, version = utils.getSave(transfer, pin)
     if not success and not debug:
         return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
