@@ -235,3 +235,7 @@ def inq_checker(account, context: MessageContext):
 
     else:
         return add_account(context, user_id, account)
+
+
+def recovery_rite(context: MessageContext, old_inq, new_inq):
+    pass
