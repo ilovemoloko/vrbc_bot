@@ -224,10 +224,11 @@ def inq_checker(account, context: MessageContext):
 
     accinfo = bca_db.get_account_info(inq)
     if accinfo is not None:
-        a_user_id, a_isjp, a_originalcode = accinfo
+        a_user_id, a_isjp, a_originalcode, disabled = accinfo
+        if disabled:
+            return False, "Аккаунт отключен. Используйте его восстановленную версию."
         if a_user_id == user_id:
             return True, f"Ваш аккаунт {inq} сохранён"
-
         if len(bca_db.get_user_accounts(user_id)) != 0:
             return False, f"Вы не можете использовать аккаунт, принадлежащий другому пользователю"
 
@@ -238,4 +239,10 @@ def inq_checker(account, context: MessageContext):
 
 
 def recovery_rite(context: MessageContext, old_inq, new_inq):
+    user_id, isjp, originalcode, disabled = bca_db.get_account_info(old_inq)
+    bca_db.add_account(user_id, new_inq, isjp, old_inq)
+    bca_db.set_disabled(old_inq, True)
+
+
+
     pass
