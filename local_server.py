@@ -4,7 +4,7 @@ import json
 base_url = "http://127.0.0.1:5000"
 api_url = base_url + "/api/hack"
 wait_time_url = base_url + "/api/wait"
-unban_url = base_url + "/api/unban"
+unban_url = base_url + "/api/ub"
 list_backups_url = base_url + "/api/list_backups"
 backup_account_url = base_url + "/api/backup_account"
 

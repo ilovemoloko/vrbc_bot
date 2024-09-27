@@ -461,7 +461,7 @@ def recovery_account(context: MessageContext):
         fsm_db.update_state(context, "select_account")
 
 
-@command(".*", level="select_account")
+@command(".*", level="select_account", weak=True)
 def select_account(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Посмотреть список аккаунтов", "recovery_account")
