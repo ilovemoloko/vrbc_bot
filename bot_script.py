@@ -429,7 +429,8 @@ def save_account_input(context: MessageContext):
         return answer.reply()
 
     user_id = fsm_db.get_local_user_id(context)
-    status, msg = local_server.backup_account(user_id, inq, data)
+    files = {"save": data}
+    status, msg = local_server.backup_account(user_id, inq, files)
     answer.addText(msg).reply()
     fsm_db.update_state(context, "first_msg")
 
@@ -464,9 +465,9 @@ def recovery_account(context: MessageContext):
 @command(".*", level="select_account", weak=True)
 def select_account(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Посмотреть список аккаунтов", "recovery_account")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-
+    answer.setText("Сейчас бот отправит коды аккаунта...").reply()
+    buttons.add("Посмотреть список аккаунтов", "recovery_account")
     inq_regex = r"([\da-fA-F]{9})"
     result = re.search(inq_regex, context.text)
 
@@ -479,6 +480,7 @@ def select_account(context: MessageContext):
     if not status:
         return answer.setText(msg).reply()
     utils.recovery_rite(context, old_inq, new_inq)
+    answer.setButtons(None)
     answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
     fsm_db.update_state(context, "first_msg")
 

@@ -296,7 +296,11 @@ def recovery_backup(user_id, inq):
 
 
 def backup_account(user_id, inq, data):
-    return requests.post(backup_account_url, params={"user_id": user_id, "inq": inq}, files=data)
+    r = requests.post(backup_account_url, params={"user_id": user_id, "inq": inq}, files=data)
+    resp = json.loads(r.content.decode("utf-8"))
+    status = resp.get("status")
+    msg = resp.get("msg")
+    return status, msg
 
 
 def get_wait_time():
