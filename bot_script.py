@@ -1,6 +1,5 @@
 import re
 import time
-import requests
 import local_server
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
@@ -11,14 +10,6 @@ local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 commands = []
 debug = False
-
-# if not debug:
-base_url = "http://127.0.0.1:5000"
-# else:
-#     base_url = "https://lolidk111.pythonanywhere.com"
-
-api_url = base_url + "/api/hack"
-wait_time_url = base_url + "/wait"
 
 
 def command(pattern, level="*", weak=False, ignore_case=False):
@@ -353,8 +344,7 @@ def starthack(context: MessageContext, retry=False):
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
 
-    wait_time = requests.get(wait_time_url).content.decode("utf-8")
-    # wait_time = "-2"
+    wait_time = local_server.get_wait_time()
     answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
 
     cart = info_worker.get_value(context, 'cart')
@@ -364,9 +354,8 @@ def starthack(context: MessageContext, retry=False):
                "inq": inq,
                "user": str(fsm_db.get_local_user_id(context))}
 
-    hack_request = requests.post(api_url, files=files, headers=headers)
+    hack_request = local_server.hack_account(files, headers)
     hack_result = eval(hack_request.content.decode("utf-8"))
-    # hack_result = {"status": 1, "codes": ("13371337d", "1444")}
 
     if hack_result['status'] == 1:
         transfer, confirmation = hack_result['codes']
