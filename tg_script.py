@@ -7,7 +7,7 @@ import telebot
 class TgBotScript(sc.BotScript):
     def __init__(self):
         super().__init__()
-        self.bot = telebot.TeleBot(token_tg)
+        self.bot = telebot.TeleBot(token_tg, skip_pending=True)
 
     def send_message(self, message: MessageBuilder):
         chat_id = message.peerId

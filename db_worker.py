@@ -173,7 +173,8 @@ class BCAccountDB(metaclass=SingletonMeta):
                 account_code TEXT PRIMARY KEY,
                 user_id INTEGER,
                 isjp BOOLEAN,
-                originalcode TEXT
+                originalcode TEXT,
+                disabled BOOLEAN
             )
         ''')
         self.conn.commit()
@@ -182,10 +183,19 @@ class BCAccountDB(metaclass=SingletonMeta):
     @connected
     def add_account(self, user_id, account_code, isjp, originalcode):
         self.conn.execute('''
-            INSERT INTO accounts (account_code, user_id, isjp, originalcode) VALUES (?, ?, ?, ?)
-            ON CONFLICT(account_code) DO UPDATE SET user_id=excluded.user_id, isjp=excluded.isjp, originalcode=excluded.originalcode
-        ''', (account_code, user_id, isjp, originalcode))
+            INSERT INTO accounts (account_code, user_id, isjp, originalcode, disabled) VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(account_code) DO UPDATE SET user_id=excluded.user_id, isjp=excluded.isjp, originalcode=excluded.originalcode, disabled=excluded.disabled
+        ''', (account_code, user_id, isjp, originalcode, False))
         self.conn.commit()
+
+    @locked
+    @connected
+    def set_disabled(self, account_code, disabled):
+        self.conn.execute('''
+            UPDATE accounts SET disabled = ? WHERE account_code = ?
+        ''', (disabled, account_code))
+        self.conn.commit()
+
 
     @locked
     def get_user_id(self, account_code):
@@ -202,7 +212,7 @@ class BCAccountDB(metaclass=SingletonMeta):
     def get_account_info(self, account_code):
         cursor = self.conn.cursor()
         cursor.execute('''
-            SELECT user_id, isjp, originalcode FROM accounts WHERE account_code = ?
+            SELECT user_id, isjp, originalcode, disabled FROM accounts WHERE account_code = ?
         ''', (account_code,))
         result = cursor.fetchone()
         if result is None:
@@ -222,7 +232,7 @@ class BCAccountDB(metaclass=SingletonMeta):
     def get_user_accounts(self, user_id):
         cursor = self.conn.cursor()
         cursor.execute('''
-            SELECT account_code, isjp, originalcode FROM accounts WHERE user_id = ?
+            SELECT account_code, isjp, originalcode, disabled FROM accounts WHERE user_id = ?
         ''', (user_id,))
         result = cursor.fetchall()
         return result
