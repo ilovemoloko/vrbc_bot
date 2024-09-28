@@ -93,6 +93,7 @@ categories = {
 default_user = {
     "cart": {},
     "last_use": 0,
+    "last_use_recovery": 0,
     "cart_size": 7,
     "cooldown": 1000,
     "donate": 229,

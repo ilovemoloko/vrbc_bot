@@ -462,11 +462,8 @@ def recovery_account(context: MessageContext):
     elif len(accounts) == 1:
         old_inq = accounts[0]
         answer.setText(f"Восстанавливаем аккаунт {old_inq}").reply().setButtons(None)
-        status, new_inq, msg, tc, cc = local_server.recovery_backup(user_id, old_inq)
-        if not status:
-            return answer.setText(msg).reply()
-        utils.recovery_rite(context, old_inq, new_inq)
-        answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+        context.text = f"select_account {old_inq}"
+        select_account(context, False)
     else:
         text = "Выберите аккаунт для восстановления\n"
         for account in accounts:
@@ -476,11 +473,22 @@ def recovery_account(context: MessageContext):
 
 
 @command(".*", level="select_account", weak=True)
-def select_account(context: MessageContext):
+def select_account(context: MessageContext, send_start_msg=True):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    answer.setText("Сейчас бот отправит коды аккаунта...").reply()
-    buttons.add("Посмотреть список аккаунтов", "recovery_account")
+
+    current_time = int(time.time())
+    user_last_use = info_worker.get_value(context, 'last_use_recovery')
+    user_cooldown = 5*60
+    next_use = user_cooldown - (current_time - user_last_use)
+
+    if next_use > 0:
+        buttons.add("Вернуться в меню функций", "menu")
+        return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
+
+    if send_start_msg:
+        answer.setText("Сейчас бот отправит коды аккаунта...").reply()
+        buttons.add("Посмотреть список аккаунтов", "recovery_account")
     inq_regex = r"([\da-fA-F]{9})"
     result = re.search(inq_regex, context.text)
 
