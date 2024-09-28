@@ -351,14 +351,15 @@ class DBInfoWorker(metaclass=SingletonMeta):
         return stackable
 
     @return_false_on_error
-    def add_to_cart(self, context, item, amount):
+    def add_to_cart(self, context, item, amount, ignore_max=False):
         user_bot_values = self.get_bot_values(context)
         cart_size = self.get_cart_size(context)
         cart_max_size = self.get_value(context, 'cart_size', src=user_bot_values['default_user'])
         cart = self.get_value(context, 'cart')
         item_info = user_bot_values['items'][item]
         if cart_size >= cart_max_size:
-            return False
+            if not ignore_max:
+                return False
 
         stackable = self.check_stackable(item_info)
         if not stackable:

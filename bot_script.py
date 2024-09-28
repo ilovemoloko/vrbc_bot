@@ -34,6 +34,18 @@ def level_on_error(level):
     return decorator
 
 
+@command(r"сукорз [\s\S]*")
+def sucart(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться в корзину", "viewcart")
+    newcart_str = context.text.split("сукорз", 1)[1]
+    for item in newcart_str.splitlines():
+        item_id, amount = item.split()
+        info_worker.add_to_cart(context, int(item_id), int(amount), ignore_max=True)
+    answer.addText("Корзина обновлена").reply()
+
+
 @command("инфо")
 def info(context: MessageContext):
     local_user_id = fsm_db.get_local_user_id(context)
@@ -431,6 +443,7 @@ def save_account_input(context: MessageContext):
     user_id = fsm_db.get_local_user_id(context)
     files = {"save": data}
     status, msg = local_server.backup_account(user_id, inq, files)
+    answer.addText(f"Ваш код аккаунта: {inq}")
     answer.addText(msg).reply()
     fsm_db.update_state(context, "first_msg")
 

@@ -179,12 +179,11 @@ def add_account(context, user_id, account):
 
 
 def merge_accounts(context: MessageContext, uid, uid_fin):
-    src = context.src
-    fin_userids = fsm_db.get_all_by_local_user_id(uid_fin)
-
-    for fin_userid in fin_userids:
-        if fin_userid[0].startswith(src):
-            return False, "Вы не можете использовать аккаунт, принадлежащий другому пользователю"
+    # src = context.src
+    # fin_userids = fsm_db.get_all_by_local_user_id(uid_fin)
+    # for fin_userid in fin_userids:
+    #     if fin_userid[0].startswith(src):
+    #         return False, "Вы не можете использовать аккаунт, принадлежащий другому пользователю"
 
     info_fin = eval(localuser_db.get_info_by_lid(uid_fin))
     info = eval(localuser_db.get_info_by_lid(uid))
