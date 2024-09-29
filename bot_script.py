@@ -481,10 +481,10 @@ def select_account(context: MessageContext, send_start_msg=True):
     user_last_use = info_worker.get_value(context, 'last_use_recovery')
     user_cooldown = 5*60
     next_use = user_cooldown - (current_time - user_last_use)
-
     if next_use > 0:
         buttons.add("Вернуться в меню функций", "menu")
         return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
+    info_worker.set_value(context, 'last_use_recovery', current_time)
 
     if send_start_msg:
         answer.setText("Сейчас бот отправит коды аккаунта...").reply()
