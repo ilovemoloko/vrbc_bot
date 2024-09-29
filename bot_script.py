@@ -289,6 +289,10 @@ def starthack(context: MessageContext):
     buttons.add("Обратно к выбору предметов", "cart")
     answer.reply().setButtons(None)
 
+    uses_count = info_worker.get_uses(context)
+    if uses_count == 0:
+        buttons.add("Где получить эти коды?", "tcccget_help")
+
     answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").reply()
     fsm_db.update_state(context, context.text)
 
@@ -326,6 +330,9 @@ def starthack(context: MessageContext, retry=False):
             answer.setText(res).reply()
     except:
         buttons.add("Вернуться в корзину", "viewcart")
+        uses_count = info_worker.get_uses(context)
+        if uses_count == 0:
+            buttons.add("Где получить эти коды?", "tcccget_help")
         res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
         answer.setText(res).reply()
 
@@ -379,8 +386,13 @@ def starthack(context: MessageContext, retry=False):
         info_worker.clear_boosts(context)
         info_worker.set_value(context, 'last_use', current_time)
         fsm_db.update_state(context, "first_msg")
+
+        uses_count = info_worker.get_uses(context)
+        if uses_count == 0:
+            buttons.add("Как активировать аккаунт?", "tccc_help")
         buttons.add("Уменьшить время ожидания", "reducecd")
         answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
+        info_worker.add_uses(context)
     else:
         fsm_db.update_state(context, "starthack")
         answer.setText(f"Произошла ошибка. Причина: {hack_result['message']}").setButtons(buttons)
@@ -398,6 +410,9 @@ def save_account(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    uses_count = info_worker.get_uses(context)
+    if uses_count == 0:
+        buttons.add("Где получить эти коды?", "tcccget_help")
     answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").reply()
     fsm_db.update_state(context, "save_account")
 
@@ -421,6 +436,9 @@ def save_account_input(context: MessageContext):
     try:
         codes = utils.extract_codes(msg)
     except:
+        uses_count = info_worker.get_uses(context)
+        if uses_count == 0:
+            buttons.add("Где получить эти коды?", "tcccget_help")
         res = "Бот не нашел кодов в сообщении. Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)"
         return answer.setText(res).reply()
 

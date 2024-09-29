@@ -196,6 +196,11 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
             info_fin["donate"] = 0
         info_fin["donate"] += info["donate"]
 
+    if "use_count" in info:
+        if "use_count" not in info_fin:
+            info_fin["use_count"] = 0
+        info_fin["use_count"] += info["use_count"]
+
     if "boosts" in info:
         if "boosts" not in info_fin:
             info_fin["boosts"] = {}

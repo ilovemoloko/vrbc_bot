@@ -393,6 +393,14 @@ class DBInfoWorker(metaclass=SingletonMeta):
             return True
         return False
 
+    @return_false_on_error
+    def add_uses(self, context):
+        self.set_value(context, 'use_count', self.get_value(context, 'use_count') + 1)
+
+    @return_false_on_error
+    def get_uses(self, context):
+        return self.get_value(context, 'use_count')
+
     def clear_cart(self, context):
         self.set_value(context, 'cart', {})
 

@@ -99,7 +99,8 @@ default_user = {
     "donate": 229,
     "boosts": {"test_boost2": 2},
     "active_boosts": [],
-    "accounts_limit": 2
+    "accounts_limit": 2,
+    "use_count": 0
 }
 
 boosts = {
