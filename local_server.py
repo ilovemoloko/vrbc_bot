@@ -100,7 +100,8 @@ default_user = {
     "boosts": {"test_boost2": 2},
     "active_boosts": [],
     "accounts_limit": 2,
-    "use_count": 0
+    "use_count": 0,
+    "presets": {1: "Пустой пресет", 2: "Пустой пресет", 3: "Пустой пресет", 4: "Пустой пресет", 5: "Пустой пресет"},
 }
 
 boosts = {
