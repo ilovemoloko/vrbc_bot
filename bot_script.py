@@ -570,6 +570,32 @@ def menu_message(context: MessageContext):
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
 
 
+@command("presets")
+def presets(context: MessageContext):
+    buttons = ButtonsBuilder()
+    message = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Список функций", "menu")
+    buttons.add("Перейти в корзину", "viewcart")
+    buttons.add("Добавить прошлую корзину", "add_last_cart")
+    buttons.add("Список пресетов", "presets_list")
+    message.setText("В этом меню вы можете сохранять шаблон корзины, чтобы потом быстро добавлять предметы в свой список").reply()
+
+
+@command("presets_list")
+def presets_list(context: MessageContext):
+    buttons = ButtonsBuilder()
+    message = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Меню пресетов", "presets")
+    buttons.add("Добавить пресет в корзину", "add_preset_to_cart")
+    buttons.add("Изменить пресет", "change_preset")
+    message.setText("Ваши сохраненные пресеты: ")
+    presets_ = info_worker.get_value(context, 'presets')
+    for preset in presets_:
+        p_name, p_cart = presets[preset]
+        message.addText(f"#{preset} - {p_name}")
+    message.reply()
+
+
 @command("recovery_menu")
 def recovery_menu(context: MessageContext):
     buttons = ButtonsBuilder()
