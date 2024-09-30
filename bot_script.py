@@ -382,6 +382,16 @@ def starthack(context: MessageContext, retry=False):
         answer.setText(transfer).reply()
         answer.setText(confirmation).reply()
 
+        cart_str = ""
+        for item_id in cart:
+            amount = cart[item_id]
+            if isinstance(amount, list):
+                for i in amount:
+                    cart_str += f"{item_id} {i}\n"
+            else:
+                cart_str += f"{item_id} {amount}\n"
+
+        info_worker.set_preset(context, "last_cart", cart_str)
         info_worker.clear_cart(context)
         info_worker.clear_boosts(context)
         info_worker.set_value(context, 'last_use', current_time)

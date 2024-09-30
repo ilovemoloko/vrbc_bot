@@ -343,6 +343,18 @@ class DBInfoWorker(metaclass=SingletonMeta):
                 size += 1
         return size
 
+    @return_false_on_error
+    def set_preset(self, context, preset_id, preset_str):
+        if preset_id == "last_cart":
+            self.set_value(context, preset_id, preset_str)
+        else:
+            presets = self.get_bot_values(context)['presets']
+            if preset_id in presets:
+                presets[preset_id] = preset_str
+                self.set_value(context, 'presets', presets)
+            else:
+                return False
+
     @staticmethod
     def check_stackable(item_info):
         stackable = False
