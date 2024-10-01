@@ -386,6 +386,35 @@ class DBInfoWorker(metaclass=SingletonMeta):
         return True
 
     @return_false_on_error
+    def mass_add_to_cart(self, context, queries, ignore_max=False):
+        user_bot_values = self.get_bot_values(context)
+        cart_size = self.get_cart_size(context)
+        cart_max_size = self.get_value(context, 'cart_size', src=user_bot_values['default_user'])
+        cart = self.get_value(context, 'cart')
+
+        added = 0
+        for item_id, amount in queries:
+            if cart_size >= cart_max_size:
+                if not ignore_max:
+                    break
+
+            item_info = user_bot_values['items'][item_id]
+            stackable = self.check_stackable(item_info)
+            if not stackable:
+                cart[item_id] = amount
+            else:
+                items_array = cart.get(item_id, [])
+                items_array.append(amount)
+                items_array = list(set(items_array))
+                cart[item_id] = items_array
+
+            cart_size += 1
+            added += 1
+
+        self.set_value(context, 'cart', cart)
+        return added
+
+    @return_false_on_error
     def del_from_cart(self, context, item, amount=None):
         cart = self.get_value(context, 'cart')
         if item in cart:

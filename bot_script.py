@@ -582,11 +582,29 @@ def menu_message(context: MessageContext):
 def presets(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Список пресетов", "presets_list")
+    buttons.add("Добавить прошлую корзину", "add_last_cart")
     buttons.add("Список функций", "menu")
     buttons.add("Перейти в корзину", "viewcart")
-    buttons.add("Добавить прошлую корзину", "add_last_cart")
-    buttons.add("Список пресетов", "presets_list")
     message.setText("В этом меню вы можете сохранять шаблон корзины, чтобы потом быстро добавлять предметы в свой список").reply()
+
+
+@command("add_last_cart")
+def add_last_cart(context: MessageContext):
+    buttons = ButtonsBuilder()
+    message = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Перейти в корзину", "viewcart")
+    buttons.add("Вернуться", "presets")
+
+    last_cart = info_worker.get_value(context, 'last_cart')
+
+    item_queries = []
+    for item in last_cart.splitlines():
+        item_id, amount = item.split()
+        item_queries.append((int(item_id), int(amount)))
+    n = info_worker.mass_add_to_cart(context, item_queries)
+
+    message.setText(f"Предметы из прошлой корзины ({n} штук) добавлены").reply()
 
 
 @command("presets_list")
@@ -622,9 +640,11 @@ def add_preset_to_cart_2(context: MessageContext):
     presets_array = info_worker.get_value(context, 'presets')
     if preset_id in presets_array:
         newcart_str = presets_array[preset_id][1]
+        item_queries = []
         for item in newcart_str.splitlines():
             item_id, amount = item.split()
-            info_worker.add_to_cart(context, int(item_id), int(amount))
+            item_queries.append((int(item_id), int(amount)))
+        info_worker.mass_add_to_cart(context, item_queries)
         buttons.add("В Корзину", "viewcart")
         fsm_db.update_state(context, "*")
         return answer.addText("Пресет успешно добавлен в корзину").reply()
