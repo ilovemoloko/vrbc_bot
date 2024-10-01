@@ -206,7 +206,7 @@ def viewcart(context: MessageContext):
         addCart(answer, cart, items_info)
 
     buttons.add("Бусты", "boosts")
-    buttons.add("Главное меню", "начать")
+    buttons.add("Больше функций/Помощь", "menu")
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
@@ -569,10 +569,10 @@ def start_message_2(context: MessageContext):
 @command("menu")
 def menu_message(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Бусты", "boosts")
-    buttons.add("Донаты", "donate")
-    buttons.add("Пресеты", "presets")
     buttons.add("Восстановление/Сохранение аккаунтов", "recovery_menu")
+    buttons.add("Пресеты", "presets")
+    buttons.add("Донаты", "donate")
+    buttons.add("Бусты", "boosts")
     buttons.add("Помощь", "help")
 
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
