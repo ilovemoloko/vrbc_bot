@@ -841,7 +841,7 @@ def donate(context: MessageContext):
 5. От 250 руб.: 17 предметов в корзине, 9 часов между использованием бота""")
     buttons.add("Пожертвовать", "donate2")
     buttons.add("Магазин бустов", "boostshop")
-    buttons.add("Назад", "reducecd")
+    buttons.add("Меню", "menu")
     answer.reply()
 
 
