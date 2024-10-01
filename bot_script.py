@@ -413,7 +413,7 @@ def starthack(context: MessageContext, retry=False):
         info_worker.add_uses(context)
     else:
         fsm_db.update_state(context, "starthack")
-        answer.setText(f"Произошла ошибка. Причина: {hack_result['message']}").setButtons(buttons)
+        answer.setText(f"Произошла ошибка. Причина: {hack_result['msg']}").setButtons(buttons)
 
     return answer.reply()
 

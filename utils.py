@@ -22,6 +22,7 @@ else:
     print("Running on Linux")
 custom_config = r'-c tessedit_char_whitelist=" :abcdefTransferCodeConfirmation0123456789€¢"'
 
+
 def get_image(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -36,7 +37,6 @@ def getText(image):
     enhancer = ImageEnhance.Contrast(image)
     image = enhancer.enhance(2)
     res = pytesseract.image_to_string(image, config=custom_config)
-    print(res)
     return res
 
 
@@ -45,10 +45,7 @@ def extract_codes(input_string):
     input_string = input_string.replace("¢", "c")
     regex = r'([a-fA-F0-9]{9})[\s\S]*([0-9]{4})'
     pattern = re.compile(regex)
-
     hex_code, numeric_code = re.findall(pattern, input_string)[0]
-    print(hex_code, numeric_code)
-
     return hex_code, numeric_code
 
 
@@ -188,7 +185,7 @@ def add_account(context, user_id, account):
 
     bca_db.add_account(user_id, inq, is_jp, "")
 
-    return "success", f"Аккаунт привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
+    return "success", f"Аккаунт ({inq}) привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
 
 
 def merge_accounts(context: MessageContext, uid, uid_fin):
