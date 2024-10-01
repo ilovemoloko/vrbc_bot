@@ -2,7 +2,7 @@ import os.path
 import numpy
 import requests
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageEnhance
 import pytesseract
 import re
 import struct
@@ -20,8 +20,7 @@ if not (sys.platform == "linux" or sys.platform == "linux2"):
     pytesseract.pytesseract.tesseract_cmd = tesPath
 else:
     print("Running on Linux")
-custom_config = r'-c tessedit_char_whitelist=:abcdefTransferCodeConfirmation0123456789'
-
+custom_config = r'-c tessedit_char_whitelist=" :abcdefTransferCodeConfirmation0123456789€¢"'
 
 def get_image(url):
     response = requests.get(url)
@@ -33,14 +32,22 @@ def get_image(url):
 
 
 def getText(image):
-    return pytesseract.image_to_string(image, config=custom_config)
+    image = image.convert('L')
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(2)
+    res = pytesseract.image_to_string(image, config=custom_config)
+    print(res)
+    return res
 
 
 def extract_codes(input_string):
+    input_string = input_string.replace("€", "e")
+    input_string = input_string.replace("¢", "c")
     regex = r'([a-fA-F0-9]{9})[\s\S]*([0-9]{4})'
     pattern = re.compile(regex)
 
     hex_code, numeric_code = re.findall(pattern, input_string)[0]
+    print(hex_code, numeric_code)
 
     return hex_code, numeric_code
 
