@@ -901,7 +901,9 @@ def boostshop2(context: MessageContext):
 
 @command(r"buyboost .*", level="boostshop2", weak=True)
 def buyboost(context: MessageContext):
-    answer = MessageBuilder().setReplyMode(context)
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Назад", "boostshop")
     boost_id = context.text.split(" ", 1)[1]
     fsm_db.update_state(context, "first_msg")
     boosts_store = local_server.get_default_values()['boosts_store']
@@ -918,7 +920,10 @@ def buyboost(context: MessageContext):
         user_boosts[boost_id] = 0
     user_boosts[boost_id] += 1
     info_worker.set_value(context, 'boosts', user_boosts)
-    answer.addText("Спасибо за покупку!").reply()
+    buttons.insert(0, "Бусты", "boosts")
+    answer.addText("Спасибо за покупку!\n\n"
+                   "Теперь вы можете в любой момент "
+                   "использовать этот буст во разделе \"Бусты\"").reply()
 
 
 @command(r".*", level="boostshop2", weak=True)
