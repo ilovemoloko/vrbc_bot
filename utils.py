@@ -16,9 +16,10 @@ import sys
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
     tesPath = "C:/Program Files/Tesseract-OCR/tesseract.exe"
-if sys.platform == "linux" or sys.platform == "linux2":
-    tesPath = "usr/bin/tesseract"
-pytesseract.pytesseract.tesseract_cmd = tesPath
+if not (sys.platform == "linux" or sys.platform == "linux2"):
+    pytesseract.pytesseract.tesseract_cmd = tesPath
+else:
+    print("Running on Linux")
 custom_config = r'-c tessedit_char_whitelist=:abcdefTransferCodeConfirmation0123456789'
 
 
