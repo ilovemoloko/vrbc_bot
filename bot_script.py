@@ -40,9 +40,10 @@ def sucart(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("Вернуться в корзину", "viewcart")
     newcart_str = context.text.split("сукорз", 1)[1]
+    is_admin = info_worker.get_value(context, 'is_admin')
     for item in newcart_str.splitlines():
         item_id, amount = item.split()
-        info_worker.add_to_cart(context, int(item_id), int(amount), ignore_max=True)
+        info_worker.add_to_cart(context, int(item_id), int(amount), ignore_max=is_admin)
     answer.addText("Корзина обновлена").reply()
 
 
@@ -287,14 +288,28 @@ def starthack(context: MessageContext):
         buttons.add("Выбрать предметы", "cart")
         return answer.reply()
     buttons.add("Обратно к выбору предметов", "cart")
-    answer.reply().setButtons(None)
+    buttons.buttons = []
+    answer.reply()
 
     uses_count = info_worker.get_uses(context)
     if uses_count == 0:
-        buttons.add("Где получить эти коды?", "tcccget_help")
+        buttons.add("Где получить коды?", "tcccget_help")
 
     answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").reply()
     fsm_db.update_state(context, context.text)
+
+
+def generate_cart_str(cart_dict):
+    cart_str = ""
+    for item_id in cart_dict:
+        amount = cart_dict[item_id]
+        if isinstance(amount, list):
+            for i in amount:
+                cart_str += f"{item_id} {i}\n"
+        else:
+            cart_str += f"{item_id} {amount}\n"
+
+    return cart_str
 
 
 @command(".*", level="starthack", weak=True)
@@ -382,14 +397,7 @@ def starthack(context: MessageContext, retry=False):
         answer.setText(transfer).reply()
         answer.setText(confirmation).reply()
 
-        cart_str = ""
-        for item_id in cart:
-            amount = cart[item_id]
-            if isinstance(amount, list):
-                for i in amount:
-                    cart_str += f"{item_id} {i}\n"
-            else:
-                cart_str += f"{item_id} {amount}\n"
+        cart_str = generate_cart_str(cart)
 
         info_worker.set_preset(context, "last_cart", cart_str)
         info_worker.clear_cart(context)
@@ -591,9 +599,80 @@ def presets_list(context: MessageContext):
     message.setText("Ваши сохраненные пресеты: ")
     presets_ = info_worker.get_value(context, 'presets')
     for preset in presets_:
-        p_name, p_cart = presets[preset]
+        p_name, p_cart = presets_[preset]
         message.addText(f"#{preset} - {p_name}")
     message.reply()
+
+
+@command("add_preset_to_cart")
+def add_preset_to_cart(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться", "presets_list")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Напишите номер нужного пресета").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@command(".*", level="add_preset_to_cart", weak=True)
+def add_preset_to_cart_2(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться", "presets_list")
+    preset_id = context.text
+    presets_array = info_worker.get_value(context, 'presets')
+    if preset_id in presets_array:
+        newcart_str = presets_array[preset_id][1]
+        for item in newcart_str.splitlines():
+            item_id, amount = item.split()
+            info_worker.add_to_cart(context, int(item_id), int(amount))
+        buttons.add("В Корзину", "viewcart")
+        fsm_db.update_state(context, "*")
+        return answer.addText("Пресет успешно добавлен в корзину").reply()
+    answer.addText("Некорректный номер пресета").reply()
+
+
+@command("change_preset")
+def change_preset(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Вернуться", "presets_list")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Напишите номер нужного пресета\n\nВ указанный пресет запишется ваша текущая корзина").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@command(".*", level="change_preset", weak=True)
+def change_preset_2(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться", "presets_list")
+    preset_id = context.text
+    presets_array = info_worker.get_value(context, 'presets')
+    if preset_id in presets_array:
+        answer.addText("Напишите новое имя пресета").reply()
+        fsm_db.update_state(context, f"change_preset_name {preset_id}")
+    else:
+        answer.addText("Некорректный номер пресета").reply()
+
+
+@command(".*", level="change_preset_name", weak=True)
+def change_preset_name(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться", "presets_list")
+    preset_name = context.text
+    preset_id = context.fsm_full.split(" ", 1)[1]
+
+    if len(preset_name) > 32:
+        return answer.addText("Имя слишком длинное").reply()
+
+    presets_array = info_worker.get_value(context, 'presets')
+    if preset_id in presets_array:
+        presets_array[preset_id] = (preset_name, generate_cart_str(info_worker.get_value(context, 'cart')))
+        info_worker.set_value(context, 'presets', presets_array)
+        fsm_db.update_state(context, "*")
+        return answer.addText("Пресет успешно изменен").reply()
+    else:
+        return answer.addText("Внутренняя ошибка.").reply()
 
 
 @command("recovery_menu")
