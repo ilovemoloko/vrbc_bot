@@ -11,10 +11,13 @@ from fuzzywuzzy import process
 from unidecode import unidecode
 from db_worker import bca_db, info_worker, fsm_db, localuser_db
 from script_base import MessageContext
+import sys
 
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
     tesPath = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+if sys.platform == "linux" or sys.platform == "linux2":
+    tesPath = "usr/bin/tesseract"
 pytesseract.pytesseract.tesseract_cmd = tesPath
 custom_config = r'-c tessedit_char_whitelist=:abcdefTransferCodeConfirmation0123456789'
 
