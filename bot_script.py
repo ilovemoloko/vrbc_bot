@@ -12,9 +12,9 @@ commands = []
 debug = False
 
 
-def command(pattern, level="*", weak=False, ignore_case=False):
+def command(pattern, level="*", weak=False, ignore_case=False, replace_newline=" "):
     def decorator(func):
-        commands.append((level, pattern, func, weak, ignore_case))
+        commands.append((level, pattern, func, weak, ignore_case, replace_newline))
         return func
 
     return decorator
@@ -34,7 +34,7 @@ def level_on_error(level):
     return decorator
 
 
-@command(r"сукорз [\s\S]*")
+@command(r"сукорз [\s\S]*", replace_newline="\n")
 def sucart(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)

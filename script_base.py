@@ -90,14 +90,14 @@ class Mapper:
     def __init__(self, commands):
         self.commands = commands
 
-    def map(self, func, pattern, level="*", weak=False, ignore_case=False):
+    def map(self, func, pattern, level="*", weak=False, ignore_case=False, replace_newline=" "):
         if isinstance(pattern, str):
             pattern = [pattern]
         if level not in self.commands:
             self.commands[level] = {}
         for p in pattern:
             p = "^" + p + "$"
-            self.commands[level][p] = {"func": func, "weak": weak, "ignore_case": ignore_case}
+            self.commands[level][p] = {"func": func, "weak": weak, "ignore_case": ignore_case, "replace_newline": replace_newline}
 
 
 class BotScript:
@@ -113,7 +113,8 @@ class BotScript:
             func = cmd[2]
             weak = cmd[3]
             ignore_case = cmd[4]
-            self.mapper.map(func, pattern, level, weak, ignore_case)
+            replace_newline = cmd[5]
+            self.mapper.map(func, pattern, level, weak, ignore_case, replace_newline)
 
     def send_message(self, message: MessageBuilder):
         pass
@@ -130,14 +131,22 @@ class BotScript:
             check_text = action.text
             if self.commands[fsm_level][pattern]['ignore_case']:
                 check_text = lowercase_text
+
+            check_text = check_text.replace("\n", self.commands[fsm_level][pattern]['replace_newline'])
             if re.match(pattern, check_text):
                 self.commands[fsm_level][pattern]['func'](action)
                 return True
         return False
 
     def check_weak(self, fsm_level, action):
+        lowercase_text = action.text.lower()
         for pattern in self.commands[fsm_level]:
-            if re.match(pattern, action.text):
+            ignore_case = self.commands[fsm_level][pattern]['ignore_case']
+            check_text = action.text
+            if ignore_case:
+                check_text = lowercase_text
+            check_text = check_text.replace("\n", self.commands[fsm_level][pattern]['replace_newline'])
+            if re.match(pattern, check_text):
                 return self.commands[fsm_level][pattern]['weak']
         return None
 
