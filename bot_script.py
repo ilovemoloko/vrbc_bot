@@ -409,6 +409,9 @@ def starthack(context: MessageContext, retry=False):
         if uses_count == 0:
             buttons.add("Как активировать аккаунт?", "tccc_help")
         buttons.add("Уменьшить время ожидания", "reducecd")
+
+        user_bot_values = info_worker.get_bot_values(context)['default_user']
+        user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)
         answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}")
         info_worker.add_uses(context)
     else:
