@@ -125,6 +125,8 @@ def getInq(data):
 
 
 def humanize_time(seconds):
+    if seconds == 0:
+        return "0 сек."
     seconds = int(seconds)
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)

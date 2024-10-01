@@ -246,6 +246,9 @@ def boost_change_catalog_limit(values, effect):
 def boost_change_cooldown(values, effect):
     time = effect['params'][0]
     values['default_user']['cooldown'] += time
+    if values['default_user']['cooldown'] < 0:
+        values['default_user']['cooldown'] = 0
+
     return values
 
 
