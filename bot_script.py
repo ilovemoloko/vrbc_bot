@@ -34,6 +34,31 @@ def level_on_error(level):
     return decorator
 
 
+def check_admin(context: MessageContext):
+    is_admin = info_worker.get_value(context, 'is_admin')
+    if not is_admin:
+        if not (context.user_id == ***REMOVED*** and context.src == "vk"):
+            return False
+    return True
+
+
+@command("ыыы 3")
+def admin_panel(context: MessageContext):
+    if check_admin(context) is False: return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("update bv", "update_bot_values")
+    answer.addText("!админка").reply()
+
+
+@command("update_bot_values")
+def update_bot_values(context: MessageContext):
+    if check_admin(context) is False: return
+    local_server.update_variables()
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Бот обновлен").reply()
+
+
 @command(r"сукорз [\s\S]*", replace_newline="\n")
 def sucart(context: MessageContext):
     buttons = ButtonsBuilder()

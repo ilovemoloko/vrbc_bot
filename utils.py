@@ -226,6 +226,9 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
 
         info_fin["active_boosts"].extend(info["active_boosts"])
 
+    if "is_admin" in info:
+        info_fin["is_admin"] = False
+
     localuser_db.update_info_by_lid(uid_fin, info_fin)
     fsm_db.set_local_user_id(context, uid_fin)
 
