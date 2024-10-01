@@ -96,8 +96,8 @@ default_user = {
     "last_use_recovery": 0,
     "cart_size": 7,
     "cooldown": 32*60*60,
-    "donate": 229,
-    "boosts": {"test_boost2": 2},
+    "donate": 100,
+    "boosts": {},
     "active_boosts": [],
     "accounts_limit": 2,
     "use_count": 0,
@@ -133,7 +133,7 @@ boosts = {
         "desc": "Мгновенно снимает 30 часов задержки",
         "type": "usable",
         "effects": [
-            {"type": "change_cooldown", "params": [-30*60*60]}
+            {"type": "change_cooldown", "params": [-50*60*60]}
         ]
     },
     "test_boost2": {
