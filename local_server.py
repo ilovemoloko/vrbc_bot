@@ -95,7 +95,7 @@ default_user = {
     "last_use": 0,
     "last_use_recovery": 0,
     "cart_size": 7,
-    "cooldown": 10,
+    "cooldown": 10*60*60,
     "donate": 229,
     "boosts": {"test_boost2": 2},
     "active_boosts": [],
