@@ -4,6 +4,8 @@ import local_server
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
+import os
+import sys
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -48,7 +50,8 @@ def admin_panel(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("update bv", "update_bot_values")
-    answer.addText("!админка").reply()
+    buttons.add("restart bot", "restart_bot")
+    answer.addText("!админка!!").reply()
 
 
 @command("update_bot_values")
@@ -57,6 +60,14 @@ def update_bot_values(context: MessageContext):
     local_server.update_variables()
     answer = MessageBuilder().setReplyMode(context)
     answer.addText("Бот обновлен").reply()
+
+
+@command("restart_bot")
+def restart_bot(context: MessageContext):
+    if check_admin(context) is False: return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Бот перезапускается").reply()
+    os.execv(sys.executable, ['python'] + sys.argv)
 
 
 @command(r"сукорз [\s\S]*", replace_newline="\n")
