@@ -158,14 +158,44 @@ def chooseitem2(context: MessageContext):
     if limit_amount != "Нет":
         buttons.insert(0, "Добавить максимальное количество", f"{limit_amount}")
     fsm_db.update_state(context, f"additem {item_id}")
+    if item_id == 27:
+        answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
     answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
     answer.addText(f"Лимит: {limit_amount}").reply()
+
+
+def addcat(context: MessageContext):
+    text = context.text
+    item_id = 27
+    items_data = info_worker.get_bot_values(context)['items'][item_id]
+    buttons = ButtonsBuilder()
+    buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    if text.isnumeric():
+        cat_id = int(text)
+    else:
+        cat_id = utils.search_cat(text)[0][1]
+
+    if item_id == 27:
+        found_cat = False
+        if cat_id in local_server.cats.values():
+            found_cat = True
+        if not found_cat:
+            return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
+
+    info_worker.add_to_cart(context, item_id, cat_id)
+    buttons.insert(0, "Начать взлом", "starthack")
+    buttons.insert(0, "Посмотреть корзину", "viewcart")
+    return answer.addText(f"Кот {cat_id} добавлен в корзину").reply()
 
 
 @command(".*", level="additem", weak=True)
 def additem(context: MessageContext):
     text = context.text
     item_id = int(context.fsm[0])
+    if item_id == 27:
+        return addcat(context)
     items_data = info_worker.get_bot_values(context)['items'][item_id]
 
     buttons = ButtonsBuilder()
@@ -174,7 +204,7 @@ def additem(context: MessageContext):
 
     result = re.search(r"\d+", text)
     if not result:
-        return answer.addText("Неправильно введено количество. Пожалуйста, напишите целое число.").reply()
+        return answer.addText("Неправильно введено количество. Пожалуйста, напишите целое число").reply()
 
     amount = int(result.group(0))
     if items_data[0] != "Нет":
