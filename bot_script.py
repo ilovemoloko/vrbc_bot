@@ -160,7 +160,8 @@ def chooseitem2(context: MessageContext):
     fsm_db.update_state(context, f"additem {item_id}")
     if item_id == 27:
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
-    answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
+    else:
+        answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
     answer.addText(f"Лимит: {limit_amount}").reply()
 
 
