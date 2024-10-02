@@ -577,7 +577,7 @@ def reg(context: MessageContext):
         fsm_db.set_local_user_id(context, local_user_id)
 
 
-@command(".*", level="first_msg", weak=True)
+@command(".*", level="first_msg")
 def start_message(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Увидеть каталог предметов", "cart").add("Меню функций", "menu")
