@@ -6,6 +6,7 @@ import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
 import os
 import sys
+import subprocess
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -51,6 +52,7 @@ def admin_panel(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("update bv", "update_bot_values")
     buttons.add("restart bot", "restart_bot")
+    buttons.add("unpack bot", "unpack_bot")
     answer.addText("!админка!!").reply()
 
 
@@ -68,6 +70,19 @@ def restart_bot(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.addText("Бот перезапускается").reply()
     os.execv(sys.executable, ['python'] + sys.argv)
+
+
+@command("unpack_bot")
+def unpack_bot(context: MessageContext):
+    if check_admin(context) is False: return
+    directory = "***REMOVED***"
+    command = ['7z', "x", "-aoa", "project.tar.gz"]
+
+    result = subprocess.run(command, cwd=directory, check=True, stdout=subprocess.PIPE)
+    result = result.stdout.decode('utf-8')
+
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText(f"{result}").reply()
 
 
 @command(r"сукорз [\s\S]*", replace_newline="\n")
