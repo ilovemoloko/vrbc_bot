@@ -810,7 +810,6 @@ def selectboost2(context: MessageContext):
     boosts_server = local_server.get_default_values()['boosts']
 
     buttons = ButtonsBuilder()
-    buttons.add("Вернуться", "boosts")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     boost_id = context.text
@@ -831,12 +830,14 @@ def selectboost2(context: MessageContext):
 def useboost(context: MessageContext):
     boost_id = context.text.split(" ", 1)[1]
     status = info_worker.use_boost(context, boost_id)
-    answer = MessageBuilder().setReplyMode(context)
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться", "boosts")
+    buttons.add("Перейти в корзину", "viewcart")
     if status:
         answer.addText("Буст использован!")
     else:
         answer.addText("Ошибка при использовании буста. Возможно, вы уже его используете")
-    fsm_db.update_state(context, "first_msg")
     answer.reply()
 
 
@@ -930,7 +931,6 @@ def buyboost(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("Назад", "boostshop")
     boost_id = context.text.split(" ", 1)[1]
-    fsm_db.update_state(context, "first_msg")
     boosts_store = local_server.get_default_values()['boosts_store']
     if boost_id not in boosts_store:
         return answer.addText("Такого буста нет в магазине").reply()
