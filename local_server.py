@@ -124,7 +124,9 @@ def get_wait_time():
 
 
 def hack_account(files, headers):
-    return requests.post(api_url, files=files, headers=headers)
+    res = requests.post(api_url, files=files, headers=headers)
+    print(res.text)
+    return res
 
 
 def update_variables():
