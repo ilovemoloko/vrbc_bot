@@ -162,7 +162,8 @@ def chooseitem2(context: MessageContext):
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
     else:
         answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
-    answer.addText(f"Лимит: {limit_amount}").reply()
+        answer.addText(f"Лимит: {limit_amount}")
+    answer.reply()
 
 
 def addcat(context: MessageContext):
