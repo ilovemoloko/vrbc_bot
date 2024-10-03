@@ -1102,7 +1102,7 @@ def boostshop(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
     buttons.add("Купить", "boostshop2")
-    buttons.add("Назад", "boosts")
+    buttons.add("Бусты", "boosts")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.addText("Список бустов для покупки:\n\n")
     boosts_server = local_server.get_default_values()['boosts']
