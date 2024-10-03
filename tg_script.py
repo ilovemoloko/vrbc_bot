@@ -22,7 +22,9 @@ class TgBotScript(sc.BotScript):
                 payload = b["payload"]
                 keyboard.add(telebot.types.InlineKeyboardButton(label, callback_data=payload))
 
-        self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+        self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard,
+                              link_preview_options=telebot.types.LinkPreviewOptions(
+                                  is_disabled=False, show_above_text=False))
 
     def _handle_action(self, action):
         res = None

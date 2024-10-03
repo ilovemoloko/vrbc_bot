@@ -43,14 +43,15 @@ class VkBotScript(sc.BotScript):
             peer_id=message.peerId,
             message=message.text,
             random_id=random.randint(-100000000, 10000000),
-            keyboard=keyboard
+            keyboard=keyboard,
+            dont_parse_links=False
         )
 
     def get_action(self):
         for action in self.longpoll.listen():
             if action.type == VkBotEventType.MESSAGE_NEW:
                 res = sc.MessageContext(self.get_name())
-                obj = action.object
+                obj = action.object['message']
                 peer_id = obj['peer_id']
                 user_id = obj['from_id']
                 text = obj['text']

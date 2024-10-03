@@ -305,7 +305,6 @@ def additem(context: MessageContext):
             answer.addText("Вы превысили лимит, поэтому в корзину будет добавлено максимальное количество\n")
 
     info_worker.add_to_cart(context, item_id, amount)
-    fsm_db.update_state(context, "*")
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
 

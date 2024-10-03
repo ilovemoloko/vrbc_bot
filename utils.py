@@ -63,7 +63,7 @@ def get_translation(text):
     if translator is None:
         return unidecode(text)
     try:
-        return translator.translate(text)
+        return translator.translate(text[:100])
     except Exception as e:
         print("TRANSLATOR ERROR", e)
         return unidecode(text)
