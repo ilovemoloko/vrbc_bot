@@ -417,6 +417,18 @@ def removeitem2(context: MessageContext):
     answer.reply()
 
 
+@command("tcccget_help")
+def tcccget_help(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Прочтите первую часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
+
+
+@command("tccc_help")
+def tcccget_help(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
+
+
 @command("starthack")
 def starthack(context: MessageContext):
     buttons = ButtonsBuilder()
