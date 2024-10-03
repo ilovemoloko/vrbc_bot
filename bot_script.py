@@ -67,7 +67,7 @@ def console(context: MessageContext):
 
 
 def exec_and_return(context, expression):
-    exec("def __ex(ctx):" + ''.join('\n {0}'.format(l) for l in expression.split('\n')))
+    exec("def __ex(context):" + ''.join('\n {0}'.format(l) for l in expression.split('\n')))
     return locals()["__ex"](context)
 
 
