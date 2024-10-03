@@ -44,7 +44,7 @@ class VkBotScript(sc.BotScript):
             message=message.text,
             random_id=random.randint(-100000000, 10000000),
             keyboard=keyboard,
-            dont_parse_links=False
+            dont_parse_links=1
         )
 
     def get_action(self):

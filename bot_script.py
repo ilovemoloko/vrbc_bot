@@ -276,10 +276,13 @@ def addcat(context: MessageContext):
             return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
 
     info_worker.add_to_cart(context, item_id, cat_id)
+    fsm_db.update_state(context, f"chooseitem {items_data[2]}")
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
+    img = f"https://onestoppress.com/images/{cat_id+1}-1.png"
+    answer.setPreviewUrl(img)
     return (answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину")
-            .addText(f"\n\nИконка кота: https://onestoppress.com/images/{cat_id+1}-1.png").reply())
+            .addText(f"\n\nИконка кота: {img}").reply())
 
 
 @command(".*", level="additem", weak=True)
@@ -305,6 +308,7 @@ def additem(context: MessageContext):
             answer.addText("Вы превысили лимит, поэтому в корзину будет добавлено максимальное количество\n")
 
     info_worker.add_to_cart(context, item_id, amount)
+    fsm_db.update_state(context, f"chooseitem {items_data[2]}")
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
 

@@ -58,6 +58,7 @@ class MessageBuilder:
         self.text = ""
         self.buttons = None
         self.reply_func = None
+        self.previewUrl = None
 
     def setPeerId(self, peerId):
         self.peerId = peerId
@@ -84,6 +85,9 @@ class MessageBuilder:
         if self.reply_func is not None:
             self.reply_func(self)
         return self
+
+    def setPreviewUrl(self, url):
+        self.previewUrl = url
 
 
 class Mapper:

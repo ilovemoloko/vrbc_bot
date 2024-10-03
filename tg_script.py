@@ -14,6 +14,9 @@ class TgBotScript(sc.BotScript):
         text = message.text
         buttons = message.buttons
         keyboard = None
+        url_preview = None
+        if message.previewUrl:
+            url_preview = message.previewUrl
 
         if buttons:
             keyboard = telebot.types.InlineKeyboardMarkup()
@@ -21,10 +24,11 @@ class TgBotScript(sc.BotScript):
                 label = b["text"]
                 payload = b["payload"]
                 keyboard.add(telebot.types.InlineKeyboardButton(label, callback_data=payload))
-
-        self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard,
-                              link_preview_options=telebot.types.LinkPreviewOptions(
-                                  is_disabled=False, show_above_text=False))
+        if url_preview:
+            return self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard,
+                                         link_preview_options=telebot.types.LinkPreviewOptions(
+                                             is_disabled=False, show_above_text=True, url=url_preview))
+        self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
 
     def _handle_action(self, action):
         res = None
@@ -37,7 +41,8 @@ class TgBotScript(sc.BotScript):
         elif action.content_type == "photo":
             text = action.caption
             photo_url = self.bot.get_file_url(action.photo[-1].file_id)
-            res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text).addPhoto(photo_url)
+            res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text).addPhoto(
+                photo_url)
 
         self.handle_action(res)
 
