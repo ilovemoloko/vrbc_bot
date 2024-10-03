@@ -120,7 +120,6 @@ def unpack_bot(context: MessageContext):
 @command("reverse_rite")
 def reverse_rite(context: MessageContext):
     if check_admin(context) is False: return
-    # ждем ввод инкури кода человека
     answer = MessageBuilder().setReplyMode(context)
     answer.addText("код аккаунта?").reply()
     fsm_db.update_state(context, "reverse_rite")
