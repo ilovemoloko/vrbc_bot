@@ -3,7 +3,7 @@ import time
 import local_server
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
 import os
 import sys
 import subprocess
@@ -53,7 +53,39 @@ def admin_panel(context: MessageContext):
     buttons.add("update bv", "update_bot_values")
     buttons.add("restart bot", "restart_bot")
     buttons.add("unpack bot", "unpack_bot")
+    buttons.add("reverse rite", "reverse_rite")
+    buttons.add("console", "console")
     answer.addText("!админка!!").reply()
+
+
+@command("console")
+def console(context: MessageContext):
+    if check_admin(context) is False: return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("вводи код").reply()
+    fsm_db.update_state(context, "console")
+
+
+def exec_and_return(context, expression):
+    exec("def __ex(ctx):" + ''.join('\n {0}'.format(l) for l in expression.split('\n')))
+    return locals()["__ex"](context)
+
+
+@command(".*", level="console")
+@level_on_error("*")
+def console_command(context: MessageContext):
+    if check_admin(context) is False: return
+    answer = MessageBuilder().setReplyMode(context)
+    text = context.text
+    result = exec_and_return(context, text)
+    result = str(result)
+    if result == "None":
+        result = "ок."
+    elif len(result) > 1024:
+        result = result[:1024] + "..."
+        print(result)
+    answer.addText(f"{result}").reply()
+    fsm_db.update_state(context, "*")
 
 
 @command("update_bot_values")
@@ -83,6 +115,37 @@ def unpack_bot(context: MessageContext):
 
     answer = MessageBuilder().setReplyMode(context)
     answer.addText(f"{result}").reply()
+
+
+@command("reverse_rite")
+def reverse_rite(context: MessageContext):
+    if check_admin(context) is False: return
+    # ждем ввод инкури кода человека
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("код аккаунта?").reply()
+    fsm_db.update_state(context, "reverse_rite")
+
+
+@command(".*", level="reverse_rite", weak=True)
+def reverse_rite_check(context: MessageContext):
+    if check_admin(context) is False: return
+    inq = context.text
+
+    answer = MessageBuilder().setReplyMode(context)
+    account = bca_db.get_account_info(inq)
+    if account is None:
+        fsm_db.update_state(context, "*")
+        return answer.addText("такого аккаунта нет").reply()
+
+    user_id, isjp, originalcode, disabled = account
+    if disabled:
+        fsm_db.update_state(context, "*")
+        return answer.addText("аккаунт уже реверснут").reply()
+
+    utils.recovery_rite(context, inq, originalcode)
+    bca_db.set_disabled(originalcode, False)
+    answer.addText("аккаунт реверснут").reply()
+    fsm_db.update_state(context, "*")
 
 
 @command(r"сукорз [\s\S]*", replace_newline="\n")
