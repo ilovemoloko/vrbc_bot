@@ -277,7 +277,7 @@ def addcat(context: MessageContext):
     info_worker.add_to_cart(context, item_id, cat_id)
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    return answer.addText(f"Кот {cat_id} добавлен в корзину").reply()
+    return answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
 
 
 @command(".*", level="additem", weak=True)
@@ -310,21 +310,30 @@ def additem(context: MessageContext):
     answer.addText(f"Предмет {items_data[1]} ({amount}) добавлен в корзину").reply()
 
 
+def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n -- ", show_id=True):
+    id_text = f" (ID: {item_id})" if show_id else ""
+    message.addText(f"{amount}", start=start)
+    message.addText(f"{item_name}", start=" ")
+    if item_id == 27:
+        message.addText(f"{local_server.cats_names[str(amount)]}", start=" ")
+    if show_id:
+        message.addText(f"{id_text}", start=" ")
+    return message
+
 def addCart(answer, cart, items_info, only_item=None, show_id=True):
     changed = False
     for i in cart:
         item_info = items_info[i]
         item_name = item_info[1]
         item_id = i
-        id_text = f" (ID: {item_id})" if show_id else ""
         if not (item_id == only_item or only_item is None):
             continue
         if isinstance(cart[i], list):
             for j in cart[i]:
-                answer.addText(f"{j} {item_name} {id_text}", start="\n -- ")
+                addItemStr(answer, j, item_name, item_id, show_id=show_id)
                 changed = True
         else:
-            answer.addText(f"{cart[i]} {item_name} {id_text}", start="\n -- ")
+            addItemStr(answer, cart[i], item_name, item_id, show_id=show_id)
             changed = True
     return changed
 
