@@ -194,10 +194,8 @@ def fuzzy_search(query, data, threshold=70, limit=1):
     query_latin = to_latin(query)
     if query_latin != query:
         query_latin = get_translation(query)
-    print(query, "->", query_latin)
     keys = list(data.keys())
     results = process.extract(query_latin, keys, limit=limit)
-    print(results)
     best_matches = [result for result in results if result[1] >= threshold]
     return [(key, data[key]) for key, score in best_matches]
 

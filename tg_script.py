@@ -25,9 +25,7 @@ class TgBotScript(sc.BotScript):
                 payload = b["payload"]
                 keyboard.add(telebot.types.InlineKeyboardButton(label, callback_data=payload))
         if url_preview:
-            return self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard,
-                                         link_preview_options=telebot.types.LinkPreviewOptions(
-                                             is_disabled=False, show_above_text=True, url=url_preview))
+            return self.bot.send_photo(chat_id=chat_id, caption=text, reply_markup=keyboard, photo=url_preview)
         self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
 
     def _handle_action(self, action):

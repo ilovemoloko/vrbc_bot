@@ -279,7 +279,7 @@ def addcat(context: MessageContext):
     fsm_db.update_state(context, f"chooseitem {items_data[2]}")
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    img = f"https://onestoppress.com/images/{cat_id+1}-1.png"
+    img = "https://onestoppress.com/images/%03d-1.png" % (cat_id-1)
     answer.setPreviewUrl(img)
     return (answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину")
             .addText(f"\n\nИконка кота: {img}").reply())
