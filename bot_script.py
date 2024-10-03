@@ -436,6 +436,18 @@ def starthack(context: MessageContext):
     buttons.buttons = []
     answer.reply()
 
+    user_bot_values = info_worker.get_bot_values(context)['default_user']
+
+    current_time = int(time.time())
+    user_last_use = info_worker.get_value(context, 'last_use')
+    user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)
+    next_use = user_cooldown - (current_time - user_last_use)
+
+    if next_use > 0:
+        buttons.add("Вернуться в корзину", "viewcart")
+        fsm_db.update_state(context, "starthack")
+        return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
+
     uses_count = info_worker.get_uses(context)
     if uses_count == 0:
         buttons.add("Где получить коды?", "tcccget_help")
