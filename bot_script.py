@@ -265,19 +265,21 @@ def addcat(context: MessageContext):
     if text.isnumeric():
         cat_id = int(text)
     else:
-        cat_id = utils.search_cat(text)[0][1]
+        cat_id = utils.search_cat(text)
+        if len(cat_id) == 0:
+            cat_id = -1
+        else:
+            cat_id = cat_id[0][1]
 
     if item_id == 27:
-        found_cat = False
-        if cat_id in local_server.cats.values():
-            found_cat = True
-        if not found_cat:
+        if not (str(cat_id) in local_server.cats_names):
             return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
 
     info_worker.add_to_cart(context, item_id, cat_id)
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    return answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
+    return (answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину")
+            .addText(f"\n\nИконка кота: https://onestoppress.com/images/{cat_id+1}-1.png").reply())
 
 
 @command(".*", level="additem", weak=True)
@@ -319,6 +321,7 @@ def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n --
     if show_id:
         message.addText(f"{id_text}", start=" ")
     return message
+
 
 def addCart(answer, cart, items_info, only_item=None, show_id=True):
     changed = False

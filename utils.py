@@ -9,6 +9,7 @@ import struct
 import local_server
 from fuzzywuzzy import process
 from unidecode import unidecode
+from translate import Translator
 from db_worker import bca_db, info_worker, fsm_db, localuser_db
 from script_base import MessageContext
 import sys
@@ -47,6 +48,25 @@ def extract_codes(input_string):
     pattern = re.compile(regex)
     hex_code, numeric_code = re.findall(pattern, input_string)[0]
     return hex_code, numeric_code
+
+
+translator = None
+try:
+    translator = Translator(from_lang="ru", to_lang="en")
+    translator.translate("тест")
+except Exception as e:
+    print("TRANSLATOR ERROR", e)
+    translator = None
+
+
+def get_translation(text):
+    if translator is None:
+        return unidecode(text)
+    try:
+        return translator.translate(text)
+    except Exception as e:
+        print("TRANSLATOR ERROR", e)
+        return unidecode(text)
 
 
 def send_ds_message(channel_id, text):
@@ -159,18 +179,31 @@ def to_latin(text):
     return unidecode(text)
 
 
-def fuzzy_search(query, data, threshold=70):
+latinized_cats = {}
+
+
+def get_latinized_cats():
+    global latinized_cats
+    if local_server.updated_cats:
+        latinized_cats = {to_latin(key): value for key, value in local_server.cats.items()}
+        local_server.updated_cats = False
+    return latinized_cats
+
+
+def fuzzy_search(query, data, threshold=70, limit=1):
     query_latin = to_latin(query)
-    data_latin = {to_latin(key): value for key, value in data.items()}
-    keys = list(data_latin.keys())
-    results = process.extract(query_latin, keys, limit=1)
+    if query_latin != query:
+        query_latin = get_translation(query)
+    print(query, "->", query_latin)
+    keys = list(data.keys())
+    results = process.extract(query_latin, keys, limit=limit)
     print(results)
     best_matches = [result for result in results if result[1] >= threshold]
-    return [(key, data_latin[key]) for key, score in best_matches]
+    return [(key, data[key]) for key, score in best_matches]
 
 
 def search_cat(query):
-    return fuzzy_search(query, local_server.cats)
+    return fuzzy_search(query, get_latinized_cats())
 
 
 def add_account(context, user_id, account):

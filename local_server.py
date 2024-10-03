@@ -129,8 +129,11 @@ def hack_account(files, headers):
     return res
 
 
+updated_cats = False
+
+
 def update_variables():
-    global bot_variables, cats, cats_names
+    global bot_variables, cats, cats_names, updated_cats
     r = requests.get(get_variables_url)
     bot_variables = r.json()
 
@@ -146,6 +149,8 @@ def update_variables():
     cats_vars = r.json()
     cats = cats_vars['all_forms']
     cats_names = cats_vars['cat_names']
+
+    updated_cats = True
 
     return True
 
