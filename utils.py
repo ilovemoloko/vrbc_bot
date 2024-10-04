@@ -161,13 +161,13 @@ def humanize_time(seconds):
     minutes, seconds = divmod(seconds, 60)
     result = ""
     if days > 0:
-        result += f"{days} дн."
+        result += f"{days} дн. "
     if hours > 0:
-        result += f"{hours} ч."
+        result += f"{hours} ч. "
     if minutes > 0:
-        result += f"{minutes} мин."
+        result += f"{minutes} мин. "
     if seconds > 0:
-        result += f"{seconds} сек."
+        result += f"{seconds} сек. "
     return result
 
 
