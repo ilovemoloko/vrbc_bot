@@ -111,6 +111,7 @@ class BotScript:
         self.commands = {}
         self.mapper = Mapper(self.commands)
         import bot_script
+        self.bot = bot_script.bot
         for cmd in bot_script.commands:
             level = cmd[0]
             pattern = cmd[1]
@@ -156,6 +157,8 @@ class BotScript:
 
     def handle_action(self, action):
         try:
+            if not self.bot.running:
+                return
             if isinstance(action, MessageContext):
                 if action.text is None:
                     action.text = ""

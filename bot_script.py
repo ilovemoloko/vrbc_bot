@@ -10,18 +10,17 @@ debug = False
 
 
 class Bot(metaclass=SingletonMeta):
-    def __init__(self, commands, thread_name="botcmd"):
+    def __init__(self, commands):
         self.commands = commands
-        self.thread_name = thread_name
+        self.running = True
 
-    def command(self, pattern, level="*", weak=False, ignore_case=False, replace_newline=" ", dont_wait=False):
+    def stop(self):
+        self.running = False
+
+    def command(self, pattern, level="*", weak=False, ignore_case=False, replace_newline=" "):
         def decorator(func):
             def wrapper(*args, **kwargs):
-                res = self.thread_name
-                if dont_wait:
-                    res = None
-                func(*args, **kwargs)
-                return res
+                return func(*args, **kwargs)
             self.commands.append((level, pattern, wrapper, weak, ignore_case, replace_newline))
             return wrapper
         return decorator

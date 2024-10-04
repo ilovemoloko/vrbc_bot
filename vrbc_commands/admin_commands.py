@@ -72,6 +72,7 @@ def restart_bot(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.setText("Ожидание конца процессов...").reply()
 
+    bot.stop()
     me_thread = threading.current_thread().name
     while True:
         time.sleep(0.1)
