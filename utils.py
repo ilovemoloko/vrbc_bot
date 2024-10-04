@@ -294,3 +294,8 @@ def recovery_rite(context: MessageContext, old_inq, new_inq):
     bca_db.add_account(user_id, new_inq, isjp, old_inq)
     bca_db.set_disabled(old_inq, True)
     local_server.change_code(user_id, old_inq, new_inq)
+
+
+def exec_and_return(context, expression):
+    exec("def __ex(context):" + ''.join('\n {0}'.format(l) for l in expression.split('\n')))
+    return locals()["__ex"](context)

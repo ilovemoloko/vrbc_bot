@@ -1,0 +1,145 @@
+from bot_script import bot, level_on_error, check_admin
+from script_base import MessageBuilder, ButtonsBuilder, MessageContext
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
+import local_server
+import utils
+import os
+import sys
+import subprocess
+
+fsm_db = FSMDatabase()
+local_user_db = LocalUsersDatabase()
+info_worker = DBInfoWorker()
+bca_db = bca_db()
+
+
+@bot.command("ыыы 3")
+def admin_panel(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("update bv", "update_bot_values")
+    buttons.add("restart bot", "restart_bot")
+    buttons.add("unpack bot", "unpack_bot")
+    buttons.add("reverse rite", "reverse_rite")
+    buttons.add("console", "console")
+    answer.addText("!админка!!").reply()
+
+
+@bot.command("console")
+def console(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("вводи код").reply()
+    fsm_db.update_state(context, "console")
+
+
+@bot.command(".*", level="console")
+@level_on_error("*")
+def console_command(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    text = context.text
+    result = utils.exec_and_return(context, text)
+    result = str(result)
+    if result == "None":
+        result = "ок."
+    elif len(result) > 1024:
+        result = result[:1024] + "..."
+        print(result)
+    answer.addText(f"{result}").reply()
+    fsm_db.update_state(context, "*")
+
+
+@bot.command("update_bot_values")
+def update_bot_values(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    local_server.update_variables()
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Бот обновлен").reply()
+
+
+@bot.command("restart_bot")
+def restart_bot(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Бот перезапускается").reply()
+    os.execv(sys.executable, ['python'] + sys.argv)
+
+
+@bot.command("unpack_bot")
+def unpack_bot(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    directory = "***REMOVED***"
+    command = ['7z', "x", "-aoa", "project.tar.gz"]
+
+    result = subprocess.run(command, cwd=directory, check=True, stdout=subprocess.PIPE)
+    result = result.stdout.decode('utf-8')
+
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText(f"{result}").reply()
+
+
+@bot.command("reverse_rite")
+def reverse_rite(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("код аккаунта?").reply()
+    fsm_db.update_state(context, "reverse_rite")
+
+
+@bot.command(".*", level="reverse_rite", weak=True)
+def reverse_rite_check(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    inq = context.text
+
+    answer = MessageBuilder().setReplyMode(context)
+    account = bca_db.get_account_info(inq)
+    if account is None:
+        fsm_db.update_state(context, "*")
+        return answer.addText("такого аккаунта нет").reply()
+
+    user_id, isjp, originalcode, disabled = account
+    if disabled:
+        fsm_db.update_state(context, "*")
+        return answer.addText("аккаунт уже реверснут").reply()
+
+    utils.recovery_rite(context, inq, originalcode)
+    bca_db.set_disabled(originalcode, False)
+    answer.addText("аккаунт реверснут").reply()
+    fsm_db.update_state(context, "*")
+
+
+@bot.command(r"сукорз [\s\S]*", replace_newline="\n")
+def sucart(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться в корзину", "viewcart")
+    newcart_str = context.text.split("сукорз", 1)[1]
+    for item in newcart_str.splitlines():
+        item_id, amount = item.split()
+        info_worker.add_to_cart(context, int(item_id), int(amount), ignore_max=True)
+    answer.addText("Корзина обновлена").reply()
+
+
+@bot.command("инфо")
+def info(context: MessageContext):
+    local_user_id = fsm_db.get_local_user_id(context)
+    answer = MessageBuilder().setReplyMode(context)
+    if local_user_id is None:
+        answer.setText("У вас пока что нет аккаунта!")
+    else:
+        user_info = local_user_db.get_info(context)
+        fsm_level = fsm_db.get_state(context)
+        answer.setText(f"Ваша информация об аккаунте:\n\n{user_info}").addText(f"fsmstate = {fsm_level}")
+    answer.reply()

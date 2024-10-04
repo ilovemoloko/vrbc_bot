@@ -1,1 +1,7 @@
-print("init lol")
+import admin_commands
+import cart_commands
+import process_commands
+import recovery_commands
+import menu_commands
+import donate_commands
+import discord_commands
