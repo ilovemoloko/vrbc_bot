@@ -439,7 +439,7 @@ def tcccget_help(context: MessageContext):
 
 
 @command("tccc_help")
-def tcccget_help(context: MessageContext):
+def tccc_help(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
 
@@ -602,6 +602,16 @@ def starthack(context: MessageContext, retry=False):
         answer.setText(f"Произошла ошибка. Причина: {hack_result['msg']}").setButtons(buttons)
 
     return answer.reply()
+
+
+@command("tccc_help", level="first_msg")
+def tccc_help_fm(context: MessageContext):
+    return tccc_help(context)
+
+
+@command("reducecd", level="first_msg")
+def reducecd_fm(context: MessageContext):
+    return reducecd(context)
 
 
 @command(".*", level="hack_process")

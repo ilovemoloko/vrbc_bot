@@ -68,6 +68,28 @@ class FSMDatabase(metaclass=SingletonMeta):
 
     @locked
     @connected
+    def delete_by_userid(self, user_id, src="vk"):
+        user_id_combined = f"{src}_{user_id}"
+        self.conn.execute('''
+            DELETE FROM users WHERE user_id = ?
+        ''', (user_id_combined,))
+        self.conn.commit()
+
+    @locked
+    @connected
+    def get_by_userid(self, user_id, src="vk"):
+        user_id_combined = f"{src}_{user_id}"
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT user_id, state, local_uid, brawl_data FROM users WHERE user_id = ?
+        ''', (user_id_combined,))
+        result = cursor.fetchone()
+        if result is None:
+            return -1
+        return result
+
+    @locked
+    @connected
     def add_user(self, context, state):
         user_id_combined = f"{context.src}_{context.user_id}"
         self.conn.execute('''
