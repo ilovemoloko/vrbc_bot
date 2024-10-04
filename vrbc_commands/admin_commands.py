@@ -1,6 +1,6 @@
 from bot_script import bot, level_on_error, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 import local_server
 import utils
 import os
@@ -10,7 +10,7 @@ import subprocess
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
-bca_db = bca_db()
+bca_db = BCAccountDB()
 
 
 @bot.command("ыыы 3")

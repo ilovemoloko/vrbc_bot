@@ -1,8 +1,8 @@
 from bot_script import bot, level_on_error, generate_cart_str
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
-from cart_commands import addCart
-from donate_commands import reducecd
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from vrbc_commands.cart_commands import addCart
+from vrbc_commands.donate_commands import reducecd
 import local_server
 import utils
 import time
@@ -10,7 +10,7 @@ import time
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
-bca_db = bca_db()
+bca_db = BCAccountDB()
 
 
 @bot.command("tcccget_help")

@@ -1,11 +1,11 @@
 from bot_script import bot, generate_cart_str
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
-bca_db = bca_db()
+bca_db = BCAccountDB()
 
 
 @bot.command("menu")

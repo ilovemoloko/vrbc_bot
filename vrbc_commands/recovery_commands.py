@@ -1,7 +1,7 @@
 from bot_script import bot, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
-from menu_commands import recovery_menu
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from vrbc_commands.menu_commands import recovery_menu
 import local_server
 import utils
 import time
@@ -10,7 +10,7 @@ import re
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
-bca_db = bca_db()
+bca_db = BCAccountDB()
 
 
 @bot.command("save_account")
