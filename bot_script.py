@@ -1120,6 +1120,8 @@ def boostshop(context: MessageContext):
     buttons.add("Купить", "boostshop2")
     buttons.add("Бусты", "boosts")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    balance = info_worker.get_value(context, 'donate')
+    answer.addText(f"Ваш баланс: {balance}₽")
     answer.addText("Список бустов для покупки:\n\n")
     boosts_server = local_server.get_default_values()['boosts']
     boosts_store = local_server.get_default_values()['boosts_store']
