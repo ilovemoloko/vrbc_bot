@@ -6,6 +6,8 @@ import utils
 import os
 import sys
 import subprocess
+import threading
+import time
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -68,7 +70,17 @@ def restart_bot(context: MessageContext):
     if check_admin(context) is False:
         return
     answer = MessageBuilder().setReplyMode(context)
-    answer.addText("Бот перезапускается").reply()
+    answer.setText("Ожидание конца процессов...").reply()
+
+    me_thread = threading.current_thread().name
+    while True:
+        time.sleep(0.1)
+        threads = threading.enumerate()
+        if any((("handle_action" in thread.name) and (thread.name != me_thread)) for thread in threads):
+            continue
+        break
+
+    answer.setText("Перезапускаю бота").reply()
     os.execv(sys.executable, ['python'] + sys.argv)
 
 
@@ -81,6 +93,7 @@ def unpack_bot(context: MessageContext):
 
     result = subprocess.run(command, cwd=directory, check=True, stdout=subprocess.PIPE)
     result = result.stdout.decode('utf-8')
+
 
     answer = MessageBuilder().setReplyMode(context)
     answer.addText(f"{result}").reply()

@@ -1,4 +1,3 @@
-import threading
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db, SingletonMeta
@@ -11,24 +10,26 @@ debug = False
 
 
 class Bot(metaclass=SingletonMeta):
-    def __init__(self, commands):
+    def __init__(self, commands, thread_name="botcmd"):
         self.commands = commands
+        self.thread_name = thread_name
 
     def command(self, pattern, level="*", weak=False, ignore_case=False, replace_newline=" ", dont_wait=False):
         def decorator(func):
-            self.commands.append((level, pattern, func, weak, ignore_case, replace_newline))
-
             def wrapper(*args, **kwargs):
-                if not dont_wait:
-                    th_name = f"botcmd"
-                    threading.current_thread().name = th_name
-                return func(*args, **kwargs)
+                res = self.thread_name
+                if dont_wait:
+                    res = None
+                func(*args, **kwargs)
+                return res
+            self.commands.append((level, pattern, wrapper, weak, ignore_case, replace_newline))
             return wrapper
         return decorator
 
 
 def initialize_bot_commands():
     import vrbc_commands
+    vrbc_commands.lets_go = True
 
 
 bot = Bot(commands)
