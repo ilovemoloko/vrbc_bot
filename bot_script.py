@@ -1,9 +1,10 @@
 import re
 import time
+import threading
 import local_server
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 import utils
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db, SingletonMeta
 import os
 import sys
 import subprocess
@@ -15,12 +16,25 @@ commands = []
 debug = False
 
 
-def command(pattern, level="*", weak=False, ignore_case=False, replace_newline=" "):
-    def decorator(func):
-        commands.append((level, pattern, func, weak, ignore_case, replace_newline))
-        return func
+class Bot(metaclass=SingletonMeta):
+    def __init__(self, commands):
+        self.commands = commands
 
-    return decorator
+    def command(self, pattern, level="*", weak=False, ignore_case=False, replace_newline=" ", dont_wait=False):
+        def decorator(func):
+            self.commands.append((level, pattern, func, weak, ignore_case, replace_newline))
+
+            def wrapper(*args, **kwargs):
+                if not dont_wait:
+                    th_name = f"botcmd_{func.__name__}"
+                    threading.current_thread().name = th_name
+                    print(th_name)
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+
+
+bot = Bot(commands)
 
 
 def level_on_error(level):
@@ -45,7 +59,7 @@ def check_admin(context: MessageContext):
     return True
 
 
-@command("ыыы 3")
+@bot.command("ыыы 3")
 def admin_panel(context: MessageContext):
     if check_admin(context) is False: return
     buttons = ButtonsBuilder()
@@ -58,7 +72,7 @@ def admin_panel(context: MessageContext):
     answer.addText("!админка!!").reply()
 
 
-@command("console")
+@bot.command("console")
 def console(context: MessageContext):
     if check_admin(context) is False: return
     answer = MessageBuilder().setReplyMode(context)
@@ -71,7 +85,7 @@ def exec_and_return(context, expression):
     return locals()["__ex"](context)
 
 
-@command(".*", level="console")
+@bot.command(".*", level="console")
 @level_on_error("*")
 def console_command(context: MessageContext):
     if check_admin(context) is False: return
@@ -88,7 +102,7 @@ def console_command(context: MessageContext):
     fsm_db.update_state(context, "*")
 
 
-@command("update_bot_values")
+@bot.command("update_bot_values")
 def update_bot_values(context: MessageContext):
     if check_admin(context) is False: return
     local_server.update_variables()
@@ -96,7 +110,7 @@ def update_bot_values(context: MessageContext):
     answer.addText("Бот обновлен").reply()
 
 
-@command("restart_bot")
+@bot.command("restart_bot")
 def restart_bot(context: MessageContext):
     if check_admin(context) is False: return
     answer = MessageBuilder().setReplyMode(context)
@@ -104,7 +118,7 @@ def restart_bot(context: MessageContext):
     os.execv(sys.executable, ['python'] + sys.argv)
 
 
-@command("unpack_bot")
+@bot.command("unpack_bot")
 def unpack_bot(context: MessageContext):
     if check_admin(context) is False: return
     directory = "***REMOVED***"
@@ -117,7 +131,7 @@ def unpack_bot(context: MessageContext):
     answer.addText(f"{result}").reply()
 
 
-@command("reverse_rite")
+@bot.command("reverse_rite")
 def reverse_rite(context: MessageContext):
     if check_admin(context) is False: return
     answer = MessageBuilder().setReplyMode(context)
@@ -125,7 +139,7 @@ def reverse_rite(context: MessageContext):
     fsm_db.update_state(context, "reverse_rite")
 
 
-@command(".*", level="reverse_rite", weak=True)
+@bot.command(".*", level="reverse_rite", weak=True)
 def reverse_rite_check(context: MessageContext):
     if check_admin(context) is False: return
     inq = context.text
@@ -147,7 +161,7 @@ def reverse_rite_check(context: MessageContext):
     fsm_db.update_state(context, "*")
 
 
-@command(r"сукорз [\s\S]*", replace_newline="\n")
+@bot.command(r"сукорз [\s\S]*", replace_newline="\n")
 def sucart(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -160,7 +174,7 @@ def sucart(context: MessageContext):
     answer.addText("Корзина обновлена").reply()
 
 
-@command("инфо")
+@bot.command("инфо")
 def info(context: MessageContext):
     local_user_id = fsm_db.get_local_user_id(context)
     answer = MessageBuilder().setReplyMode(context)
@@ -173,7 +187,7 @@ def info(context: MessageContext):
     answer.reply()
 
 
-@command(["корзина", "cart"])
+@bot.command(["корзина", "cart"])
 def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -186,7 +200,7 @@ def cart(context: MessageContext):
     answer.reply()
 
 
-@command("selectcategory \\d+")
+@bot.command("selectcategory \\d+")
 def selectcategory(context: MessageContext):
     fsm_db.update_state(context, "*")
 
@@ -207,7 +221,7 @@ def selectcategory(context: MessageContext):
     answer.reply()
 
 
-@command("chooseitem \\d+")
+@bot.command("chooseitem \\d+")
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -223,7 +237,7 @@ def chooseitem(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@command(".*", level="chooseitem", weak=True)
+@bot.command(".*", level="chooseitem", weak=True)
 def chooseitem2(context: MessageContext):
     text = context.text
     category_id = context.fsm[0]
@@ -285,7 +299,7 @@ def addcat(context: MessageContext):
             .addText(f"\n\nИконка кота: {img}").reply())
 
 
-@command(".*", level="additem", weak=True)
+@bot.command(".*", level="additem", weak=True)
 def additem(context: MessageContext):
     text = context.text
     item_id = int(context.fsm[0])
@@ -344,7 +358,7 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
     return changed
 
 
-@command("viewcart")
+@bot.command("viewcart")
 def viewcart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -370,7 +384,7 @@ def viewcart(context: MessageContext):
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
-@command("removeitem")
+@bot.command("removeitem")
 def removeitem(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
@@ -384,7 +398,7 @@ def removeitem(context: MessageContext):
     answer.reply()
 
 
-@command(".*", level="removeitem", weak=True)
+@bot.command(".*", level="removeitem", weak=True)
 def removeitem(context: MessageContext):
     regex = re.search(r"\d+", context.text)
     buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
@@ -412,7 +426,7 @@ def removeitem(context: MessageContext):
     answer.addText("Предмет удален из корзины").reply()
 
 
-@command(".*", level="removeitem2", weak=True)
+@bot.command(".*", level="removeitem2", weak=True)
 def removeitem2(context: MessageContext):
     regex = re.search(r"\d+", context.text)
     buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
@@ -432,19 +446,19 @@ def removeitem2(context: MessageContext):
     answer.reply()
 
 
-@command("tcccget_help")
+@bot.command("tcccget_help")
 def tcccget_help(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.addText("Прочтите первую часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
 
 
-@command("tccc_help")
+@bot.command("tccc_help")
 def tccc_help(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
 
 
-@command("starthack")
+@bot.command("starthack")
 def starthack(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -495,7 +509,7 @@ def generate_cart_str(cart_dict):
     return cart_str
 
 
-@command(".*", level="starthack", weak=True)
+@bot.command(".*", level="starthack", weak=True)
 @level_on_error("starthack")
 def starthack(context: MessageContext, retry=False):
     fsm_db.update_state(context, "hack_process")
@@ -604,22 +618,22 @@ def starthack(context: MessageContext, retry=False):
     return answer.reply()
 
 
-@command("tccc_help", level="first_msg")
+@bot.command("tccc_help", level="first_msg")
 def tccc_help_fm(context: MessageContext):
     return tccc_help(context)
 
 
-@command("reducecd", level="first_msg")
+@bot.command("reducecd", level="first_msg")
 def reducecd_fm(context: MessageContext):
     return reducecd(context)
 
 
-@command(".*", level="hack_process")
+@bot.command(".*", level="hack_process")
 def hack_process(context: MessageContext):
     MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
 
 
-@command("save_account")
+@bot.command("save_account")
 def save_account(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться в корзину", "viewcart")
@@ -631,7 +645,7 @@ def save_account(context: MessageContext):
     fsm_db.update_state(context, "save_account")
 
 
-@command(".*", level="save_account", weak=True)
+@bot.command(".*", level="save_account", weak=True)
 def save_account_input(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -680,7 +694,7 @@ def save_account_input(context: MessageContext):
     fsm_db.update_state(context, "first_msg")
 
 
-@command("recovery_account")
+@bot.command("recovery_account")
 def recovery_account(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -713,7 +727,7 @@ def recovery_account(context: MessageContext):
         fsm_db.update_state(context, "select_account")
 
 
-@command(".*", level="select_account", weak=True)
+@bot.command(".*", level="select_account", weak=True)
 def select_account(context: MessageContext, send_start_msg=True):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -739,13 +753,13 @@ def select_account(context: MessageContext, send_start_msg=True):
     fsm_db.update_state(context, f"select_account_conf {int(send_start_msg)} {old_inq}")
 
 
-@command("recovery_menu", level="select_account_conf")
+@bot.command("recovery_menu", level="select_account_conf")
 def recovery_menu_back_conf(context: MessageContext):
     fsm_db.update_state(context, "*")
     recovery_menu(context)
 
 
-@command(".*", level="select_account_conf")
+@bot.command(".*", level="select_account_conf")
 def select_account_conf(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -791,7 +805,7 @@ def reg(context: MessageContext):
         fsm_db.set_local_user_id(context, local_user_id)
 
 
-@command(".*", level="first_msg")
+@bot.command(".*", level="first_msg")
 def start_message(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Увидеть каталог предметов", "cart").add("Меню функций", "menu")
@@ -803,12 +817,12 @@ def start_message(context: MessageContext):
     fsm_db.update_state(context, "*")
 
 
-@command("начать", ignore_case=True)
+@bot.command("начать", ignore_case=True)
 def start_message_2(context: MessageContext):
     start_message(context)
 
 
-@command("menu")
+@bot.command("menu")
 def menu_message(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Восстановление/Сохранение аккаунтов", "recovery_menu")
@@ -820,7 +834,7 @@ def menu_message(context: MessageContext):
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
 
 
-@command("presets")
+@bot.command("presets")
 def presets(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -831,7 +845,7 @@ def presets(context: MessageContext):
     message.setText("В этом меню вы можете сохранять шаблон корзины, чтобы потом быстро добавлять предметы в свой список").reply()
 
 
-@command("add_last_cart")
+@bot.command("add_last_cart")
 def add_last_cart(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -849,7 +863,7 @@ def add_last_cart(context: MessageContext):
     message.setText(f"Предметы из прошлой корзины ({n} штук) добавлены").reply()
 
 
-@command("presets_list")
+@bot.command("presets_list")
 def presets_list(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -864,7 +878,7 @@ def presets_list(context: MessageContext):
     message.reply()
 
 
-@command("add_preset_to_cart")
+@bot.command("add_preset_to_cart")
 def add_preset_to_cart(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться", "presets_list")
@@ -873,7 +887,7 @@ def add_preset_to_cart(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@command(".*", level="add_preset_to_cart", weak=True)
+@bot.command(".*", level="add_preset_to_cart", weak=True)
 def add_preset_to_cart_2(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -893,7 +907,7 @@ def add_preset_to_cart_2(context: MessageContext):
     answer.addText("Некорректный номер пресета").reply()
 
 
-@command("change_preset")
+@bot.command("change_preset")
 def change_preset(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться", "presets_list")
@@ -902,7 +916,7 @@ def change_preset(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@command(".*", level="change_preset", weak=True)
+@bot.command(".*", level="change_preset", weak=True)
 def change_preset_2(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -916,7 +930,7 @@ def change_preset_2(context: MessageContext):
         answer.addText("Некорректный номер пресета").reply()
 
 
-@command(".*", level="change_preset_name", weak=True)
+@bot.command(".*", level="change_preset_name", weak=True)
 def change_preset_name(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -937,7 +951,7 @@ def change_preset_name(context: MessageContext):
         return answer.addText("Внутренняя ошибка.").reply()
 
 
-@command("recovery_menu")
+@bot.command("recovery_menu")
 def recovery_menu(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Восстановить аккаунт", "recovery_account")
@@ -957,7 +971,7 @@ def addBoost(message: MessageBuilder, boost, boost_id, amount=None, desc=False):
         message.addText(f"Осталось использований: {amount}")
 
 
-@command("boosts")
+@bot.command("boosts")
 def boosts(context: MessageContext):
     boosts = info_worker.get_value(context, 'boosts')
     boosts_server = local_server.get_default_values()['boosts']
@@ -990,7 +1004,7 @@ def boosts(context: MessageContext):
     answer.reply()
 
 
-@command("passiveboosts")
+@bot.command("passiveboosts")
 def passiveboosts(context: MessageContext):
     boosts = info_worker.get_value(context, 'boosts')
     boosts_server = local_server.get_default_values()['boosts']
@@ -1009,7 +1023,7 @@ def passiveboosts(context: MessageContext):
     answer.reply()
 
 
-@command("selectboost")
+@bot.command("selectboost")
 def selectboost(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Вернуться", "boosts")
@@ -1018,7 +1032,7 @@ def selectboost(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@command(".*", level="selectboost", weak=True)
+@bot.command(".*", level="selectboost", weak=True)
 def selectboost2(context: MessageContext):
     boosts = info_worker.get_value(context, 'boosts')
     boosts_server = local_server.get_default_values()['boosts']
@@ -1040,7 +1054,7 @@ def selectboost2(context: MessageContext):
     answer.reply()
 
 
-@command("useboost .*")
+@bot.command("useboost .*")
 def useboost(context: MessageContext):
     boost_id = context.text.split(" ", 1)[1]
     status = info_worker.use_boost(context, boost_id)
@@ -1055,7 +1069,7 @@ def useboost(context: MessageContext):
     answer.reply()
 
 
-@command("reducecd")
+@bot.command("reducecd")
 def reducecd(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -1066,7 +1080,7 @@ def reducecd(context: MessageContext):
     answer.reply()
 
 
-@command("donate")
+@bot.command("donate")
 def donate(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -1088,7 +1102,7 @@ def donate(context: MessageContext):
     answer.reply()
 
 
-@command("donate2")
+@bot.command("donate2")
 def donate2(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "reducecd")
@@ -1097,7 +1111,7 @@ def donate2(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@command(r"\d+", level="donate2", weak=True)
+@bot.command(r"\d+", level="donate2", weak=True)
 def donate3(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "reducecd")
@@ -1113,7 +1127,7 @@ def donate3(context: MessageContext):
     fsm_db.update_state(context, "first_msg")
 
 
-@command("boostshop")
+@bot.command("boostshop")
 def boostshop(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -1132,7 +1146,7 @@ def boostshop(context: MessageContext):
     answer.reply()
 
 
-@command("boostshop2")
+@bot.command("boostshop2")
 def boostshop2(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "boostshop")
@@ -1141,7 +1155,7 @@ def boostshop2(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@command(r"buyboost .*", level="boostshop2", weak=True)
+@bot.command(r"buyboost .*", level="boostshop2", weak=True)
 def buyboost(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -1167,7 +1181,7 @@ def buyboost(context: MessageContext):
                    "использовать этот буст во разделе \"Бусты\"").reply()
 
 
-@command(r".*", level="boostshop2", weak=True)
+@bot.command(r".*", level="boostshop2", weak=True)
 def boostshop3(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "boostshop")
@@ -1187,7 +1201,7 @@ def boostshop3(context: MessageContext):
     answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()
 
 
-@command(r"startfight .*")
+@bot.command(r"startfight .*")
 def start_fight(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     message = "я не хочу пока тестировать как у тебя работает внедрение новых команд с тз синтаксиса"
@@ -1209,14 +1223,14 @@ def start_fight(context: MessageContext):
     #код дс бота кстати полностью готов нужно просто чут чут поиграться с изображениями (и здесь тоже)
 
 
-@command(r"find .*")
+@bot.command(r"find .*")
 def find_cat(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     query = context.text.split(" ", 1)[1]
     answer.setText(str(utils.search_cat(query))).reply()
 
 
-@command(r".*",
+@bot.command(r".*",
          level="fight")  # интересно а как сделать так чтоб любое сообщение не принадлежащее к основному протоколу шло в дискорд
 def complain(context: MessageContext):
     # я подозреваю что нужно подобную ноунейм команду просто в конец пихнуть
