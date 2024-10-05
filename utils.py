@@ -190,11 +190,12 @@ def get_latinized_cats():
     return latinized_cats
 
 
-def fuzzy_search(query, data, threshold=70, limit=1):
+def fuzzy_search(query, data, threshold=70, limit=8):
     query_latin = to_latin(query)
     if query_latin != query:
         query_latin = get_translation(query)
     keys = list(data.keys())
+    print("ищу", query_latin)
     results = process.extract(query_latin, keys, limit=limit)
     best_matches = [result for result in results if result[1] >= threshold]
     return [(key, data[key]) for key, score in best_matches]
@@ -257,7 +258,7 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
 
         info_fin["active_boosts"].extend(info["active_boosts"])
 
-    if "is_admin" in info:
+    if "is_admin" in info_fin:
         info_fin["is_admin"] = False
 
     localuser_db.update_info_by_lid(uid_fin, info_fin)

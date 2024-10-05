@@ -11,7 +11,7 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command(["корзина", "cart"])
+@bot.command(["предметы", "cart"])
 def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -45,7 +45,7 @@ def selectcategory(context: MessageContext):
     answer.reply()
 
 
-@bot.command("chooseitem \\d+")
+@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*"])
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -57,8 +57,29 @@ def chooseitem(context: MessageContext):
         buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
         return answer.reply()
 
-    answer.addText("Напишите ID нужного вам предмета").reply()
+    if context.text.startswith("!добавить") or context.text.startswith("добавить"):
+        buttons.add("Список предметов", "cart")
+        context.text = "chooseitem 1"
     fsm_db.update_state(context, context.text)
+
+    answer.addText("Напишите ID нужного вам предмета").reply()
+
+
+@bot.command("return_27", level=["find_cat_2", "additem"], weak=True)
+def return_27(context: MessageContext):
+    context.fsm = [6]
+    context.text = "27"
+    chooseitem2(context)
+
+
+@bot.command("find_cat", level=["additem", "chooseitem"], weak=True)
+def find_cat(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "return_27")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите найти")
+    answer.reply()
+    fsm_db.update_state(context, "find_cat_2")
 
 
 @bot.command(".*", level="chooseitem", weak=True)
@@ -86,10 +107,28 @@ def chooseitem2(context: MessageContext):
     fsm_db.update_state(context, f"additem {item_id}")
     if item_id == 27:
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
+        buttons.insert(0, "Поиск котов", "find_cat")
     else:
         answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
         answer.addText(f"Лимит: {limit_amount}")
     answer.reply()
+
+
+@bot.command(".*", level="find_cat_2", weak=True)
+def find_cat_2(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Искать ещё раз", "find_cat")
+    buttons.add("Добавить кота", "return_27")
+
+    text = context.text
+    cat_id = utils.search_cat(text)
+    answer.addText("Результаты поиска:\n")
+    for i in cat_id:
+        answer.addText(f" - {i[0]} (ID: {i[1]})")
+    answer.reply()
+
+    fsm_db.update_state(context, "additem 27")
 
 
 def addcat(context: MessageContext):
@@ -182,7 +221,7 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
     return changed
 
 
-@bot.command("viewcart")
+@bot.command(["viewcart", "корзина", "!корзина"])
 def viewcart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -208,9 +247,10 @@ def viewcart(context: MessageContext):
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
-@bot.command("removeitem")
+@bot.command(["removeitem", "!убрать", "убрать"])
 def removeitem(context: MessageContext):
     buttons = ButtonsBuilder()
+    buttons.add("Убрать всё", "remove_all")
     buttons.add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
@@ -222,10 +262,26 @@ def removeitem(context: MessageContext):
     answer.reply()
 
 
+@bot.command("remove_all")
+def remove_all(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Да, убрать всё", "remove_all_conf")
+    buttons.add("Назад", "removeitem")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    answer.addText("Вы уверены, что хотите очистить корзину?").reply()
+
+
+@bot.command("remove_all_conf")
+def remove_all_conf(context: MessageContext):
+    info_worker.clear_cart(context)
+    viewcart(context)
+
+
 @bot.command(".*", level="removeitem", weak=True)
 def removeitem(context: MessageContext):
     regex = re.search(r"\d+", context.text)
-    buttons = ButtonsBuilder().add("Вернуться в корзину", "viewcart")
+    buttons = ButtonsBuilder().add("Убрать всё", "remove_all").add("Вернуться в корзину", "viewcart")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     if not regex:

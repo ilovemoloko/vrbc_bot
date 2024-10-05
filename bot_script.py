@@ -21,7 +21,12 @@ class Bot(metaclass=SingletonMeta):
         def decorator(func):
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
-            self.commands.append((level, pattern, wrapper, weak, ignore_case, replace_newline))
+
+            levels = level
+            if isinstance(level, str):
+                levels = [level]
+            for lv in levels:
+                self.commands.append((lv, pattern, wrapper, weak, ignore_case, replace_newline))
             return wrapper
         return decorator
 
