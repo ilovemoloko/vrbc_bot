@@ -25,10 +25,11 @@ def presets(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("Список пресетов", "presets_list")
-    buttons.add("Добавить прошлую корзину", "add_last_cart")
+    buttons.add("Взять прошлую корзину", "add_last_cart")
     buttons.add("Список функций", "menu")
     buttons.add("Перейти в корзину", "viewcart")
-    message.setText("В этом меню вы можете сохранять шаблон корзины, чтобы потом быстро добавлять предметы в свой список").reply()
+    message.setText("В этом меню вы можете сохранять шаблон корзины, "
+                    "чтобы потом быстро добавлять предметы в свой список").reply()
 
 
 @bot.command("add_last_cart")
