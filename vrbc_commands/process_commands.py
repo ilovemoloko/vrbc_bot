@@ -179,9 +179,11 @@ def tccc_help_fm(context: MessageContext):
 
 @bot.command("reducecd", level="first_msg")
 def reducecd_fm(context: MessageContext):
+    fsm_db.update_state(context, "*")
     return reducecd(context)
 
 
 @bot.command(".*", level="hack_process")
 def hack_process(context: MessageContext):
+    fsm_db.update_state(context, "*")
     MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
