@@ -21,7 +21,7 @@ if not (sys.platform == "linux" or sys.platform == "linux2"):
     pytesseract.pytesseract.tesseract_cmd = tesPath
 else:
     print("Running on Linux")
-custom_config = r'-c tessedit_char_whitelist=" :abcdefTransferCodeConfirmation0123456789€¢"'
+custom_config = r'-c tessedit_char_whitelist=" :abcdefABCDEFTransferCodeConfirmation0123456789€¢"'
 
 
 def get_image(url):
@@ -37,7 +37,7 @@ def getText(image):
     image = image.convert('L')
     enhancer = ImageEnhance.Contrast(image)
     image = enhancer.enhance(2)
-    res = pytesseract.image_to_string(image, config=custom_config)
+    res = pytesseract.image_to_string(image, config=custom_config).lower()
     return res
 
 

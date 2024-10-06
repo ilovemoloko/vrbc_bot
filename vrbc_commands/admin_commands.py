@@ -95,7 +95,6 @@ def unpack_bot(context: MessageContext):
     result = subprocess.run(command, cwd=directory, check=True, stdout=subprocess.PIPE)
     result = result.stdout.decode('utf-8')
 
-
     answer = MessageBuilder().setReplyMode(context)
     answer.addText(f"{result}").reply()
 
@@ -144,6 +143,14 @@ def sucart(context: MessageContext):
         item_id, amount = item.split()
         info_worker.add_to_cart(context, int(item_id), int(amount), ignore_max=True)
     answer.addText("Корзина обновлена").reply()
+
+
+@bot.command("what")
+def what(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText(f"https://imgur.com/gallery/lol-ATTrufe").reply()
 
 
 @bot.command("инфо")
