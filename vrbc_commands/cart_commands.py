@@ -237,7 +237,7 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
     return changed
 
 
-@bot.command(["viewcart", "корзина", "!корзина"])
+@bot.command(["viewcart", "корзина", "!корзина"], level=["*", "starthack_agreement"])
 def viewcart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()

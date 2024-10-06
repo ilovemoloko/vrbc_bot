@@ -25,10 +25,47 @@ def tccc_help(context: MessageContext):
     answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
 
 
+agreement_text = """❗❗❗ВНИМАНИЕ❗❗❗
+
+❗Прочтите текст, чтобы у вас в дальнейшем не возникло проблем с аккаунтом❗
+
+Вы должны знать следующие вещи перед использованием бота:
+1. Через некоторое время после отправки кодов аккаунта, бот пришлет вам новые в ответ.
+❗АККАУНТ НУЖНО БУДЕТ АКТИВИРОВАТЬ В ИГРЕ С ПОМОЩЬЮ ТЕХ КОДОВ, КОТОРЫЕ ВАМ ДАСТ БОТ❗
+О том, как это делается вы сможете прочитать, нажав кнопку \"Как активировать аккаунт?\"
+
+2. Любой аккаунт, который передавался боту ❗ВОЗМОЖНО ВОССТАНОВИТЬ❗ при любых формах его утраты/блокировки.
+Стоит учитывать, что восстановление возможно по контрольным точкам аккаунта.
+Каждый раз, когда бот получает аккаунт, контрольная точка перезаписывается.
+Восстановить аккаунт можно в меню команды !восстановить
+
+3. При любых проблемах с аккаунтом/игрой вы можете обращаться в тех. поддержку бота.
+Чтобы нам написать, используйте команду !помощь
+
+Если вы ознакомились с этим текстом, то напишите заглавными буквами ПРОЧИТАЛ
+"""
+
+
+@bot.command(".*", level="starthack_agreement")
+def starthack_agreement(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    if context.text == "ПРОЧИТАЛ":
+        return starthack(context, True)
+    answer.addText(agreement_text).reply()
+
+
 @bot.command(["starthack", "!взлом", "взлом"], ignore_case=True)
-def starthack(context: MessageContext):
+def starthack(context: MessageContext, agreed=False):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    uses_count = info_worker.get_uses(context)
+
+    if uses_count == 0:
+        if not agreed:
+            buttons.add("Вернуться", "viewcart")
+            fsm_db.update_state(context, "starthack_agreement")
+            return answer.addText(agreement_text).reply()
+
     user_bot_values = info_worker.get_bot_values(context)['default_user']
 
     current_time = int(time.time())
@@ -55,7 +92,6 @@ def starthack(context: MessageContext):
     buttons.buttons = []
     answer.reply()
 
-    uses_count = info_worker.get_uses(context)
     if uses_count == 0:
         buttons.add("Где получить коды?", "tcccget_help")
 
@@ -65,7 +101,7 @@ def starthack(context: MessageContext):
 
 @bot.command(".*", level="starthack", weak=True)
 @level_on_error("starthack")
-def starthack(context: MessageContext, retry=False):
+def starthack2(context: MessageContext, retry=False):
     fsm_db.update_state(context, "hack_process")
     attachments = context.attached_photos
     msg = context.text
@@ -125,7 +161,7 @@ def starthack(context: MessageContext, retry=False):
         fsm_db.update_state(context, "starthack")
         if status == "retry":
             answer.reply()
-            return starthack(context, retry=True)
+            return starthack2(context, retry=True)
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
 
