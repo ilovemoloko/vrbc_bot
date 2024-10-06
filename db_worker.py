@@ -472,9 +472,14 @@ class DBInfoWorker(metaclass=SingletonMeta):
     @staticmethod
     def get_donate_boost_id(donate_amount, donate_server):
         msq = 0
+        min_distance = float('inf')
         for k in donate_server:
-            if donate_amount >= k:
+            distance = donate_amount - k
+            if distance < 0:
+                continue
+            if distance < min_distance:
                 msq = k
+                min_distance = distance
         if msq == 0:
             return None
         return donate_server[msq]
@@ -484,11 +489,11 @@ class DBInfoWorker(metaclass=SingletonMeta):
         default_values = copy.deepcopy(default_values)
         boosts_ids = self.get_value(context, 'boosts')
         active_boosts = self.get_value(context, 'active_boosts')
-        boosts_server = local_server.get_default_values()['boosts']
+        boosts_server = default_values['boosts']
         passive_boosts = []
 
         donate = self.get_value(context, 'donate')
-        donate_server = local_server.get_default_values()['donate_rules']
+        donate_server = default_values['donate_rules']
         donate_boost_id = self.get_donate_boost_id(donate, donate_server)
 
         if donate_boost_id:

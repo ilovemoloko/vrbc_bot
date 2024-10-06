@@ -1,4 +1,4 @@
-from bot_script import bot, addBoost
+from bot_script import bot, addBoost, give_boost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 import local_server
@@ -210,11 +210,8 @@ def buyboost(context: MessageContext):
     if not status:
         return answer.addText(f"Произошла ошибка").reply()
 
-    user_boosts = info_worker.get_value(context, 'boosts')
-    if boost_id not in user_boosts:
-        user_boosts[boost_id] = 0
-    user_boosts[boost_id] += 1
-    info_worker.set_value(context, 'boosts', user_boosts)
+    give_boost(context, boost_id)
+
     buttons.insert(0, "Бусты", "boosts")
     answer.addText("Спасибо за покупку!\n\n"
                    "Теперь вы можете в любой момент "
