@@ -45,11 +45,26 @@ def selectcategory(context: MessageContext):
     answer.reply()
 
 
-@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*"])
+@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*"], level=["*", "additem"], weak=True)
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     user_bot_values = info_worker.get_bot_values(context)['default_user']
+
+    command_parts = context.text.split()
+    if len(command_parts) == 3:
+        context.text = command_parts[2]
+        fsm_db.update_state(context, f"additem {command_parts[1]}")
+        context.fsm = [command_parts[1]]
+        return additem(context)
+    elif len(command_parts) == 2:
+        if not command_parts[0] == "chooseitem":
+            context.text = command_parts[1]
+            item_id = int(context.text)
+            category_id = local_server.bot_variables["items"][item_id][2]
+            fsm_db.update_state(context, f"chooseitem {category_id}")
+            context.fsm = [str(category_id)]
+            return chooseitem2(context)
 
     cart_size = info_worker.get_cart_size(context)
     if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values):
@@ -103,7 +118,7 @@ def chooseitem2(context: MessageContext):
 
     limit_amount = items_data[item_id][0]
     if limit_amount != "Нет":
-        buttons.insert(0, "Добавить максимальное количество", f"{limit_amount}")
+        buttons.insert(0, "Добавить максимальное количество", f"chooseitem {item_id} {limit_amount}")
     fsm_db.update_state(context, f"additem {item_id}")
     if item_id == 27:
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
