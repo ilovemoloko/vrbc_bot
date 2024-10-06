@@ -245,7 +245,7 @@ class BCAccountDB(metaclass=SingletonMeta):
         user_accounts = bca_db.get_user_accounts(user_id)
         c = 0
         for a in user_accounts:
-            if a[-1] == "":
+            if a[-1] == 0:
                 c += 1
         return c
 
