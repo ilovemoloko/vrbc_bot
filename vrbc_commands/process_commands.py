@@ -25,7 +25,7 @@ def tccc_help(context: MessageContext):
     answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
 
 
-@bot.command("starthack")
+@bot.command(["starthack", "!взлом", "взлом"], ignore_case=True)
 def starthack(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -60,7 +60,7 @@ def starthack(context: MessageContext):
         buttons.add("Где получить коды?", "tcccget_help")
 
     answer.setText("Пожалуйста, пришлите коды от аккаунта (текстом или скриншотом)").reply()
-    fsm_db.update_state(context, context.text)
+    fsm_db.update_state(context, "starthack")
 
 
 @bot.command(".*", level="starthack", weak=True)

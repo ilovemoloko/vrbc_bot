@@ -51,6 +51,12 @@ def chooseitem(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     user_bot_values = info_worker.get_bot_values(context)['default_user']
 
+    cart_size = info_worker.get_cart_size(context)
+    if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values):
+        answer.addText("Корзина переполнена")
+        buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
+        return answer.reply()
+
     command_parts = context.text.split()
     if len(command_parts) == 3:
         context.text = command_parts[2]
@@ -65,12 +71,6 @@ def chooseitem(context: MessageContext):
             fsm_db.update_state(context, f"chooseitem {category_id}")
             context.fsm = [str(category_id)]
             return chooseitem2(context)
-
-    cart_size = info_worker.get_cart_size(context)
-    if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values):
-        answer.addText("Корзина переполнена")
-        buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
-        return answer.reply()
 
     if context.text.startswith("!добавить") or context.text.startswith("добавить"):
         buttons.add("Список предметов", "cart")
@@ -167,8 +167,9 @@ def addcat(context: MessageContext):
         if not (str(cat_id) in local_server.cats_names):
             return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
 
-    info_worker.add_to_cart(context, item_id, cat_id)
     fsm_db.update_state(context, f"chooseitem {items_data[2]}")
+    info_worker.add_to_cart(context, item_id, cat_id)
+
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
     img = "https://onestoppress.com/images/%03d-1.png" % (cat_id+1)

@@ -60,6 +60,7 @@ except Exception as e:
 
 
 def get_translation(text):
+    text = text.title()
     if translator is None:
         return unidecode(text)
     try:
@@ -176,7 +177,7 @@ def get_donate_url(user_id, amount):
 
 
 def to_latin(text):
-    return unidecode(text)
+    return unidecode(text).title()
 
 
 latinized_cats = {}
@@ -192,11 +193,19 @@ def get_latinized_cats():
 
 def fuzzy_search(query, data, threshold=70, limit=8):
     query_latin = to_latin(query)
+    ql = query_latin
     if query_latin != query:
         query_latin = get_translation(query)
+
     keys = list(data.keys())
-    print("ищу", query_latin)
-    results = process.extract(query_latin, keys, limit=limit)
+    results1 = process.extract(query_latin, keys, limit=limit)
+    results2 = process.extract(ql, keys, limit=limit)
+
+    results = results1 + results2
+    results = list(set(results))
+    results.sort(key=lambda x: x[1], reverse=True)
+    results = results[:limit]
+
     best_matches = [result for result in results if result[1] >= threshold]
     return [(key, data[key]) for key, score in best_matches]
 
