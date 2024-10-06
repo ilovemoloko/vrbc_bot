@@ -11,7 +11,7 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command(["предметы", "cart"])
+@bot.command(["предметы", "cart"], ignore_case=True)
 def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -45,7 +45,7 @@ def selectcategory(context: MessageContext):
     answer.reply()
 
 
-@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*"], level=["*", "additem"], weak=True)
+@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*"], level=["*", "additem"], weak=True, ignore_case=True)
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -237,7 +237,7 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
     return changed
 
 
-@bot.command(["viewcart", "корзина", "!корзина"], level=["*", "starthack_agreement"])
+@bot.command(["viewcart", "корзина", "!корзина"], level=["*", "starthack_agreement"], ignore_case=True)
 def viewcart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -263,7 +263,7 @@ def viewcart(context: MessageContext):
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
-@bot.command(["removeitem", "!убрать.*", "убрать.*"])
+@bot.command(["removeitem", "!убрать.*", "убрать.*"], ignore_case=True)
 def removeitem(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Убрать всё", "remove_all")
