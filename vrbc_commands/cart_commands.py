@@ -262,7 +262,7 @@ def viewcart(context: MessageContext):
     answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
 
 
-@bot.command(["removeitem", "!убрать", "убрать"])
+@bot.command(["removeitem", "!убрать.*", "убрать.*"])
 def removeitem(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Убрать всё", "remove_all")
@@ -273,6 +273,8 @@ def removeitem(context: MessageContext):
         answer.addText("Корзина пуста")
     else:
         answer.addText("Напишите ID нужного вам предмета")
+        if context.text.startswith("!убрать") or context.text.startswith("убрать"):
+            context.text = "removeitem"
         fsm_db.update_state(context, context.text)
     answer.reply()
 
