@@ -14,6 +14,7 @@ get_cats_url = base_url + "/api/get_cats"
 cats = {}
 cats_names = {}
 bot_variables = {}
+cats_icons = {}
 
 
 def categorize_items(items):
@@ -133,7 +134,7 @@ updated_cats = False
 
 
 def update_variables():
-    global bot_variables, cats, cats_names, updated_cats
+    global bot_variables, cats, cats_names, updated_cats, cats_icons
     r = requests.get(get_variables_url)
     bot_variables = r.json()
 
@@ -149,6 +150,7 @@ def update_variables():
     cats_vars = r.json()
     cats = cats_vars['all_forms']
     cats_names = cats_vars['cat_names']
+    cats_icons = cats_vars['icons']
 
     updated_cats = True
 

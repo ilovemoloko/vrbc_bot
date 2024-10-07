@@ -22,6 +22,10 @@ class VkBotScript(sc.BotScript):
     def send_message(self, message: MessageBuilder):
         buttons = message.buttons
         keyboard = None
+        attachment = None
+        previewUrl = message.previewUrl
+        if previewUrl:
+            attachment = previewUrl[0]
 
         if buttons:
             buttons_vk = []
@@ -44,7 +48,8 @@ class VkBotScript(sc.BotScript):
             message=message.text,
             random_id=random.randint(-100000000, 10000000),
             keyboard=keyboard,
-            dont_parse_links=0
+            dont_parse_links=0,
+            attachment=attachment
         )
 
     def get_action(self):

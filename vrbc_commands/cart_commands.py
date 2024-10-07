@@ -172,10 +172,9 @@ def addcat(context: MessageContext):
 
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    img = "https://onestoppress.com/images/%03d-1.png" % (cat_id+1)
+    img = local_server.cats_icons[str(cat_id)]
     answer.setPreviewUrl(img)
-    return (answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину")
-            .addText(f"\n\nИконка кота: {img}").reply())
+    return answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
 
 
 @bot.command(".*", level="additem", weak=True)
