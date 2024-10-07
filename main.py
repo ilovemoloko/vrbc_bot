@@ -2,6 +2,7 @@ from tg_script import TgBotScript
 from vk_script import VkBotScript
 import threading
 import logging
+import time
 
 logging.basicConfig(filename='app.log', level=logging.ERROR,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -20,7 +21,12 @@ script_tg = TgBotScript()
 
 @thread
 def vk_bot_start():
-    script_vk.start()
+    while True:
+        try:
+            script_vk.start()
+        except:
+            time.sleep(60)
+            print("vk polling...")
 
 
 @thread
