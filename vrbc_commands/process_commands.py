@@ -26,6 +26,7 @@ def tccc_help(context: MessageContext):
 
 
 agreement_text = """❗❗❗ВНИМАНИЕ❗❗❗
+В тексте спрятано слово, которое нужно написать боту, чтобы вы могли начать выдачу предметов.
 У вас не получится использовать бота дальше, если вы внимательно не прочитаете этот текст ПОЛНОСТЬЮ
 
 ❗Прочтите текст, чтобы у вас в дальнейшем не возникло проблем с аккаунтом❗
@@ -46,9 +47,28 @@ agreement_text = """❗❗❗ВНИМАНИЕ❗❗❗
 """
 
 
+iamdumb_text = """Вы должны прочитать текст, чтобы знать что делать, если вас вдруг заблокируют в игре.
+Такое бывает, но бот может восстановить ваш аккаунт за минуту.
+
+В большом тексте есть 2 пункта - о восстановлении аккаунтов, и о тех. поддержке бота.
+Это слово находится между этими двумя пунктами.
+
+Вы не можете продолжить, не прочитав 1, 2 и 3 пункты текста.
+"""
+
+
+@bot.command("iamdumb")
+def iamdumb(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText(iamdumb_text).reply()
+
+
 @bot.command(".*", level="starthack_agreement")
 def starthack_agreement(context: MessageContext):
-    answer = MessageBuilder().setReplyMode(context)
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Подсказка", "iamdumb")
+    buttons.add("Вернуться", "viewcart")
     if context.text == "ПРОДОЛЖИТЬ":
         return starthack(context, True)
     answer.addText(agreement_text).reply()
