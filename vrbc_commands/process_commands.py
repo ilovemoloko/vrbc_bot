@@ -62,7 +62,7 @@ iamdumb_text = """❗ВНИМАНИЕ❗ (короткая версия)
 """
 
 
-@bot.command("iamdumb")
+@bot.command("iamdumb", level="starthack_agreement")
 def iamdumb(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.addText(iamdumb_text).reply()
