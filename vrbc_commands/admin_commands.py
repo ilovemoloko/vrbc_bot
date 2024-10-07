@@ -147,6 +147,8 @@ def sucart(context: MessageContext):
 
 @bot.command("инфо")
 def info(context: MessageContext):
+    if check_admin(context) is False:
+        return
     local_user_id = fsm_db.get_local_user_id(context)
     answer = MessageBuilder().setReplyMode(context)
     if local_user_id is None:
