@@ -29,24 +29,36 @@ class TgBotScript(sc.BotScript):
         self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
 
     def _handle_action(self, action):
-        res = None
         peer_id = action.chat.id
         user_id = action.from_user.id
 
+        res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setRawAction(action)
+
         if action.content_type == "text":
             text = action.text
-            res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text)
+            res.setText(text)
         elif action.content_type == "photo":
             text = action.caption
             photo_url = self.bot.get_file_url(action.photo[-1].file_id)
-            res = MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text).addPhoto(
-                photo_url)
+            res.setText(text).addPhoto(photo_url)
 
         self.handle_action(res)
 
     def get_actions(self, actions):
         for action in actions:
             self._handle_action(action)
+
+    def _get_user_description(self, context: MessageContext):
+        userdata = self.bot.get_chat(context.user_id)
+
+        first_name = userdata.first_name or ""
+        last_name = userdata.last_name or ""
+        username = userdata.username or ""
+
+        user_name = " ".join(filter(None, [first_name, last_name, f"({username})"]))
+        photo_url = self.bot.get_file_url(userdata.photo.small_file_id)
+
+        return {"name": user_name, "image_url": photo_url}
 
     def start(self):
         self.bot.set_update_listener(self.get_actions)

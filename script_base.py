@@ -12,11 +12,17 @@ class MessageContext:
         self.attached_photos = []
         self.src = source
         self.fsm = ""
-        self.srcobj = None
+        self.srcobj: BotScript = None
         self.fsm_full = ""
+        self.userData = None
+        self.rawAction = None
 
     def setPeerId(self, peerId):
         self.peer_id = peerId
+        return self
+
+    def setRawAction(self, obj):
+        self.rawAction = obj
         return self
 
     def setText(self, text):
@@ -36,6 +42,10 @@ class MessageContext:
 
     def setSrcObject(self, obj):
         self.srcobj = obj
+
+    def setUserData(self, obj):
+        self.userData = obj
+        return self
 
 
 class ButtonsBuilder:
@@ -154,6 +164,12 @@ class BotScript:
             if re.match(pattern, check_text):
                 return self.commands[fsm_level][pattern]['weak']
         return None
+
+    def _get_user_description(self, context: MessageContext):
+        return {"name": None, "image_url": None}
+
+    def get_user_description(self, context: MessageContext):
+        return context.setUserData(self._get_user_description(context))
 
     def handle_action(self, action):
         try:

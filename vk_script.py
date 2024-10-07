@@ -2,7 +2,7 @@ import script_base as sc
 from config import token_vk, id_vk
 import vk_api
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from script_base import MessageBuilder
+from script_base import MessageBuilder, MessageContext
 import random
 import json
 import threading
@@ -18,6 +18,14 @@ class VkBotScript(sc.BotScript):
     def handle_action(self, action):
         t = threading.Thread(target=super().handle_action, args=(action,))
         t.start()
+
+    def _get_user_description(self, context: MessageContext):
+        user_id = context.user_id
+        user_data = self.vk.users.get(user_id=user_id, fields="photo_100")[0]
+
+        user_name = f"{user_data['first_name']} {user_data['last_name']}"
+        photo_url = user_data['photo_100']
+        return {"name": user_name, "image_url": photo_url}
 
     def send_message(self, message: MessageBuilder):
         buttons = message.buttons
@@ -61,6 +69,7 @@ class VkBotScript(sc.BotScript):
                 user_id = obj['from_id']
                 text = obj['text']
                 res.setText(text).setPeerId(peer_id).setUserId(user_id)
+                res.setRawAction(action)
 
                 if "payload" in obj:
                     payload = json.loads(obj['payload'])

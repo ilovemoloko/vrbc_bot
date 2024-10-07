@@ -145,14 +145,6 @@ def sucart(context: MessageContext):
     answer.addText("Корзина обновлена").reply()
 
 
-@bot.command("what")
-def what(context: MessageContext):
-    if check_admin(context) is False:
-        return
-    answer = MessageBuilder().setReplyMode(context)
-    answer.addText(f"https://imgur.com/gallery/lol-ATTrufe").reply()
-
-
 @bot.command("инфо")
 def info(context: MessageContext):
     local_user_id = fsm_db.get_local_user_id(context)
@@ -163,4 +155,7 @@ def info(context: MessageContext):
         user_info = local_user_db.get_info(context)
         fsm_level = fsm_db.get_state(context)
         answer.setText(f"Ваша информация об аккаунте:\n\n{user_info}").addText(f"fsmstate = {fsm_level}")
+    bot_obj = context.srcobj
+    bot_obj.get_user_description(context)
+    answer.addText(str(context.userData), start="\n\n")
     answer.reply()
