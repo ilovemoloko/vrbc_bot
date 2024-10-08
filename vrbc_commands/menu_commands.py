@@ -15,9 +15,18 @@ def menu_message(context: MessageContext):
     buttons.add("Пресеты", "presets")
     buttons.add("Донаты", "donate")
     buttons.add("Бусты", "boosts")
-    buttons.add("Помощь", "help")
 
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
+
+
+@bot.command(["help", "помощь", "!помощь", "!help", "/help", "/помощь"])
+def help_message(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context)
+    buttons.add("Связь с администрацией", "startfight")
+    buttons.add("Вернуться", "начать")
+
+    answer.setText("Меню помощи по боту\nСейчас здесь ничего нет, поэтому смело обращайтесь к администрации, если вы хотите что-то узнать").setButtons(buttons).reply()
 
 
 @bot.command("presets")

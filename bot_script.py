@@ -107,6 +107,7 @@ initialize_bot_commands()
 def start_message(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Увидеть каталог предметов", "cart").add("Меню функций", "menu")
+    buttons.add("Помощь", "help")
     MessageBuilder().setReplyMode(context).setText(
         f"Здравствуй! В этом боте ты можешь получить различные предметы в игре The Battle Cats бесплатно.\n"
         f"Ты всегда можешь вернуться к этому сообщению, написав Начать\n\n"
@@ -118,10 +119,3 @@ def start_message(context: MessageContext):
 @bot.command("начать", ignore_case=True)
 def start_message_2(context: MessageContext):
     start_message(context)
-
-
-@bot.command(r"find .*")
-def find_cat(context: MessageContext):
-    answer = MessageBuilder().setReplyMode(context)
-    query = context.text.split(" ", 1)[1]
-    answer.setText(str(utils.search_cat(query))).reply()

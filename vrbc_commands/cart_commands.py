@@ -146,6 +146,13 @@ def find_cat_2(context: MessageContext):
     fsm_db.update_state(context, "additem 27")
 
 
+@bot.command(r"find .*", ignore_case=True)
+def find_cat(context: MessageContext):
+    query = context.text.split(" ", 1)[1]
+    context.text = query
+    return find_cat_2(context)
+
+
 def addcat(context: MessageContext):
     text = context.text
     item_id = 27

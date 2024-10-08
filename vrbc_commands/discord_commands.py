@@ -1,6 +1,8 @@
-from bot_script import bot
+from bot_script import bot, level_on_error
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+import techsup
+import time
 import utils
 
 fsm_db = FSMDatabase()
@@ -9,36 +11,63 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command(r"startfight .*")
+@bot.command([r"startfight", "!отправить", "!админ", "отправить", "админ", "помоги", "!помоги"], level=["*", "letsgo"])
 def start_fight(context: MessageContext):
-    answer = MessageBuilder().setReplyMode(context)
-    message = "я не хочу пока тестировать как у тебя работает внедрение новых команд с тз синтаксиса"
-    user = str(fsm_db.get_local_user_id(context))
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Написать админу", "letsgo")
+    buttons.add("Меню помощи", "help")
 
-    # если спор уже начат хз аезир сам сделай дб штуки
-    if answer:
-        return answer.setText("У Вас уже ведется диалог с админчиками. Пожалуйста, дождитесь ответа.").reply()
-    req = utils.create_ds_channel(user, "PLATFORM")
-    if req.status_code == 200:
-        discord_channel_id = eval(req.text)['id']
-        if message:
-            utils.send_ds_message(discord_channel_id, message)
-            return answer.setText("Ваше сообщение было передано администрации. уйди отсюда сука").reply()
-        return answer.setText("Был начат спор с администрацией (вы выбрали смерть.)").reply()
-    return answer.setText("Я НЕ МОГУ ОТПРАВИТЬ ПОЖАЛУЙСТА УЙДИ").reply()
-    # тебе кстати возможно интересно как же так вышло что я начал работать
-    # я обнаружил что нужно просто сесть за кодинг ночью под бедфингер-бейби блю
-    #код дс бота кстати полностью готов нужно просто чут чут поиграться с изображениями (и здесь тоже)
+    answer.setText("В этом меню вы можете обратиться к администраторам бота.").reply()
 
 
-@bot.command(r".*", level="fight")  # интересно а как сделать так чтоб любое сообщение не принадлежащее к основному протоколу шло в дискорд
-def complain(context: MessageContext):
-    # я подозреваю что нужно подобную ноунейм команду просто в конец пихнуть
-    # я не очень хочу тебе весь код сносить и менять как мне удобно и понятно потому что он сука твой
-    # поэтому если что просто подправь я думаю это не так сложно и думаю это можно отдельно вынести
-    if "ты не общаешься с админами еблан" * 0: return
-    answer = MessageBuilder().setReplyMode(context)
-    attempt = utils.send_ds_message("тут должен быть айди канала дискорда из дб", context.text)
-    if attempt.status_code == 200:
-        return answer.setText("Отправлено.").reply()
-    return answer.setText("завались").reply()
+@bot.command("letsgo")
+def letsgo(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться", "startfight")
+
+    current_time = int(time.time())
+    user_last_use = fsm_db.get_brawl_data(context)
+    user_cooldown = 60*60
+    next_use = user_cooldown - (current_time - user_last_use)
+
+    if next_use > 0:
+        buttons.insert(0, "Вернуться в главное меню", "menu")
+        buttons.insert(0, "Попробовать снова", "letsgo")
+        return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
+
+    answer.setText("Напишите сообщение, которое вы хотите отправить").reply()
+    fsm_db.update_state(context, "letsgo")
+
+
+modbot = techsup.Modbot()
+
+
+@bot.command(".*", level="letsgo")
+def letsgo(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Вернуться", "startfight")
+
+    text = context.text
+    if len(text) == 0:
+        return answer.setText("Напишите сообщение (в нем должен быть текст), которое вы хотите отправить").reply()
+    elif len(text) > 2000:
+        return answer.setText("Слишком длинное сообщение. Сократите его и попробуйте снова").reply()
+
+    local_user_id = fsm_db.get_local_user_id(context)
+    bot_obj = context.srcobj
+    bot_obj.get_user_description(context)
+    ctx = techsup.LittleContext(context.peer_id,
+                                context.text,
+                                context.userData["name"],
+                                local_user_id,
+                                context.userData["image_url"],
+                                context.attached_photos, answer)
+    modbot.handle_message(ctx)
+    fsm_db.set_brawl_data(context, int(time.time()))
+    fsm_db.update_state(context, "*")
+
+    buttons.insert(0,"Главное меню", "menu")
+    return answer.setText("Сообщение отправлено\nОжидайте ответа").reply()

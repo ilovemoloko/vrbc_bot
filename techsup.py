@@ -1,6 +1,6 @@
 from telebot import types
-from db_worker import SingletonMeta
-from script_base import MessageBuilder, MessageContext
+from db_worker import SingletonMeta, fsm_db
+from script_base import MessageBuilder, MessageContext, ButtonsBuilder
 
 
 class LittleContext:
@@ -117,6 +117,10 @@ class Modbot(metaclass=SingletonMeta):
         """
         reply_text = message.text
         answer: MessageBuilder = ctx.answer
+        buttons = ButtonsBuilder()
+        answer.setButtons(buttons)
+        buttons.add("Написать снова", "letsgo")
+        buttons.add("Главное меню", "first_msg")
         if reply_text:
             # Скрываем исходное сообщение в спойлере
             original_message = f"||{ctx.original_message}||"
@@ -137,6 +141,7 @@ class Modbot(metaclass=SingletonMeta):
                 f"Ответ отправлен пользователю {ctx.name}.",
                 reply_to_message_id=message.message_id
             )
+            fsm_db.set_brawl_data(ctx.answer.context, -1)
             # Удаление контекста после отправки ответа
             self.user_messages.pop(message.message_id, None)
         else:

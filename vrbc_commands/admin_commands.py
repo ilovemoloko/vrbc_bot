@@ -164,11 +164,11 @@ def info(context: MessageContext):
     answer.addText(str(context.userData), start="\n\n")
     answer.reply()
 
-    context.text = "spsdufhsdpifhsdpfisudhfspdifuhspfiusdhf dfsipudufhs dpfosudf"
-    ctx = techsup.LittleContext(context.peer_id,
-                                context.text,
-                                context.userData["name"],
-                                local_user_id,
-                                context.userData["image_url"],
-                                context.attached_photos, answer)
-    modbot.handle_message(ctx)
+    # context.text = "spsdufhsdpifhsdpfisudhfspdifuhspfiusdhf dfsipudufhs dpfosudf"
+    # ctx = techsup.LittleContext(context.peer_id,
+    #                             context.text,
+    #                             context.userData["name"],
+    #                             local_user_id,
+    #                             context.userData["image_url"],
+    #                             context.attached_photos, answer)
+    # modbot.handle_message(ctx)
