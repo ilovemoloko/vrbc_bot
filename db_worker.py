@@ -195,7 +195,7 @@ class BCAccountDB(metaclass=SingletonMeta):
                 user_id INTEGER,
                 isjp BOOLEAN,
                 originalcode TEXT,
-                disabled BOOLEAN
+                disabled INTEGER
             )
         ''')
         self.conn.commit()
