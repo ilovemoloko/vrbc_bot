@@ -16,14 +16,13 @@ vk = vk_api.VkApi(token=token_vk)
 
 
 def sendvk(place, text, is_end=False):
-    buttons_vk = []
-    buttons_vk.append([{
+    buttons_vk = [[{
         "action": {
             "type": "text",
             "payload": json.dumps({"button": "startfight"}),
             "label": "Ответить"
         }
-    }])
+    }]]
 
     keyboard = {
         "one_time": False,

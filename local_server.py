@@ -62,12 +62,18 @@ def boost_change_cart_size(values, effect):
     values['default_user']['cart_size'] += size
     return values
 
+def boost_add_value(values, effect):
+    value, value_inc = effect['params']
+    values['default_user'][value] += value_inc
+    return values
+
 
 boost_functions = {"change_limit": boost_change_limit,
                    "add_item": boost_add_item,
                    "change_catalog_limit": boost_change_catalog_limit,
                    "change_cooldown": boost_change_cooldown,
-                   "change_cart_size": boost_change_cart_size}
+                   "change_cart_size": boost_change_cart_size,
+                   "add_value": boost_add_value}
 
 
 def mod_values(values, boost_id):

@@ -221,10 +221,11 @@ def add_account(context, user_id, account):
     accounts_limit = info_worker.get_value(context, 'accounts_limit', src=user_bot_values)
     user_accounts_number = bca_db.count_accounts(user_id)
 
-    if user_accounts_number >= accounts_limit:
-        return False, "Вы достигли лимита аккаунтов"
-
     bca_db.add_account(user_id, inq, is_jp, "")
+
+    if user_accounts_number >= accounts_limit:
+        bca_db.set_disabled(inq, 2)
+        return False, "Вы достигли лимита аккаунтов"
 
     return "success", f"Аккаунт ({inq}) привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
 
@@ -280,12 +281,28 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
 def inq_checker(account, context: MessageContext):
     inq, is_jp = account
     user_id = fsm_db.get_local_user_id(context)
-
     accinfo = bca_db.get_account_info(inq)
+
     if accinfo is not None:
         a_user_id, a_isjp, a_originalcode, disabled = accinfo
-        if disabled:
+        if disabled == 1:
             return False, "Аккаунт отключен. Используйте его восстановленную версию."
+        elif disabled == 2:
+            if a_user_id == user_id:
+                user_bot_values = info_worker.get_bot_values(context)['default_user']
+                accounts_limit = info_worker.get_value(context, 'accounts_limit', src=user_bot_values)
+                user_accounts_number = bca_db.count_accounts(user_id)
+
+                if accounts_limit - user_accounts_number > 0:
+                    bca_db.set_disabled(inq, 0)
+                    return True, f"Ваш аккаунт {inq} сохранён"
+                else:
+                    return False, "Вы достигли лимита аккаунтов"
+
+            if len(bca_db.get_user_accounts(user_id)) != 0:
+                return False, f"Вы не можете использовать аккаунт, принадлежащий другому пользователю"
+
+            return merge_accounts(context, user_id, a_user_id)
         if a_user_id == user_id:
             return True, f"Ваш аккаунт {inq} сохранён"
         if len(bca_db.get_user_accounts(user_id)) != 0:

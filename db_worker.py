@@ -510,10 +510,12 @@ class DBInfoWorker(metaclass=SingletonMeta):
         for bid in boosts_ids:
             boost = boosts_server[bid]
             active = False
+            count = boosts_ids[bid]
             if boost['type'] == 'passive':
                 active = True
             if active:
-                passive_boosts.append(bid)
+                for i in range(count):
+                    passive_boosts.append(bid)
         passive_boosts.extend(active_boosts)
 
         for bid in passive_boosts:
