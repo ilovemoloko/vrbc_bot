@@ -182,7 +182,7 @@ def boostshop(context: MessageContext):
 
     for boost_id in boosts_store:
         addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
-        answer.addText(f"Цена: {boosts_store[boost_id]}₽\n")
+        answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
     answer.reply()
 
 
