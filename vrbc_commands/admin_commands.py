@@ -8,6 +8,7 @@ import sys
 import subprocess
 import threading
 import time
+import techsup
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -144,6 +145,7 @@ def sucart(context: MessageContext):
         info_worker.add_to_cart(context, int(item_id), int(amount), ignore_max=True)
     answer.addText("Корзина обновлена").reply()
 
+modbot = techsup.Modbot()
 
 @bot.command("инфо")
 def info(context: MessageContext):
@@ -161,3 +163,12 @@ def info(context: MessageContext):
     bot_obj.get_user_description(context)
     answer.addText(str(context.userData), start="\n\n")
     answer.reply()
+
+    context.text = "spsdufhsdpifhsdpfisudhfspdifuhspfiusdhf dfsipudufhs dpfosudf"
+    ctx = techsup.LittleContext(context.peer_id,
+                                context.text,
+                                context.userData["name"],
+                                local_user_id,
+                                context.userData["image_url"],
+                                context.attached_photos, answer)
+    modbot.handle_message(ctx)
