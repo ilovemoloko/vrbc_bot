@@ -116,8 +116,8 @@ def starthack(context: MessageContext, agreed=False):
         buttons.add("Выбрать предметы", "cart")
         return answer.reply()
     buttons.add("Обратно к выбору предметов", "cart")
-    buttons.buttons = []
     answer.reply()
+    buttons.buttons = []
 
     if uses_count == 0:
         buttons.add("Где получить коды?", "tcccget_help")
@@ -192,8 +192,15 @@ def starthack2(context: MessageContext, retry=False):
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
 
-    wait_time = local_server.get_wait_time()
-    answer.addText(f"Примерное время ожидания до получения кодов: {wait_time} сек.").reply()
+    try:
+        wait_time = local_server.get_wait_time()
+    except:
+        answer.setText("Бот потерял связь с сервером. Попробуйте ещё раз немного позже.").reply()
+        raise ConnectionError
+
+    wait_time = round(float(wait_time))
+    wait_time = utils.humanize_time(wait_time)
+    answer.addText(f"Примерное время ожидания до получения кодов: {wait_time}").reply()
 
     cart = info_worker.get_value(context, 'cart')
     files = {"save": data}
