@@ -271,6 +271,7 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
         info_fin["is_admin"] = False
 
     localuser_db.update_info_by_lid(uid_fin, info_fin)
+    localuser_db.delete_user_by_lid(uid)
     fsm_db.set_local_user_id(context, uid_fin)
 
     return "retry", "Теперь этот профиль привязан к аккаунту, на котором вы ранее использовали бота."

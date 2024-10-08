@@ -321,6 +321,14 @@ class LocalUsersDatabase(metaclass=SingletonMeta):
         self.conn.commit()
 
     @locked
+    @connected
+    def delete_user(self, local_uid):
+        self.conn.execute('''
+            DELETE FROM localusers WHERE local_user_id = ?
+        ''', (local_uid,))
+        self.conn.commit()
+
+    @locked
     def close(self):
         self.conn.close()
 
