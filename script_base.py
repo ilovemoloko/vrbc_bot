@@ -178,6 +178,8 @@ class BotScript:
             if isinstance(action, MessageContext):
                 if action.text is None:
                     action.text = ""
+                if action.user_id != action.peer_id:
+                    return
                 fsm_level = fsm_db.get_state(action)
                 action.fsm_full = fsm_level
                 context = fsm_level.split(" ")[1:]

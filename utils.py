@@ -21,7 +21,7 @@ if not (sys.platform == "linux" or sys.platform == "linux2"):
     pytesseract.pytesseract.tesseract_cmd = tesPath
 else:
     print("Running on Linux")
-custom_config = r'-c tessedit_char_whitelist=" :abcdefABCDEFTransferCodeConfirmation0123456789€¢"'
+custom_config = r'-c tessedit_char_whitelist=" :abcdefABCDEFTransferCodeConfirmation0123456789€¢Oo"'
 
 
 def get_image(url):
@@ -44,6 +44,9 @@ def getText(image):
 def extract_codes(input_string):
     input_string = input_string.replace("€", "e")
     input_string = input_string.replace("¢", "c")
+    input_string = input_string.replace("o", "0")
+    input_string = input_string.replace("s", "5")
+
     regex = r'([a-fA-F0-9]{9})[\s\S]*([0-9]{4})'
     pattern = re.compile(regex)
     hex_code, numeric_code = re.findall(pattern, input_string)[0]

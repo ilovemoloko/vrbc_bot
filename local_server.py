@@ -87,13 +87,6 @@ def get_default_values():
     return bot_variables
 
 
-def discord_config():
-    # я сука этот токен печатал вручную с пк потому что не хочу 100 раз обновлять
-    return {"token": "***REMOVED***",
-            "guild_id": "670612631849009162",
-            "api_base": "https://discord.com/api/v10"}
-
-
 def get_user_backups(user_id):
     retval = requests.get(list_backups_url, params={"user_id": user_id}).content.decode("utf-8")
     json_data = json.loads(retval)
