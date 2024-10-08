@@ -55,7 +55,7 @@ class TgBotScript(sc.BotScript):
         last_name = userdata.last_name or ""
         username = userdata.username or ""
 
-        user_name = " ".join(filter(None, [first_name, last_name, f"({username})"]))
+        user_name = " ".join(filter(None, [first_name, last_name, f"(@{username})"]))
         photo_url = self.bot.get_file_url(userdata.photo.small_file_id)
 
         return {"name": user_name, "image_url": photo_url}

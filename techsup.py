@@ -1,6 +1,6 @@
 from telebot import types
 from db_worker import SingletonMeta
-from script_base import MessageBuilder
+from script_base import MessageBuilder, MessageContext
 
 
 class LittleContext:
@@ -11,7 +11,22 @@ class LittleContext:
         self.local_uid = local_uid
         self.photo_url = photo_url
         self.attachments = attachments
-        self.answer = answer
+        self.answer: MessageBuilder = answer
+        self.original_message = ""
+
+
+def escape_markdown_v2(text: str) -> str:
+    return (text.replace("(", "\\(")
+            .replace(")", "\\)")
+            .replace("_", "\\_")
+            .replace("*", "\\*")
+            .replace("[", "\\[")
+            .replace("]", "\\]")
+            .replace("|", "\\|")
+            .replace(">", "\\>")
+            .replace("<", "\\<")
+            .replace("~", "\\~")
+            .replace("`", "\\`"))
 
 
 class Modbot(metaclass=SingletonMeta):
@@ -25,16 +40,30 @@ class Modbot(metaclass=SingletonMeta):
         self.mod_channel_id = mod_channel_id
         self.user_messages = {}  # Для отслеживания сообщений пользователей
 
-    def format_message(self, ctx):
+    def format_message(self, ctx: LittleContext):
         """
         Форматирует сообщение пользователя для отправки в канал модераторов.
         """
+        answer: MessageBuilder = ctx.answer
+        context: MessageContext = answer.context
+
+        src_context = context.src
+        user_id = context.user_id
+
         formatted_message = (
-            f"**Пользователь:** {ctx.name}\n"
-            f"**ID:** {ctx.local_uid}\n"
-            f"**Сообщение:** {ctx.text}\n"
-            f"**Вложения:** {', '.join(ctx.attachments) if ctx.attachments else 'Нет'}"
+            f"Пользователь: {ctx.name}\n"
+            f"LOCAL_ID: {ctx.local_uid}\n"
+            f"Src Id: {src_context} {user_id}\n"
         )
+
+        if ctx.attachments:
+            formatted_message += f"Вложения: {', '.join(ctx.attachments)}\n"
+        formatted_message = escape_markdown_v2(formatted_message)
+
+        escaped_text = escape_markdown_v2(ctx.text)
+        formatted_message += f"\n\n_Сообщение_"
+        formatted_message += f"\n```\n{escaped_text}\n```"
+        ctx.original_message = formatted_message
         return formatted_message
 
     def handle_message(self, ctx):
@@ -46,7 +75,7 @@ class Modbot(metaclass=SingletonMeta):
         sent_message = self.bot.send_message(
             self.mod_channel_id,
             message,
-            parse_mode='Markdown',
+            parse_mode='MarkdownV2',
             disable_web_page_preview=True
         )
 
@@ -90,12 +119,8 @@ class Modbot(metaclass=SingletonMeta):
         answer: MessageBuilder = ctx.answer
         if reply_text:
             # Скрываем исходное сообщение в спойлере
-            original_message = (
-                f"||**Пользователь:** {ctx.name}\n"
-                f"**ID:** {ctx.local_uid}\n"
-                f"**Сообщение:** {ctx.text}||"
-            ).replace("(", "\\(").replace(")", "\\)")
-            answer.setText(f"**Ответ модератора:** {reply_text}").reply()
+            original_message = f"||{ctx.original_message}||"
+            answer.setText(f"Вам пришел ответ от администратора:\n\n{reply_text}").reply()
             message_id_old = 0
             for mid in self.user_messages:
                 if self.user_messages[mid] == ctx:

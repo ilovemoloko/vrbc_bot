@@ -69,6 +69,7 @@ class MessageBuilder:
         self.buttons = None
         self.reply_func = None
         self.previewUrl = None
+        self.context = None
 
     def setPeerId(self, peerId):
         self.peerId = peerId
@@ -88,6 +89,7 @@ class MessageBuilder:
 
     def setReplyMode(self, context: MessageContext):
         self.reply_func = context.srcobj.send_message
+        self.context = context
         self.peerId = context.peer_id
         return self
 
