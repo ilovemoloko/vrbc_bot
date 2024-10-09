@@ -107,7 +107,7 @@ initialize_bot_commands()
 def start_message(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Увидеть каталог предметов", "cart").add("Меню функций", "menu")
-    buttons.add("Помощь", "help")
+    buttons.add("Помощь | Тех. поддержка", "help")
     MessageBuilder().setReplyMode(context).setText(
         f"Здравствуй! В этом боте ты можешь получить различные предметы в игре The Battle Cats бесплатно.\n"
         f"Ты всегда можешь вернуться к этому сообщению, написав Начать\n\n"
@@ -116,6 +116,6 @@ def start_message(context: MessageContext):
     fsm_db.update_state(context, "*")
 
 
-@bot.command("начать", ignore_case=True)
+@bot.command(["начать", "!начать", "почати", "start"], ignore_case=True)
 def start_message_2(context: MessageContext):
     start_message(context)

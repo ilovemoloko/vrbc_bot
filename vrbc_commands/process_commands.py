@@ -101,6 +101,7 @@ def starthack(context: MessageContext, agreed=False):
     next_use = user_cooldown - (current_time - user_last_use)
 
     if next_use > 0:
+        buttons.add("Пропустить время", "skip_cd")
         buttons.add("Вернуться в корзину", "viewcart")
         fsm_db.update_state(context, "starthack")
         return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()

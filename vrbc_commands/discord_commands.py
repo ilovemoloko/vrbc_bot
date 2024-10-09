@@ -52,7 +52,7 @@ modbot = techsup.Modbot()
 def letsgo(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    buttons.add("Вернуться", "startfight")
+    buttons.add("В главное меню", "menu")
 
     text = context.text
     if len(text) == 0:
@@ -73,5 +73,7 @@ def letsgo(context: MessageContext):
     fsm_db.set_brawl_data(context, int(time.time()))
     fsm_db.update_state(context, "*")
 
-    buttons.insert(0,"Главное меню", "menu")
+    buttons = ButtonsBuilder()
+    answer = answer.setButtons(buttons)
+    buttons.add("Главное меню", "menu")
     return answer.setText("Сообщение отправлено\nОжидайте ответа").reply()

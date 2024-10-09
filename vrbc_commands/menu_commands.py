@@ -25,7 +25,7 @@ def help_message(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     buttons.add("Связь с администрацией", "startfight")
     buttons.add("Проблемы с аккаунтом", "account_issues")
-    buttons.add("Вернуться", "начать")
+    buttons.add("Вернуться", "start")
 
     answer.setText("Меню помощи по боту\nСейчас здесь ничего нет, поэтому смело обращайтесь к администрации, если вы хотите что-то узнать").setButtons(buttons).reply()
 

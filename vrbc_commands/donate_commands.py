@@ -201,7 +201,7 @@ def boostshop2(context: MessageContext):
 def buyboost(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    buttons.add("Назад", "boostshop")
+    buttons.add("В магазин бустов", "boostshop")
     boost_id = context.text.split(" ", 1)[1]
     boosts_store = local_server.get_default_values()['boosts_store']
     if boost_id not in boosts_store:
@@ -245,3 +245,57 @@ def buy_slot(context: MessageContext):
     fsm_db.update_state(context, "boostshop2")
     context.text = "add_slot"
     boostshop3(context)
+
+
+@bot.command([r"skip_cd", "!пропуск", "пропуск"], ignore_case=True)
+def skip_cd(context: MessageContext):
+    fsm_db.update_state(context, "*")
+    buttons = ButtonsBuilder()
+    buttons.add("Купить", "boostshop2cd")
+    buttons.add("Вернуться в корзину", "viewcart")
+    buttons.add("Полная версия магазина", "boostshop")
+
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    balance = info_worker.get_value(context, 'donate')
+    answer.addText(f"Ваш баланс: {balance}₽")
+
+    answer.addText("Список бустов для покупки:\n\n")
+    boosts_server = local_server.get_default_values()['boosts']
+    boosts_store = local_server.get_default_values()['boosts_store']
+
+    for boost_id in boosts_store:
+        if not boost_id.startswith("skip"):
+            continue
+        addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
+        answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
+    answer.reply()
+
+
+@bot.command("boostshop2cd")
+def boostshop2(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "skip_cd")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Введите ID буста из магазина").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@bot.command(r".*", level="boostshop2cd", weak=True)
+def boostshop3(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "skip_cd")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    boost_id = context.text
+
+    boosts_store = local_server.get_default_values()['boosts_store']
+    if boost_id not in boosts_store:
+        return answer.addText("Такого буста нет в магазине").reply()
+
+    boost_cost = boosts_store[boost_id]
+    balance = info_worker.get_value(context, 'donate')
+    if balance < boost_cost:
+        return answer.addText(f"Недостаточно средств ({balance}₽)").reply()
+
+    buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
+    answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()
