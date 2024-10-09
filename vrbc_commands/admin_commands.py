@@ -49,7 +49,7 @@ def admin_panel(context: MessageContext):
         return
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    buttons.add("<-<-", "evalbutbetter 3")
+    buttons.add("<-<-", "evalbutbetter 4")
     answer.addText("тут пусто").reply()
 
 
