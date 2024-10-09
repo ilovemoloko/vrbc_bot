@@ -64,6 +64,8 @@ def save_account_input(context: MessageContext):
         answer.setText(msg)
     if not status:
         fsm_db.update_state(context, "first_msg")
+        if "Вы достигли лимита" in msg:
+            buttons.insert(0, "Увеличить лимит", "buy_slot")
         return answer.reply()
 
     user_id = fsm_db.get_local_user_id(context)

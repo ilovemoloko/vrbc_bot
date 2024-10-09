@@ -55,6 +55,7 @@ def passiveboosts(context: MessageContext):
     for boost in boosts:
         if boosts_server[boost]['type'] == "passive":
             addBoost(answer, boosts_server[boost], boost, desc=True)
+            answer.addText(f"Количество: {boosts[boost]}\n")
             answer.addText("\n")
     if len(boosts) == 0:
         answer.addText("У вас пока нет активируемых бустов")
@@ -237,3 +238,10 @@ def boostshop3(context: MessageContext):
 
     buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
     answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()
+
+
+@bot.command(r"buy_slot")
+def buy_slot(context: MessageContext):
+    fsm_db.update_state(context, "boostshop2")
+    context.text = "add_slot"
+    boostshop3(context)

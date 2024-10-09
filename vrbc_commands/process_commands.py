@@ -189,6 +189,8 @@ def starthack2(context: MessageContext, retry=False):
         if status == "retry":
             answer.reply()
             return starthack2(context, retry=True)
+        if "Вы достигли лимита" in msg:
+            buttons.insert(0, "Увеличить лимит", "buy_slot")
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
 
