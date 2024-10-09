@@ -73,37 +73,6 @@ def get_translation(text):
         return unidecode(text)
 
 
-def send_ds_message(channel_id, text):
-    the_bot_token = local_server.discord_config()['token']
-    json = {
-        "content": text
-    }
-    headers = {
-        "authorization": f"Bot {the_bot_token}",
-        "Content-Type": "application/json"
-    }
-    return requests.post(f"https://discord.com/api/v10/channels/{channel_id}/messages", headers=headers, json=json)
-
-
-def create_ds_channel(user, platform):
-    discord_config = local_server.discord_config()
-    the_bot_token = discord_config['token']
-    discord_api = discord_config['api_base']
-    guild_id = discord_config['guild_id']
-    json = {"name": user,
-            "permission_overwrites": [],
-            "type": 0,
-            "topic": f'{user} {platform}'
-            }
-    headers = {
-        "authorization": f"Bot {the_bot_token}",
-        "Content-Type": "application/json"
-    }
-    # я кстати не проверял его работоспособность. если что затролен
-    req = requests.post(f"{discord_api}/guilds/{guild_id}/channels", json=json, headers=headers)
-    return req
-
-
 def randhex(len):
     return numpy.random.bytes(len).hex()
 
@@ -275,7 +244,7 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
         info_fin["is_admin"] = False
 
     localuser_db.update_info_by_lid(uid_fin, info_fin)
-    localuser_db.delete_user_by_lid(uid)
+    localuser_db.delete_user(uid)
     fsm_db.set_local_user_id(context, uid_fin)
 
     return "retry", "Теперь этот профиль привязан к аккаунту, на котором вы ранее использовали бота."
