@@ -11,12 +11,15 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command([r"startfight", "!отправить", "!админ", "отправить", "админ", "помоги", "!помоги"], level=["*", "letsgo"])
+@bot.command([r"startfight.*", "!отправить", "!админ", "отправить", "админ", "помоги", "!помоги"], level=["*", "letsgo"])
 def start_fight(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("Написать админу", "letsgo")
     buttons.add("Меню помощи", "help")
+
+    if len(context.text.split()) > 1:
+        fsm_db.update_state(context, "*")
 
     answer.setText("В этом меню вы можете обратиться к администраторам бота.").reply()
 
@@ -25,7 +28,7 @@ def start_fight(context: MessageContext):
 def letsgo(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    buttons.add("Вернуться", "startfight")
+    buttons.add("Вернуться", "startfight 1")
 
     current_time = int(time.time())
     user_last_use = fsm_db.get_brawl_data(context)
@@ -45,6 +48,7 @@ modbot = techsup.Modbot()
 
 
 @bot.command(".*", level="letsgo")
+@level_on_error("start_msg")
 def letsgo(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
