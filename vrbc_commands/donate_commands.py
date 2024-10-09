@@ -173,6 +173,7 @@ def boostshop(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Купить", "boostshop2")
     buttons.add("Бусты", "boosts")
+    buttons.add("Главное меню", "начать")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     balance = info_worker.get_value(context, 'donate')
     answer.addText(f"Ваш баланс: {balance}₽")
