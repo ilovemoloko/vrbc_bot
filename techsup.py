@@ -26,7 +26,8 @@ def escape_markdown_v2(text: str) -> str:
             .replace(">", "\\>")
             .replace("<", "\\<")
             .replace("~", "\\~")
-            .replace("`", "\\`"))
+            .replace("`", "\\`")
+            .replace(".", "\\."))
 
 
 class Modbot(metaclass=SingletonMeta):
