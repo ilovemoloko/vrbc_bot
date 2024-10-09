@@ -15,19 +15,11 @@ class LittleContext:
         self.original_message = ""
 
 
+escape_characters = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
 def escape_markdown_v2(text: str) -> str:
-    return (text.replace("(", "\\(")
-            .replace(")", "\\)")
-            .replace("_", "\\_")
-            .replace("*", "\\*")
-            .replace("[", "\\[")
-            .replace("]", "\\]")
-            .replace("|", "\\|")
-            .replace(">", "\\>")
-            .replace("<", "\\<")
-            .replace("~", "\\~")
-            .replace("`", "\\`")
-            .replace(".", "\\."))
+    for c in escape_characters:
+        text = text.replace(c, f"\\{c}")
+    return text
 
 
 class Modbot(metaclass=SingletonMeta):
