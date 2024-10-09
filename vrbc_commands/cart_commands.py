@@ -72,7 +72,7 @@ def chooseitem(context: MessageContext):
             context.fsm = [str(category_id)]
             return chooseitem2(context)
 
-    if context.text.startswith("!добавить") or context.text.startswith("добавить"):
+    if not context.text.startswith("chooseitem"):
         buttons.add("Список предметов", "cart")
         context.text = "chooseitem 1"
     fsm_db.update_state(context, context.text)
@@ -280,7 +280,7 @@ def removeitem(context: MessageContext):
         answer.addText("Корзина пуста")
     else:
         answer.addText("Напишите ID нужного вам предмета")
-        if context.text.startswith("!убрать") or context.text.startswith("убрать"):
+        if not context.text.startswith("removeitem"):
             context.text = "removeitem"
         fsm_db.update_state(context, context.text)
     answer.reply()
