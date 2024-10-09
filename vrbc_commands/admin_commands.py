@@ -16,7 +16,7 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command("ыыы 3")
+@bot.command(["ыыы 3", "ыыы"], ignore_case=True)
 def admin_panel(context: MessageContext):
     if check_admin(context) is False:
         return
@@ -25,9 +25,40 @@ def admin_panel(context: MessageContext):
     buttons.add("update bv", "update_bot_values")
     buttons.add("restart bot", "restart_bot")
     buttons.add("unpack bot", "unpack_bot")
-    buttons.add("reverse rite", "reverse_rite")
+    buttons.add(">>", "ыыы 4")
+    answer.addText("!админка").reply()
+
+
+@bot.command("ыыы 4", ignore_case=True)
+def admin_panel(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("<<", "ыыы 3")
     buttons.add("console", "console")
-    answer.addText("!админка!!").reply()
+    buttons.add("reverse rite", "reverse_rite")
+    buttons.add("upgrade bot", "upgrade_bot")
+    buttons.add(">>", "ыыы 5")
+    answer.addText("!админка").reply()
+
+
+@bot.command("ыыы 5", ignore_case=True)
+def admin_panel(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("<<", "ыыы 3")
+    answer.addText("тут пусто").reply()
+
+
+@bot.command("upgrade_bot")
+def upgrade_bot(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    unpack_bot(context)
+    restart_bot(context)
 
 
 @bot.command("console")
