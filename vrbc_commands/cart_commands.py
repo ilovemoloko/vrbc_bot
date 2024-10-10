@@ -45,7 +45,7 @@ def selectcategory(context: MessageContext):
     answer.reply()
 
 
-@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*", "! добавить.*"], level=["*", "additem"], weak=True, ignore_case=True)
+@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*", "! добавить.*", "! Добавить.*"], level=["*", "additem"], weak=True, ignore_case=True)
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
