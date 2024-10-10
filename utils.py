@@ -13,6 +13,7 @@ from translate import Translator
 from db_worker import bca_db, info_worker, fsm_db, localuser_db
 from script_base import MessageContext
 import sys
+import logging
 
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
@@ -91,38 +92,87 @@ def getSave(t, c, ver='en'):  # Возвращает (инфо, успешно �
         return "КОДГОВНО!aaabbbccc!АВТОРГЕНИЙ".encode("utf-8"), False, ver
 
 
-def search(data, Pattern, startIndex):
-    if startIndex > len(data) or len(Pattern) > (len(data) - startIndex):
-        return -100
-    index = startIndex
-    limit = len(data) - len(Pattern)
-    while index <= limit:
-        j = len(Pattern) - 1
-        while j >= 0 and Pattern[j] == data[index + j]:
-            j -= 1
-        if j < 0:
-            return index
-        index += 1
-    return -100
+class DataSearcher:
+    def __init__(self, data):
+        self.sBytes = data
+        self.Offsets = {}
+        self.inq = "LOL"
+
+    def getInq(self):
+        inqIdx = 0
+        try:
+            inqIdx = self.search(struct.pack("<I", 9), 300000) + 4
+        except:
+            sBytes = self.sBytes
+            str_from_bytes = sBytes.decode('utf-8', errors='ignore')
+
+            lololo = re.findall(
+                r"(?:^|[^a-zA-Z\d])[a-f0-9]{9}(?:[^a-zA-Z\d]|$)", str_from_bytes)
+            if len(lololo) > 0:
+                lololo = lololo[0]
+                k = ''.join(
+                    lol for lol in lololo if lol in 'abcdef0123456789')
+                inqIdx = self.sBytes.index(k.encode())
+            else:
+                possibleinq = re.findall(
+                    r'(?<![0-9a-f])[0-9a-fA-F]{11}(?![0-9a-fA-F]{2})', str(self.sBytes))
+                probablyinq = list(filter(lambda t: str(t).startswith(
+                    '00') and str(t).lower() == str(t), possibleinq))[0][2:11]
+                inqIdx = self.sBytes.index(probablyinq.encode())
+
+        InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
+        for i in range(9):
+            InqBytes[i] = self.sBytes[inqIdx+i]
+
+        self.inq = InqBytes.decode()
+        if not ''.join(k for k in self.inq if k in 'abcdef0123456789'):
+            sBytes = self.sBytes
+            str_from_bytes = sBytes.decode('utf-8', errors='ignore')
+
+            lololo = re.findall(
+                r"(?:^|[^a-zA-Z\d])[a-f0-9]{9}(?:[^a-zA-Z\d]|$)", str_from_bytes)
+
+            if len(lololo) > 0:
+                lololo = lololo[0]
+                k = ''.join(
+                    lol for lol in lololo if lol in 'abcdef0123456789')
+                inqIdx = self.sBytes.index(k.encode())
+            else:
+                possibleinq = re.findall(
+                    r'(?<![0-9a-f])[0-9a-fA-F]{11}(?![0-9a-fA-F]{2})', str(self.sBytes))
+                probablyinq = list(filter(lambda t: str(t).startswith(
+                    '00') and str(t).lower() == str(t), possibleinq))[0][2:11]
+                inqIdx = self.sBytes.index(probablyinq.encode())
+            InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
+            for i in range(9):
+                InqBytes[i] = self.sBytes[inqIdx+i]
+            self.inq = InqBytes.decode()
+
+        return self.inq
+
+    def search(self, Pattern: list, startIndex: int):
+        if startIndex > len(self.sBytes) or len(Pattern) > (len(self.sBytes) - startIndex):
+            raise IndexError('Something went wrong')
+        index = startIndex
+        limit = len(self.sBytes) - len(Pattern)
+        while index <= limit:
+            j = len(Pattern) - 1
+            while j >= 0 and Pattern[j] == self.sBytes[index + j]:
+                j -= 1
+            if j < 0:
+                return index
+            index += 1
+        return -1
 
 
 def getInq(data):
-    data = bytearray(data)
     try:
-        CurrIdx = search(data, struct.pack("<I", 9), 300000) + 4
-        if CurrIdx > 0:
-            InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
-            for i in range(9):
-                InqBytes[i] = data[CurrIdx + i]
-            inq = ''.join(k for k in InqBytes.decode() if k in 'abcdef0123456789')
-            if len(inq) == 9: return inq
-        inq_pat = re.findall(r"(?:^|[^a-zA-Z\d])[a-f0-9]{9}(?:[^a-zA-Z\d]|$)", str(data))
-        lololo = inq_pat[0]
-        inq = ''.join(lol for lol in lololo if lol in 'abcdef0123456789')
-        return inq
-
-    except:
-        return "LOL"
+        ds = DataSearcher(data)
+        inq = ds.getInq()
+    except Exception as e:
+        logging.error(e)
+        inq = "LOL"
+    return inq
 
 
 def humanize_time(seconds):
