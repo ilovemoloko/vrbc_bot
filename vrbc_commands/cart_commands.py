@@ -45,7 +45,7 @@ def selectcategory(context: MessageContext):
     answer.reply()
 
 
-@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*"], level=["*", "additem"], weak=True, ignore_case=True)
+@bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*", "! добавить.*"], level=["*", "additem"], weak=True, ignore_case=True)
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -57,6 +57,8 @@ def chooseitem(context: MessageContext):
         buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
         return answer.reply()
 
+    if context.text.startswith("! добавить"):
+        context.text = context.text[2:]
     command_parts = context.text.split()
     if len(command_parts) == 3:
         context.text = command_parts[2]
