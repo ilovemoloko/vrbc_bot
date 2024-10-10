@@ -49,10 +49,10 @@ def selectcategory(context: MessageContext):
 def chooseitem(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    user_bot_values = info_worker.get_bot_values(context)['default_user']
+    user_bot_values = info_worker.get_bot_values(context)
 
     cart_size = info_worker.get_cart_size(context)
-    if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values):
+    if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values['default_user']):
         answer.addText("Корзина переполнена")
         buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
         return answer.reply()
@@ -60,14 +60,21 @@ def chooseitem(context: MessageContext):
     command_parts = context.text.split()
     if len(command_parts) == 3:
         context.text = command_parts[2]
-        fsm_db.update_state(context, f"additem {command_parts[1]}")
+        item_id = int(command_parts[1])
+        if item_id not in user_bot_values["items"]:
+            buttons.add("Список предметов", "cart")
+            answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
+        fsm_db.update_state(context, f"additem {item_id}")
         context.fsm = [command_parts[1]]
         return additem(context)
     elif len(command_parts) == 2:
         if not command_parts[0] == "chooseitem":
             context.text = command_parts[1]
             item_id = int(context.text)
-            category_id = local_server.bot_variables["items"][item_id][2]
+            if item_id not in user_bot_values["items"]:
+                buttons.add("Список предметов", "cart")
+                answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
+            category_id = user_bot_values["items"][item_id][2]
             fsm_db.update_state(context, f"chooseitem {category_id}")
             context.fsm = [str(category_id)]
             return chooseitem2(context)
