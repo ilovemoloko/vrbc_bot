@@ -63,7 +63,7 @@ def chooseitem(context: MessageContext):
         item_id = int(command_parts[1])
         if item_id not in user_bot_values["items"]:
             buttons.add("Список предметов", "cart")
-            answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
+            return answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
         fsm_db.update_state(context, f"additem {item_id}")
         context.fsm = [command_parts[1]]
         return additem(context)
@@ -73,7 +73,7 @@ def chooseitem(context: MessageContext):
             item_id = int(context.text)
             if item_id not in user_bot_values["items"]:
                 buttons.add("Список предметов", "cart")
-                answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
+                return answer.addText("Такого предмета нет в каталоге. Попробуйте еще раз.").reply()
             category_id = user_bot_values["items"][item_id][2]
             fsm_db.update_state(context, f"chooseitem {category_id}")
             context.fsm = [str(category_id)]
