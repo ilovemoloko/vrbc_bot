@@ -28,22 +28,26 @@ def cart(context: MessageContext):
 
 @bot.command("selectcategory \\d+")
 def selectcategory(context: MessageContext):
-    fsm_db.update_state(context, "*")
-
     category_id = context.text.split()[1]
     if category_id == "all":
         return allcategories(context)
 
-    category_id = int(category_id)
-    category_items = info_worker.get_bot_values(context)['categorized'][category_id]
-    category_name = info_worker.get_bot_values(context)['categories'][category_id]
-
     buttons = ButtonsBuilder()
-    buttons.add("Добавить предмет", f"chooseitem {category_id}")
     buttons.add("Корзина", "viewcart")
     buttons.add("Назад", "cart")
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    bot_values = info_worker.get_bot_values(context)
+    category_id = int(category_id)
+    if category_id not in bot_values['categorized']:
+        return answer.setText("Такой категории нет").reply()
+    category_items = bot_values['categorized'][category_id]
+    category_name = bot_values['categories'][category_id]
+
+    buttons.add("Добавить предмет", f"chooseitem {category_id}")
+    fsm_db.update_state(context, f"chooseitem {category_id}")
+
     answer.addText(f"Категория \"{category_name}\"\nЕсли вы хотите увидеть список предметов из всех каталогов, то используйте команду Список", start="")
     for i in category_items:
         answer.addText(f"{category_items[i][1]} (ID: {i})")
@@ -53,7 +57,7 @@ def selectcategory(context: MessageContext):
 
 @bot.command(["allcategories", "!список", "список"], ignore_case=True)
 def allcategories(context: MessageContext):
-    fsm_db.update_state(context, "*")
+    fsm_db.update_state(context, "chooseitem all")
 
     buttons = ButtonsBuilder()
     buttons.add("Добавить предмет", f"chooseitem all")
