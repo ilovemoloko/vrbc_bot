@@ -26,7 +26,7 @@ def cart(context: MessageContext):
     answer.reply()
 
 
-@bot.command("selectcategory \\d+")
+@bot.command("selectcategory \\d+", level=["*", "chooseitem"])
 def selectcategory(context: MessageContext):
     category_id = context.text.split()[1]
     if category_id == "all":
