@@ -65,6 +65,9 @@ def allcategories(context: MessageContext):
     for i in categories:
         answer.addText(f"{categories[i]} (ID: {i})")
 
+    answer.setButtons(buttons)
+    answer.reply()
+
 
 @bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*", "! добавить.*", "! Добавить.*"], level=["*", "additem"], weak=True, ignore_case=True)
 def chooseitem(context: MessageContext):
