@@ -28,7 +28,7 @@ def help_message(context: MessageContext):
     buttons.add("Проблемы с аккаунтом", "account_issues")
     buttons.add("Вернуться", "start")
 
-    answer.setText("Меню помощи по боту\nСейчас здесь ничего нет, поэтому смело обращайтесь к администрации, если вы хотите что-то узнать").setButtons(buttons).reply()
+    answer.setText("Меню помощи по боту\nЭто меню будет заполняться ответами на частые вопросы.\n\nЕсли вы не нашли здесь ответа на свой вопрос, то смело обращайтесь к администрации").setButtons(buttons).reply()
 
 
 @bot.command("account_issues")
