@@ -16,7 +16,9 @@ def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
     answer = (MessageBuilder().setReplyMode(context)
-              .setText("Вы можете выбрать предметы из представленных категорий").setButtons(buttons))
+              .setText("Вы можете выбрать предметы из представленных категорий\n\n"
+                       "Если вы хотите увидеть список предметов из всех каталогов, "
+                       "то используйте команду Список").setButtons(buttons))
 
     categories = info_worker.get_bot_values(context)['categories']
     for i in categories:
@@ -28,7 +30,11 @@ def cart(context: MessageContext):
 def selectcategory(context: MessageContext):
     fsm_db.update_state(context, "*")
 
-    category_id = int(context.text.split()[1])
+    category_id = context.text.split()[1]
+    if category_id == "all":
+        return allcategories(context)
+
+    category_id = int(category_id)
     category_items = info_worker.get_bot_values(context)['categorized'][category_id]
     category_name = info_worker.get_bot_values(context)['categories'][category_id]
 
@@ -38,11 +44,26 @@ def selectcategory(context: MessageContext):
     buttons.add("Назад", "cart")
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    answer.addText(f"Категория \"{category_name}\"\n", start="")
+    answer.addText(f"Категория \"{category_name}\"\nЕсли вы хотите увидеть список предметов из всех каталогов, то используйте команду Список", start="")
     for i in category_items:
         answer.addText(f"{category_items[i][1]} (ID: {i})")
 
     answer.reply()
+
+
+@bot.command(["allcategories", "!список", "список"], ignore_case=True)
+def allcategories(context: MessageContext):
+    fsm_db.update_state(context, "*")
+
+    buttons = ButtonsBuilder()
+    buttons.add("Добавить предмет", f"chooseitem all")
+    buttons.add("Корзина", "viewcart")
+    buttons.add("Назад", "cart")
+
+    categories = info_worker.get_bot_values(context)['categories']
+    answer = MessageBuilder().setReplyMode(context)
+    for i in categories:
+        answer.addText(f"{categories[i]} (ID: {i})")
 
 
 @bot.command(["chooseitem \\d+", "!добавить.*", "добавить.*", "chooseitem.*", "! добавить.*", "! Добавить.*"], level=["*", "additem"], weak=True, ignore_case=True)
