@@ -64,6 +64,11 @@ iamdumb_text = """❗ВНИМАНИЕ❗ (короткая версия)
 """
 
 
+@bot.command(".*", level="hack_process")
+def hack_process(context: MessageContext):
+    MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
+
+
 @bot.command("iamdumb", level="starthack_agreement")
 def iamdumb(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
@@ -254,9 +259,3 @@ def tccc_help_fm(context: MessageContext):
 def reducecd_fm(context: MessageContext):
     fsm_db.update_state(context, "*")
     return reducecd(context)
-
-
-@bot.command(".*", level="hack_process")
-def hack_process(context: MessageContext):
-    fsm_db.update_state(context, "*")
-    MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
