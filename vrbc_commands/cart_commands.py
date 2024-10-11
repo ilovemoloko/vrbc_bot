@@ -26,7 +26,7 @@ def cart(context: MessageContext):
     answer.reply()
 
 
-@bot.command("selectcategory \\d+", level=["*", "additem"])
+@bot.command("selectcategory .*", level=["*", "additem"], weak="True")
 def selectcategory(context: MessageContext):
     category_id = context.text.split()[1]
     if category_id == "all":
@@ -45,7 +45,7 @@ def selectcategory(context: MessageContext):
     category_items = bot_values['categorized'][category_id]
     category_name = bot_values['categories'][category_id]
 
-    buttons.add("Добавить предмет", f"chooseitem {category_id}")
+    buttons.insert(0,"Добавить предмет", f"chooseitem {category_id}")
     fsm_db.update_state(context, f"chooseitem {category_id}")
 
     answer.addText(f"Категория \"{category_name}\"\nЕсли вы хотите увидеть список предметов из всех каталогов, то используйте команду Список", start="")
