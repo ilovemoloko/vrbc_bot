@@ -60,10 +60,14 @@ def allcategories(context: MessageContext):
     buttons.add("Корзина", "viewcart")
     buttons.add("Назад", "cart")
 
-    categories = info_worker.get_bot_values(context)['categories']
+    bot_values = info_worker.get_bot_values(context)
+
+    categories = bot_values['categories']
     answer = MessageBuilder().setReplyMode(context)
-    for i in categories:
-        answer.addText(f"{categories[i]} (ID: {i})")
+    for cat in categories:
+        cat_items = bot_values['categorized'][cat]
+        for i in cat_items:
+            answer.addText(f"{cat_items[i][1]} (ID: {i})")
 
     answer.setButtons(buttons)
     answer.reply()
