@@ -197,7 +197,7 @@ def boostshop2(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@bot.command(r"buyboost .*", level="boostshop2", weak=True)
+@bot.command(r"buyboost .*", level=["boostshop2", "boostshop2cd"], weak=True)
 def buyboost(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
