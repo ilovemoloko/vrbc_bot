@@ -24,7 +24,7 @@ def start_fight(context: MessageContext):
     answer.setText("В этом меню вы можете обратиться к администраторам бота.").reply()
 
 
-@bot.command("letsgo")
+@bot.command("letsgo", level=["*", "letsgo"])
 def letsgo(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
