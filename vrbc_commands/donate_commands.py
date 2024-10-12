@@ -218,6 +218,7 @@ def buyboost(context: MessageContext):
     answer.addText("Спасибо за покупку!\n\n"
                    "Теперь вы можете в любой момент "
                    "использовать этот буст во разделе \"Бусты\"").reply()
+    fsm_db.update_state(context, "*")
 
 
 @bot.command(r".*", level="boostshop2", weak=True)
@@ -229,7 +230,8 @@ def boostshop3(context: MessageContext):
 
     boosts_store = local_server.get_default_values()['boosts_store']
     if boost_id not in boosts_store:
-        return answer.addText("Такого буста нет в магазине").reply()
+        return answer.addText("Буста с таким ID нет.\n"
+                              "Пожалуйста, отправьте боту ID, указанный около названия в магазине").reply()
 
     boost_cost = boosts_store[boost_id]
     balance = info_worker.get_value(context, 'donate')
@@ -290,7 +292,8 @@ def boostshop3(context: MessageContext):
 
     boosts_store = local_server.get_default_values()['boosts_store']
     if boost_id not in boosts_store:
-        return answer.addText("Такого буста нет в магазине").reply()
+        return answer.addText("Буста с таким ID нет.\n"
+                              "Пожалуйста, отправьте боту ID, указанный около названия в магазине").reply()
 
     boost_cost = boosts_store[boost_id]
     balance = info_worker.get_value(context, 'donate')
