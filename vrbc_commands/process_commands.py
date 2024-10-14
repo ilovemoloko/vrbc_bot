@@ -206,6 +206,7 @@ def starthack2(context: MessageContext, retry=False):
     buttons.add("Полезные факты о боте", "funfact")
     answer.addText(f"Примерное время ожидания до получения кодов: {wait_time}").reply()
     buttons = ButtonsBuilder()
+    answer.setButtons(buttons)
 
     cart = info_worker.get_value(context, 'cart')
     files = {"save": data}
