@@ -220,6 +220,8 @@ def addcat(context: MessageContext):
 
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
+    if str(cat_id) not in local_server.cats_icons:
+        return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
     img = local_server.cats_icons[str(cat_id)]
     answer.setPreviewUrl(img)
     return answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
