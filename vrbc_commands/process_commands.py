@@ -64,11 +64,6 @@ iamdumb_text = """❗ВНИМАНИЕ❗ (короткая версия)
 """
 
 
-@bot.command(".*", level="hack_process")
-def hack_process(context: MessageContext):
-    MessageBuilder().setReplyMode(context).setText("Пожалуйста, подождите...").reply()
-
-
 @bot.command("iamdumb", level="starthack_agreement")
 def iamdumb(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)

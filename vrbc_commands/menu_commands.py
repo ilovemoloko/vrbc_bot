@@ -42,7 +42,7 @@ def account_issues(context: MessageContext):
     answer.setText("Возникли проблемы с аккаунтом?").setButtons(buttons).reply()
 
 
-@bot.command("presets")
+@bot.command(["presets", "пресет.*", "!пресет.*"], ignore_case=True)
 def presets(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
