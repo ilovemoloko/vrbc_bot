@@ -1,3 +1,5 @@
+import time
+
 import script_base as sc
 from config import token_tg
 from script_base import MessageBuilder, MessageContext
@@ -7,7 +9,9 @@ import telebot
 class TgBotScript(sc.BotScript):
     def __init__(self):
         super().__init__()
-        self.bot = telebot.TeleBot(token_tg, skip_pending=True)
+        self.started_sent = {}
+        self.start_time = None
+        self.bot = telebot.TeleBot(token_tg)
 
     def send_message(self, message: MessageBuilder):
         chat_id = message.peerId
@@ -27,6 +31,22 @@ class TgBotScript(sc.BotScript):
         if url_preview:
             return self.bot.send_photo(chat_id=chat_id, caption=text, reply_markup=keyboard, photo=url_preview[1])
         self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+
+    def handle_action(self, action):
+        message = action.rawAction
+        peer_id = message.chat.id
+        time_now = time.time()
+        call_time = message.date
+
+        if call_time - self.start_time < 0:
+            if peer_id in self.started_sent:
+                if time_now - self.started_sent[peer_id] < 2:
+                    return
+            else:
+                self.started_sent[peer_id] = time_now
+                return self.bot.send_message(peer_id, "Бот перезапущен. Вы можете попробовать снова.")
+
+        super().handle_action(action)
 
     def _handle_action(self, action):
         peer_id = action.chat.id
@@ -65,18 +85,22 @@ class TgBotScript(sc.BotScript):
 
     def start(self):
         self.bot.set_update_listener(self.get_actions)
+        self.start_time = time.time()
+        self.started_sent = {}
 
         @self.bot.callback_query_handler(func=lambda call: True)
         def query_listener(call):
             user_id = call.from_user.id
             peer_id = call.message.chat.id
             text = call.data
-            self.handle_action(MessageContext(self.get_name()).setPeerId(peer_id).setUserId(user_id).setText(text))
+
+            self.handle_action(MessageContext(self.get_name()).setPeerId(peer_id)
+                               .setUserId(user_id).setText(text).setRawAction(call.message))
 
         while True:
             print("tg polling...")
             try:
-                self.bot.polling(none_stop=True, skip_pending=True)
+                self.bot.polling(none_stop=True)
             except Exception as e:
                 print(e)
 
