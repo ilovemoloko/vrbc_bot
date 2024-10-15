@@ -178,7 +178,7 @@ def find_cat_2(context: MessageContext):
     buttons.add("Добавить кота", "return_27")
 
     text = context.text
-    cat_id = utils.search_cat(text)
+    cat_id = utils.search_cat(text, info_worker.get_value(context, "japan_user"))
     answer.addText("Результаты поиска:\n")
     for i in cat_id:
         answer.addText(f" - {i[0]} (ID: {i[1]})")
@@ -194,6 +194,20 @@ def find_cat(context: MessageContext):
     return find_cat_2(context)
 
 
+@bot.command(r"setlocal.*")
+def setlocal(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    arg = context.text.split(" ", 1)[1]
+    value = False
+    if arg == "ja":
+        value = True
+
+    info_worker.set_value(context, "japan_user", value)
+
+    answer.addText(f"Бот переключил ваш поиск котов на {arg} версию.")
+    answer.reply()
+
+
 def addcat(context: MessageContext):
     text = context.text
     item_id = 27
@@ -202,10 +216,12 @@ def addcat(context: MessageContext):
     buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
+    is_jp = info_worker.get_value(context, "japan_user")
+
     if text.isnumeric():
         cat_id = int(text)
     else:
-        cat_id = utils.search_cat(text)
+        cat_id = utils.search_cat(text, is_jp)
         if len(cat_id) == 0:
             cat_id = -1
         else:
@@ -213,7 +229,19 @@ def addcat(context: MessageContext):
 
     if item_id == 27:
         if not (str(cat_id) in local_server.cats_names):
-            return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
+            answer.addText("В базе данных бота пока что ещё нет такого кота\n")
+            max_id = local_server.max_cat_ja
+            if cat_id <= max_id:
+                return answer.reply()
+            if not is_jp:
+                buttons.add("Включить японский поиск", "setlocal ja")
+                answer.addText("Этого кота нет в глобальной версии игры.\n"
+                                "Если вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
+            else:
+                buttons.add("Включить английский поиск", "setlocal en")
+                answer.addText("Этого кота нет в японской версии игры.\n"
+                               "Если вы играете на английской версии, то вы можете попытаться добавить кота после включения английского поиска")
+            return answer.reply()
 
     fsm_db.update_state(context, f"chooseitem {items_data[2]}")
     info_worker.add_to_cart(context, item_id, cat_id)
@@ -221,7 +249,20 @@ def addcat(context: MessageContext):
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
     if str(cat_id) not in local_server.cats_icons:
-        return answer.addText("В базе данных бота пока что ещё нет такого кота").reply()
+        answer.addText("В базе данных бота пока что ещё нет такого кота\n")
+        max_id = local_server.max_cat_ja
+        if cat_id <= max_id:
+            return answer.reply()
+        if not is_jp:
+            buttons.add("Включить японский поиск", "setlocal ja")
+            answer.addText("Этого кота нет в глобальной версии игры.\n"
+                           "Если вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
+        else:
+            buttons.add("Включить английский поиск", "setlocal en")
+            answer.addText("Этого кота нет в японской версии игры.\n"
+                           "Если вы играете на английской версии, то вы можете попытаться добавить кота после включения английского поиска")
+        return answer.reply()
+
     img = local_server.cats_icons[str(cat_id)]
     answer.setPreviewUrl(img)
     return answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()

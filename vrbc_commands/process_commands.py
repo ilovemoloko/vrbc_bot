@@ -172,10 +172,12 @@ def starthack2(context: MessageContext, retry=False):
 
     transfer, pin = codes
     data, success, version = utils.getSave(transfer, pin)
+
     if not success:
         fsm_db.update_state(context, "starthack")
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
+    info_worker.set_value(context, 'japan_user', version == "ja")
 
     inq = utils.getInq(data)
 

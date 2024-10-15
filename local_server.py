@@ -135,9 +135,12 @@ def hack_account(files, headers):
 
 updated_cats = False
 
+max_cat_en = 0
+max_cat_ja = 0
+
 
 def update_variables():
-    global bot_variables, cats, cats_names, updated_cats, cats_icons, cats_names_ja, cats_icons_ja, cats_ja
+    global bot_variables, cats, cats_names, updated_cats, cats_icons, cats_names_ja, cats_icons_ja, cats_ja, max_cat_en, max_cat_ja
     r = requests.get(get_variables_url)
     bot_variables = r.json()
 
@@ -160,6 +163,13 @@ def update_variables():
     cats_names_ja = cats_vars['cats_ja']['cat_names']
     cats_icons_ja = cats_vars['icons_ja']
 
+    for cat_icon_id in cats_icons:
+        if int(cat_icon_id) > max_cat_en:
+            max_cat_en = int(cat_icon_id)
+
+    for cat_icon_id in cats_icons_ja:
+        if int(cat_icon_id) > max_cat_ja:
+            max_cat_ja = int(cat_icon_id)
 
     updated_cats = True
 
