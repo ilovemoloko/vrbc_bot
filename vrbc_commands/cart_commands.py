@@ -92,7 +92,7 @@ def chooseitem(context: MessageContext):
     if context.text.startswith("! добавить"):
         context.text = context.text[2:]
     command_parts = context.text.split()
-    if len(command_parts) == 3:
+    if len(command_parts) >= 3:
         context.text = command_parts[2]
         item_id = int(command_parts[1])
         if item_id not in user_bot_values["items"]:
