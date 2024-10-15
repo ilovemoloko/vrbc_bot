@@ -227,8 +227,9 @@ def addcat(context: MessageContext):
         else:
             cat_id = cat_id[0][1]
 
+    cats_names = local_server.get_cats_names(is_jp=is_jp)
     if item_id == 27:
-        if not (str(cat_id) in local_server.get_cats_names(is_jp=is_jp)):
+        if not str(cat_id) in cats_names:
             answer.addText("В базе данных бота пока что ещё нет такого кота\n")
             max_id = local_server.max_cat_ja
             if cat_id <= max_id:
@@ -248,7 +249,8 @@ def addcat(context: MessageContext):
 
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    if str(cat_id) not in local_server.get_icons(is_jp=is_jp):
+    icons = local_server.get_icons(is_jp=is_jp)
+    if str(cat_id) not in icons:
         answer.addText("В базе данных бота пока что ещё нет такого кота\n")
         max_id = local_server.max_cat_ja
         if cat_id <= max_id:
@@ -263,9 +265,9 @@ def addcat(context: MessageContext):
                            "Если вы играете на английской версии, то вы можете попытаться добавить кота после включения английского поиска")
         return answer.reply()
 
-    img = local_server.cats_icons[str(cat_id)]
+    img = icons[str(cat_id)]
     answer.setPreviewUrl(img)
-    return answer.addText(f"Кот {local_server.cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
+    return answer.addText(f"Кот {cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
 
 
 @bot.command(".*", level="additem", weak=True)
@@ -298,12 +300,13 @@ def additem(context: MessageContext):
     answer.addText(f"Предмет {items_data[1]} ({amount}) добавлен в корзину").reply()
 
 
-def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n -- ", show_id=True):
+def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n -- ", show_id=True, cats_names=None):
     id_text = f" (ID: {item_id})" if show_id else ""
     message.addText(f"{amount}", start=start)
     message.addText(f"{item_name}", start=" ")
     if item_id == 27:
-        message.addText(f"{local_server.cats_names[str(amount)]}", start=" ")
+        if cats_names is not None:
+            message.addText(f"{cats_names[str(amount)]}", start=" ")
     if show_id:
         message.addText(f"{id_text}", start=" ")
     return message
@@ -311,6 +314,7 @@ def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n --
 
 def addCart(answer, cart, items_info, only_item=None, show_id=True):
     changed = False
+    cats_names = local_server.get_cats_names(is_jp=info_worker.get_value(answer.context, "japan_user"))
     for i in cart:
         item_info = items_info[i]
         item_name = item_info[1]
@@ -319,10 +323,10 @@ def addCart(answer, cart, items_info, only_item=None, show_id=True):
             continue
         if isinstance(cart[i], list):
             for j in cart[i]:
-                addItemStr(answer, j, item_name, item_id, show_id=show_id)
+                addItemStr(answer, j, item_name, item_id, show_id=show_id, cats_names=cats_names)
                 changed = True
         else:
-            addItemStr(answer, cart[i], item_name, item_id, show_id=show_id)
+            addItemStr(answer, cart[i], item_name, item_id, show_id=show_id, cats_names=cats_names)
             changed = True
     return changed
 
