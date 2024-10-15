@@ -177,3 +177,15 @@ def update_variables():
 
 
 update_variables()
+
+
+def get_cats_names(is_jp=False):
+    if is_jp:
+        return cats_names_ja
+    return cats_names
+
+
+def get_icons(is_jp=False):
+    if is_jp:
+        return cats_icons_ja
+    return cats_icons

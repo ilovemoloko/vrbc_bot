@@ -228,7 +228,7 @@ def addcat(context: MessageContext):
             cat_id = cat_id[0][1]
 
     if item_id == 27:
-        if not (str(cat_id) in local_server.cats_names):
+        if not (str(cat_id) in local_server.get_cats_names(is_jp=is_jp)):
             answer.addText("В базе данных бота пока что ещё нет такого кота\n")
             max_id = local_server.max_cat_ja
             if cat_id <= max_id:
@@ -248,7 +248,7 @@ def addcat(context: MessageContext):
 
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
-    if str(cat_id) not in local_server.cats_icons:
+    if str(cat_id) not in local_server.get_icons(is_jp=is_jp):
         answer.addText("В базе данных бота пока что ещё нет такого кота\n")
         max_id = local_server.max_cat_ja
         if cat_id <= max_id:
