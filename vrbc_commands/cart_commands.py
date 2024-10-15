@@ -244,9 +244,6 @@ def addcat(context: MessageContext):
                                "Если вы играете на английской версии, то вы можете попытаться добавить кота после включения английского поиска")
             return answer.reply()
 
-    fsm_db.update_state(context, f"chooseitem {items_data[2]}")
-    info_worker.add_to_cart(context, item_id, cat_id)
-
     buttons.insert(0, "Начать взлом", "starthack")
     buttons.insert(0, "Посмотреть корзину", "viewcart")
     icons = local_server.get_icons(is_jp=is_jp)
@@ -264,6 +261,9 @@ def addcat(context: MessageContext):
             answer.addText("Этого кота нет в японской версии игры.\n"
                            "Если вы играете на английской версии, то вы можете попытаться добавить кота после включения английского поиска")
         return answer.reply()
+
+    fsm_db.update_state(context, f"chooseitem {items_data[2]}")
+    info_worker.add_to_cart(context, item_id, cat_id)
 
     img = icons[str(cat_id)]
     answer.setPreviewUrl(img)
