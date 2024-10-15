@@ -11,11 +11,15 @@ change_code_url = base_url + "/api/change_code"
 get_variables_url = base_url + "/api/get_variables"
 get_cats_url = base_url + "/api/get_cats"
 
-cats = {}
-cats_names = {}
-bot_variables = {}
-cats_icons = {}
 
+bot_variables = {}
+
+cats = {}
+cats_ja = {}
+cats_names = {}
+cats_names_ja = {}
+cats_icons = {}
+cats_icons_ja = {}
 
 def categorize_items(items):
     res = {}
@@ -133,7 +137,7 @@ updated_cats = False
 
 
 def update_variables():
-    global bot_variables, cats, cats_names, updated_cats, cats_icons
+    global bot_variables, cats, cats_names, updated_cats, cats_icons, cats_names_ja, cats_icons_ja, cats_ja
     r = requests.get(get_variables_url)
     bot_variables = r.json()
 
@@ -147,9 +151,14 @@ def update_variables():
 
     r = requests.get(get_cats_url)
     cats_vars = r.json()
+
     cats = cats_vars['all_forms']
     cats_names = cats_vars['cat_names']
     cats_icons = cats_vars['icons']
+
+    cats_ja = cats_vars['cats_ja']['all_forms']
+    cats_names_ja = cats_vars['cats_ja']['cat_names']
+    cats_icons_ja = cats_vars['icons_ja']
 
     updated_cats = True
 
