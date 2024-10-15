@@ -15,6 +15,40 @@ class VkBotScript(sc.BotScript):
         self.vk = self.vk_session.get_api()
         self.longpoll = VkBotLongPoll(self.vk_session, id_vk)
 
+    def get_users(self, num):
+        users = []
+        offset = 0
+        count_per_request = 200
+
+        while len(users) < num:
+            response = self.vk.messages.getConversations(count=count_per_request, offset=offset, filter="unread")
+            dialogs = response['items']
+            if not dialogs:
+                break
+
+            for dialog in dialogs:
+                chat_id = dialog['conversation']['peer']['id']
+                last_message = dialog['last_message']['text']
+                users.append((chat_id, last_message))
+
+                if len(users) >= num:
+                    break
+
+            offset += count_per_request
+
+        return users[:num]
+
+    def massmsg(self, user_ids, message):
+        max_users = 100
+
+        while user_ids:
+            try:
+                user_ids_batch = user_ids[:max_users]
+                self.vk.messages.send(user_ids=user_ids_batch, message=message, random_id=random.randint(1, 2147483647))
+                user_ids = user_ids[max_users:]
+            except Exception as e:
+                print(e)
+
     def handle_action(self, action):
         t = threading.Thread(target=super().handle_action, args=(action,))
         t.start()
@@ -91,3 +125,11 @@ class VkBotScript(sc.BotScript):
 
     def get_name(self):
         return "vk"
+
+    def start(self):
+        userids = []
+        for x in self.get_users(1000):
+            userids.append(x[0])
+        msg = "Бот перезапущен. Вы можете попробовать снова."
+        self.massmsg(userids, msg)
+        super().start()
