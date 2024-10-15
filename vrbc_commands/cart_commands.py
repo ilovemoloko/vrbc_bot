@@ -232,7 +232,7 @@ def addcat(context: MessageContext):
         if not str(cat_id) in cats_names:
             answer.addText("В базе данных бота пока что ещё нет такого кота\n")
             max_id = local_server.max_cat_ja
-            if cat_id <= max_id:
+            if cat_id > max_id:
                 return answer.reply()
             if not is_jp:
                 buttons.add("Включить японский поиск", "setlocal ja")
@@ -253,7 +253,7 @@ def addcat(context: MessageContext):
     if str(cat_id) not in icons:
         answer.addText("В базе данных бота пока что ещё нет такого кота\n")
         max_id = local_server.max_cat_ja
-        if cat_id <= max_id:
+        if cat_id > max_id:
             return answer.reply()
         if not is_jp:
             buttons.add("Включить японский поиск", "setlocal ja")
