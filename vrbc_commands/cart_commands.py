@@ -306,7 +306,11 @@ def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n --
     message.addText(f"{item_name}", start=" ")
     if item_id == 27:
         if cats_names is not None:
-            message.addText(f"{cats_names[str(amount)]}", start=" ")
+            if str(amount) not in cats_names:
+                name = "??? (Имя кота не найдено, смените версию поиска)"
+            else:
+                name = cats_names[str(amount)]
+            message.addText(f"{name}", start=" ")
     if show_id:
         message.addText(f"{id_text}", start=" ")
     return message
