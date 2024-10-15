@@ -160,6 +160,7 @@ def update_variables():
     cats_names_ja = cats_vars['cats_ja']['cat_names']
     cats_icons_ja = cats_vars['icons_ja']
 
+
     updated_cats = True
 
     return True

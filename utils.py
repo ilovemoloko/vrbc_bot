@@ -203,13 +203,16 @@ def to_latin(text):
 
 
 latinized_cats = {}
+latinized_cats_ja = {}
 
-
-def get_latinized_cats():
-    global latinized_cats
+def get_latinized_cats(is_jp=False):
+    global latinized_cats, latinized_cats_ja
     if local_server.updated_cats:
         latinized_cats = {to_latin(key): value for key, value in local_server.cats.items()}
+        latinized_cats_ja = {to_latin(key): value for key, value in local_server.cats_ja.items()}
         local_server.updated_cats = False
+    if is_jp:
+        return latinized_cats_ja
     return latinized_cats
 
 
@@ -232,8 +235,8 @@ def fuzzy_search(query, data, threshold=70, limit=8):
     return [(key, data[key]) for key, score in best_matches]
 
 
-def search_cat(query):
-    return fuzzy_search(query, get_latinized_cats())
+def search_cat(query, is_jp=False):
+    return fuzzy_search(query, get_latinized_cats(is_jp=is_jp))
 
 
 def add_account(context, user_id, account):
