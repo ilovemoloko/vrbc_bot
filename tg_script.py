@@ -38,13 +38,14 @@ class TgBotScript(sc.BotScript):
         time_now = time.time()
         call_time = message.date
 
-        if call_time - self.start_time < 0:
-            if peer_id in self.started_sent:
-                if time_now - self.started_sent[peer_id] < 2:
-                    return
-            else:
-                self.started_sent[peer_id] = time_now
-                return self.bot.send_message(peer_id, "Бот перезапущен. Вы можете попробовать снова.")
+        if time_now - self.start_time < 10:
+            if call_time - self.start_time < 0:
+                if peer_id in self.started_sent:
+                    if time_now - self.started_sent[peer_id] < 2:
+                        return
+                else:
+                    self.started_sent[peer_id] = time_now
+                    return self.bot.send_message(peer_id, "Бот перезапущен. Вы можете попробовать снова.")
 
         super().handle_action(action)
 
