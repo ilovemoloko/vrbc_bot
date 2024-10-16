@@ -68,7 +68,8 @@ def get_translation(text):
     if translator is None:
         return unidecode(text)
     try:
-        return translator.translate(text[:100])
+        res = translator.translate(text[:100])
+        return res
     except Exception as e:
         print("TRANSLATOR ERROR", e)
         return unidecode(text)
@@ -205,6 +206,7 @@ def to_latin(text):
 latinized_cats = {}
 latinized_cats_ja = {}
 
+
 def get_latinized_cats(is_jp=False):
     global latinized_cats, latinized_cats_ja
     if local_server.updated_cats:
@@ -236,7 +238,18 @@ def fuzzy_search(query, data, threshold=70, limit=8):
 
 
 def search_cat(query, is_jp=False):
-    return fuzzy_search(query, get_latinized_cats(is_jp=is_jp))
+    data = get_latinized_cats(is_jp=is_jp)
+    if query.isnumeric():
+        res = []
+        for key, value in data.items():
+            if value == int(query):
+                res.append((key, value))
+        if len(res) == 0:
+            res = fuzzy_search(query, data)
+    else:
+        res = fuzzy_search(query, data)
+
+    return res
 
 
 def add_account(context, user_id, account):
