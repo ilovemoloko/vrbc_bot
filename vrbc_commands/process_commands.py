@@ -190,6 +190,7 @@ def starthack2(context: MessageContext, retry=False):
     if not status or status == "retry":
         fsm_db.update_state(context, "starthack")
         if status == "retry":
+            buttons.add("?????", "huh_whatisthat")
             answer.reply()
             return starthack2(context, retry=True)
         if "Вы достигли лимита" in msg:

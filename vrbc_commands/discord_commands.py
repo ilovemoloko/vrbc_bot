@@ -11,7 +11,7 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command([r"startfight.*", "!отправить", "!админ", "отправить", "админ", "помоги", "!помоги"], level=["*", "letsgo"])
+@bot.command([r"startfight.*", "!отправить", "!админ", "отправить", "админ", "помоги", "!помоги"], level=["*", "letsgo", "first_msg"])
 def start_fight(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)

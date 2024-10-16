@@ -19,11 +19,51 @@ facts = [
 ]
 
 
-@bot.command("funfact", level=[".*", "hack_process"])
+@bot.command("funfact", level=["*", "hack_process"])
 def funfact(context: MessageContext):
     buttons = ButtonsBuilder().add("Другой факт", "funfact")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.setText(random.choice(facts)).reply()
+
+
+@bot.command("huh_whatisthat", level=["*", "hack_process", "first_msg"])
+def huh_whatisthat(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Первый раз пользуюсь", "huh_whatisthat_frst")
+    buttons.add("Уже пользовался", "huh_whatisthat_alrdy")
+    answer.setText("Вы никогда раньше не пользовались ботом?").reply()
+
+
+@bot.command("huh_whatisthat_frst", level=["*", "hack_process", "first_msg"])
+def huh_whatisthat_frst(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Написать администрации", "startfight 1")
+    answer.setText("Если вы действительно не пользовались ботом на этом аккаунте игры, то кто-то другой получил доступ к вашему аккаунту.")
+    answer.addText("Обратитесь в администрацию, чтобы у вас не было проблем с дальнейшим использованием бота").reply()
+
+
+@bot.command("huh_whatisthat_alrdy", level=["*", "hack_process", "first_msg"])
+def huh_whatisthat_alrdy(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("Да", "huh_whatisthat_alrdy_yes")
+    buttons.add("Нет", "huh_whatisthat_alrdy_no")
+    answer.setText("Вы первый раз пользуетесь ботом на ЭТОМ аккаунте игры?")
+
+
+@bot.command("huh_whatisthat_alrdy_yes", level=["*", "hack_process", "first_msg"])
+def huh_whatisthat_alrdy_yes(context: MessageContext):
+    huh_whatisthat_frst(context)
+
+
+@bot.command("huh_whatisthat_alrdy_no", level=["*", "hack_process", "first_msg"])
+def huh_whatisthat_alrdy_no(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("У меня остались вопросы", "startfight 1")
+    answer.setText("В таком случае, теперь этот аккаунт игры привязан к нескольким страницам, с которых вы писали.").reply()
 
 
 @bot.command(".*", level="hack_process")
