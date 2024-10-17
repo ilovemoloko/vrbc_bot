@@ -48,16 +48,12 @@ def extract_codes(input_string):
     input_string = input_string.replace("o", "0")
     input_string = input_string.replace("s", "5")
 
-    regex = r'([a-fA-F0-9]{9})[\s\S]*?([0-9]{4})'  # ? делает выражение ленивым
+    regex = r'([a-fA-F0-9]{9})[\s\S]*?([0-9]{4})'
     pattern = re.compile(regex)
     matches = re.findall(pattern, input_string)
 
-    if matches:
-        # Ищем ближайшие совпадения, т.е. минимизируем длину строки между ними
-        closest_match = min(matches, key=lambda x: input_string.find(x[1]) - input_string.find(x[0]))
-        return closest_match
-    else:
-        return None
+    closest_match = min(matches, key=lambda x: input_string.find(x[1]) - input_string.find(x[0]))
+    return closest_match
 
 
 translator = None
