@@ -174,7 +174,7 @@ def select_account_afterconf(context: MessageContext):
     status, new_inq, msg, tc, cc = local_server.recovery_backup(user_id, old_inq)
     if (not status) or (not new_inq) or (new_inq == "") or (tc == "") or (cc == ""):
         if msg == "Ваши коды:":
-            msg = "Попробуйте восстановить аккаунт ещё раз"
+            msg = "Произошла ошибка. Попробуйте восстановить аккаунт ещё раз"
         return answer.setText(msg).reply()
     answer.setButtons(None)
     try:
