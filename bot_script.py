@@ -110,8 +110,7 @@ def start_message(context: MessageContext):
     buttons.add("Помощь | Тех. поддержка", "help")
     MessageBuilder().setReplyMode(context).setText(
         f"Здравствуй! В этом боте ты можешь получить различные предметы в игре The Battle Cats бесплатно.\n"
-        f"Ты всегда можешь вернуться к этому сообщению, написав Начать\n\n"
-        f"Если вам нужна помощь/техническая поддержка, то нажмите кнопку Меню").setButtons(buttons).reply()
+        f"Ты всегда можешь вернуться к этому сообщению, написав Начать\n\n").setButtons(buttons).reply()
     reg(context)
     fsm_db.update_state(context, "*")
 
