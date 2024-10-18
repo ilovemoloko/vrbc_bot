@@ -131,7 +131,7 @@ def get_wait_time():
 
 def hack_account(files, headers):
     res = requests.post(api_url, files=files, headers=headers)
-    return res
+    return json.loads(res.content.decode("utf-8"))
 
 
 updated_cats = False

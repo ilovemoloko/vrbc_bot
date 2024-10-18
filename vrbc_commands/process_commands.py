@@ -218,8 +218,7 @@ def starthack2(context: MessageContext, retry=False):
                "inq": inq,
                "user": str(fsm_db.get_local_user_id(context))}
 
-    hack_request = local_server.hack_account(files, headers)
-    hack_result = eval(hack_request.content.decode("utf-8"))
+    hack_result = local_server.hack_account(files, headers)
 
     if hack_result['status'] == 1:
         transfer, confirmation = hack_result['codes']
