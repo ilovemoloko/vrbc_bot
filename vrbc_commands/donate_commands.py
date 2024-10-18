@@ -174,7 +174,9 @@ def boostshop(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Купить", "boostshop2")
     buttons.add("Бусты", "boosts")
+    buttons.add("Пополнить баланс", "donate")
     buttons.add("Главное меню", "начать")
+
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     balance = info_worker.get_value(context, 'donate')
     answer.addText(f"Ваш баланс: {balance}₽")
@@ -254,8 +256,9 @@ def skip_cd(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
     buttons.add("Купить", "boostshop2cd")
-    buttons.add("Вернуться в корзину", "viewcart")
     buttons.add("Полная версия магазина", "boostshop")
+    buttons.add("Пополнить баланс", "donate")
+    buttons.add("Вернуться в корзину", "viewcart")
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
