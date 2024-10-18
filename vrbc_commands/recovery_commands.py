@@ -172,7 +172,9 @@ def select_account_afterconf(context: MessageContext):
     user_id = fsm_db.get_local_user_id(context)
     old_inq = context.fsm[1]
     status, new_inq, msg, tc, cc = local_server.recovery_backup(user_id, old_inq)
-    if not status:
+    if (not status) or (not new_inq) or (new_inq == "") or (tc == "") or (cc == ""):
+        if msg == "Ваши коды:":
+            msg = "Попробуйте восстановить аккаунт ещё раз"
         return answer.setText(msg).reply()
     utils.recovery_rite(context, old_inq, new_inq)
     answer.setButtons(None)

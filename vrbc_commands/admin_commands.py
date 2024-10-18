@@ -146,6 +146,9 @@ def reverse_rite_check(context: MessageContext):
         return
     inq = context.text
 
+    if inq.lower() == "none":
+        inq = ""
+
     answer = MessageBuilder().setReplyMode(context)
     account = bca_db.get_account_info(inq)
     if account is None:

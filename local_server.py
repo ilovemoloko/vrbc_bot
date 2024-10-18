@@ -109,6 +109,7 @@ def recovery_backup(user_id, inq):
     new_inq = json_data.get('new_inq', "")
     tc = json_data.get('tc', "")
     cc = json_data.get('cc', "")
+
     return status, new_inq, msg, tc, cc
 
 
