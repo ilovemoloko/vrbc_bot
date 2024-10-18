@@ -176,7 +176,10 @@ def select_account_afterconf(context: MessageContext):
         if msg == "Ваши коды:":
             msg = "Попробуйте восстановить аккаунт ещё раз"
         return answer.setText(msg).reply()
-    utils.recovery_rite(context, old_inq, new_inq)
     answer.setButtons(None)
-    answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+    try:
+        answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+    except:
+        answer.setText("Произошла ошибка. Попробуйте восстановить позже.")
+    utils.recovery_rite(context, old_inq, new_inq)
     fsm_db.update_state(context, "first_msg")

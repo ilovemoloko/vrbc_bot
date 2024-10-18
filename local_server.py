@@ -21,6 +21,7 @@ cats_names_ja = {}
 cats_icons = {}
 cats_icons_ja = {}
 
+
 def categorize_items(items):
     res = {}
     for iid in items:
@@ -65,6 +66,7 @@ def boost_change_cart_size(values, effect):
     size = effect['params'][0]
     values['default_user']['cart_size'] += size
     return values
+
 
 def boost_add_value(values, effect):
     value, value_inc = effect['params']
