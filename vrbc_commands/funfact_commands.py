@@ -51,7 +51,7 @@ def huh_whatisthat_alrdy(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("Да", "huh_whatisthat_alrdy_yes")
     buttons.add("Нет", "huh_whatisthat_alrdy_no")
-    answer.setText("Вы первый раз пользуетесь ботом на ЭТОМ аккаунте игры?")
+    answer.setText("Вы первый раз пользуетесь ботом на ЭТОМ аккаунте игры?").reply()
 
 
 @bot.command("huh_whatisthat_alrdy_yes", level=["*", "hack_process", "first_msg"])
