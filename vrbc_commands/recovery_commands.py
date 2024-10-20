@@ -180,6 +180,7 @@ def select_account_afterconf(context: MessageContext):
     try:
         if len(cc) == 0:
             raise ValueError
+        buttons = ButtonsBuilder()
         buttons.add("Не получается ввести коды", "help_enter")
         answer.setButtons(buttons).setText(msg).reply().setButtons(None).setText(tc).reply().setText(cc).reply()
     except:
