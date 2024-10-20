@@ -181,7 +181,7 @@ def select_account_afterconf(context: MessageContext):
         if len(cc) == 0:
             raise ValueError
         buttons.add("Не получается ввести коды", "help_enter")
-        answer.setText(msg).reply().setButtons(None).setText(tc).reply().setText(cc).reply()
+        answer.setButtons(buttons).setText(msg).reply().setButtons(None).setText(tc).reply().setText(cc).reply()
     except:
         answer.setText("Произошла ошибка. Попробуйте восстановить позже.")
     utils.recovery_rite(context, old_inq, new_inq)
