@@ -3,6 +3,7 @@ import sqlite3
 import local_server
 import os
 import threading
+from bot_script import give_boost
 
 db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -179,6 +180,75 @@ class FSMDatabase(metaclass=SingletonMeta):
 fsm_db = FSMDatabase()
 
 
+class couponDB(metaclass=SingletonMeta):
+    def __init__(self):
+        self.conn = conn
+        self.create_table()
+
+    @locked
+    @connected
+    def create_table(self):
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS coupon (
+                coup_name TEXT PRIMARY KEY,
+                uses_left INTEGER,
+                id TEXT,
+                users TEXT
+            )
+        ''')
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_coup(self, cname, uses, cId):
+        self.conn.execute('''
+            INSERT INTO coupon (coup_name, uses_left, id, users) VALUES (?, ?, ?, ?)
+        ''', (cname, uses, cId, ""))
+        self.conn.commit()
+
+    @locked
+    def get_coup_info(self, coupName):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+                    SELECT uses_left, id, users FROM coupon WHERE coup_name = ?
+                ''', (coupName,))
+        result = cursor.fetchone()
+        return result
+
+    @locked
+    def hasUsed(self, coupName, context):
+        data = self.get_coup_info(coupName)
+        return str(fsm_db.get_local_user_id(context)) in data[2].split(" ")
+
+    @locked
+    @connected
+    def removeCoup(self, coupName):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+        DELETE FROM coupon WHERE coup_name = ?
+        ''', (coupName,))
+
+    @locked
+    @connected
+    def useCoup(self, coupName, context):
+        context = str(fsm_db.get_local_user_id(context))
+        cursor = self.conn.cursor()
+        data = self.get_coup_info(coupName)
+        if not data:
+            return 0
+        uses_left, coupon_id, all_used = data
+        if context in all_used.split(' '):
+            return -1
+        uses_left -= 1
+        all_used = all_used + context + ' '
+        if uses_left == 0:
+            self.removeCoup(coupName)
+        else:
+            cursor.execute('''
+            UPDATE coupon SET uses_left = ?, users = ? WHERE coup_name = ?
+            ''', (uses_left, all_used, coupName))
+        return 1
+
 # unique string account code, int userid, boolean isjp, string originalcode
 
 class BCAccountDB(metaclass=SingletonMeta):
@@ -216,7 +286,6 @@ class BCAccountDB(metaclass=SingletonMeta):
             UPDATE accounts SET disabled = ? WHERE account_code = ?
         ''', (disabled, account_code))
         self.conn.commit()
-
 
     @locked
     def get_user_id(self, account_code):
