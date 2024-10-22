@@ -178,8 +178,20 @@ def select_account_afterconf(context: MessageContext):
         return answer.setText(msg).reply()
     answer.setButtons(None)
     try:
-        answer.setText("Ваши коды: ").reply().setText(tc).reply().setText(cc).reply()
+        if len(cc) == 0:
+            raise ValueError
+        buttons = ButtonsBuilder()
+        buttons.add("Не получается ввести коды", "help_enter")
+        answer.setButtons(buttons).setText(msg).reply().setButtons(None).setText(tc).reply().setText(cc).reply()
     except:
         answer.setText("Произошла ошибка. Попробуйте восстановить позже.")
     utils.recovery_rite(context, old_inq, new_inq)
     fsm_db.update_state(context, "first_msg")
+
+
+@bot.command("help_enter", level=["first_msg", "*"])
+def help_enter(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText("Если у вас не получается зайти в меню для ввода кодов, "
+                   "то это значит, что вам нужно сбросить данные игры\n"
+                   "Это можно сделать в настройках устройства, очистив все данные приложения").reply()

@@ -175,7 +175,7 @@ def boostshop(context: MessageContext):
     buttons.add("Купить", "boostshop2")
     buttons.add("Бусты", "boosts")
     buttons.add("Пополнить баланс", "donate")
-    buttons.add("Главное меню", "начать")
+    buttons.add("Главное меню", "start")
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     balance = info_worker.get_value(context, 'donate')
@@ -238,7 +238,8 @@ def boostshop3(context: MessageContext):
     boost_cost = boosts_store[boost_id]
     balance = info_worker.get_value(context, 'donate')
     if balance < boost_cost:
-        return answer.addText(f"Недостаточно средств ({balance}₽)").reply()
+        buttons.add("Пополнить баланс", "donate")
+        return answer.addText(f"Недостаточно средств ({balance}₽, требуется {boost_cost}₽)").reply()
 
     buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
     answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()
@@ -301,7 +302,8 @@ def boostshop3(context: MessageContext):
     boost_cost = boosts_store[boost_id]
     balance = info_worker.get_value(context, 'donate')
     if balance < boost_cost:
-        return answer.addText(f"Недостаточно средств ({balance}₽)").reply()
+        buttons.add("Пополнить баланс", "donate")
+        return answer.addText(f"Недостаточно средств ({balance}₽, требуется {boost_cost}₽)").reply()
 
     buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
     answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()

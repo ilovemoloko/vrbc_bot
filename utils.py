@@ -267,7 +267,7 @@ def add_account(context, user_id, account):
         bca_db.set_disabled(inq, 2)
         return False, "Вы достигли лимита аккаунтов"
 
-    return "success", f"Аккаунт ({inq}) привязан к вашему профилю ({user_accounts_number + 1} из {accounts_limit} аккаунтов)\n"
+    return "success", f"Аккаунт ({inq}) привязан к вашему профилю\n"
 
 
 def merge_accounts(context: MessageContext, uid, uid_fin):
