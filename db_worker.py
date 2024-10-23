@@ -180,7 +180,7 @@ class FSMDatabase(metaclass=SingletonMeta):
 fsm_db = FSMDatabase()
 
 
-class couponDB(metaclass=SingletonMeta):
+class CouponDB(metaclass=SingletonMeta):
     def __init__(self):
         self.conn = conn
         self.create_table()
@@ -231,16 +231,19 @@ class couponDB(metaclass=SingletonMeta):
     @locked
     @connected
     def useCoup(self, coupName, context):
-        context = str(fsm_db.get_local_user_id(context))
+        local_id = str(fsm_db.get_local_user_id(context))
         cursor = self.conn.cursor()
         data = self.get_coup_info(coupName)
         if not data:
             return 0
         uses_left, coupon_id, all_used = data
-        if context in all_used.split(' '):
+        if local_id in all_used.split(' '):
             return -1
+
+        give_boost(context, coupon_id)
+
         uses_left -= 1
-        all_used = all_used + context + ' '
+        all_used = all_used + local_id + ' '
         if uses_left == 0:
             self.removeCoup(coupName)
         else:
@@ -249,7 +252,9 @@ class couponDB(metaclass=SingletonMeta):
             ''', (uses_left, all_used, coupName))
         return 1
 
-# unique string account code, int userid, boolean isjp, string originalcode
+
+coupon_db = CouponDB()
+
 
 class BCAccountDB(metaclass=SingletonMeta):
     def __init__(self):
