@@ -1,4 +1,4 @@
-from bot_script import bot, addBoost, give_boost
+from bot_script import bot, addBoost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 import local_server
@@ -9,6 +9,14 @@ fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
+
+
+def give_boost(context: MessageContext, boost_id, amount=1):
+    user_boosts = info_worker.get_value(context, 'boosts')
+    if boost_id not in user_boosts:
+        user_boosts[boost_id] = 0
+    user_boosts[boost_id] += 1
+    info_worker.set_value(context, 'boosts', user_boosts)
 
 
 @bot.command("boosts")

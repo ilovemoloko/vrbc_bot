@@ -92,14 +92,6 @@ def addBoost(message: MessageBuilder, boost, boost_id, amount=None, desc=False):
         message.addText(f"Осталось использований: {amount}")
 
 
-def give_boost(context: MessageContext, boost_id, amount=1):
-    user_boosts = info_worker.get_value(context, 'boosts')
-    if boost_id not in user_boosts:
-        user_boosts[boost_id] = 0
-    user_boosts[boost_id] += 1
-    info_worker.set_value(context, 'boosts', user_boosts)
-
-
 initialize_bot_commands()
 
 

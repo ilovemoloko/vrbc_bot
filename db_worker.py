@@ -3,7 +3,6 @@ import sqlite3
 import local_server
 import os
 import threading
-from bot_script import give_boost
 
 db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -187,6 +186,13 @@ class FSMDatabase(metaclass=SingletonMeta):
 
 fsm_db = FSMDatabase()
 
+
+def give_boost(context, boost_id, amount=1):
+    user_boosts = info_worker.get_value(context, 'boosts')
+    if boost_id not in user_boosts:
+        user_boosts[boost_id] = 0
+    user_boosts[boost_id] += 1
+    info_worker.set_value(context, 'boosts', user_boosts)
 
 class CouponDB(metaclass=SingletonMeta):
     def __init__(self):

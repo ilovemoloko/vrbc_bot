@@ -113,6 +113,12 @@ def recovery_account(context: MessageContext):
 def select_account(context: MessageContext, send_start_msg=True):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    if utils.hack_locked:
+        utils.add_mass_msg(context, answer)
+        fsm_db.update_state(context, "starthack")
+        return answer.setText("Накрутка сейчас отключена. Бот оповестит вас, когда мы его включим.").reply()
+
     buttons.add("Вернуться", "recovery_menu")
 
     user_id = fsm_db.get_local_user_id(context)

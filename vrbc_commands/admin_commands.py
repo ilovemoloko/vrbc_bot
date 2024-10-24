@@ -53,8 +53,19 @@ def admin_panel(context: MessageContext):
     buttons.add("<-<-", "evalbutbetter 4")
     buttons.add("lock bot", "lock_bot")
     buttons.add("unlock bot", "unlock_bot")
+    buttons.add("islocked", "islocked")
     answer.addText("oijsdfijsdf").reply()
 
+
+@bot.command("islocked")
+def islocked(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    if utils.hack_locked:
+        answer.addText("Бот заблокирован").reply()
+    else:
+        answer.addText("Бот разблокирован").reply()
 
 @bot.command("lock_bot")
 def lock_bot(context: MessageContext):
@@ -128,6 +139,11 @@ def restart_bot(context: MessageContext):
         return
     answer = MessageBuilder().setReplyMode(context)
     answer.setText("Ожидание конца процессов...").reply()
+
+    if utils.hack_locked:
+        sys.argv.append("lock")
+        utils.mass_msg("Бот перезапускается. "
+                       "Это не гарантирует того, что бот будет работать исправно, но вы можете попытаться.")
 
     bot.stop()
     me_thread = threading.current_thread().name

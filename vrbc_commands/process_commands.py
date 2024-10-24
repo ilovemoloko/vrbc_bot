@@ -85,8 +85,12 @@ def starthack_agreement(context: MessageContext):
 def starthack(context: MessageContext, agreed=False):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    uses_count = info_worker.get_uses(context)
 
+    if utils.hack_locked:
+        utils.add_mass_msg(context, answer)
+        return answer.setText("Накрутка сейчас отключена. Бот оповестит вас, когда мы его включим.").reply()
+
+    uses_count = info_worker.get_uses(context)
     if uses_count == 0:
         if not agreed:
             buttons.add("Вернуться", "viewcart")
@@ -139,7 +143,8 @@ def starthack2(context: MessageContext, retry=False):
 
     if utils.hack_locked:
         utils.add_mass_msg(context, answer)
-        return answer.setText("Накрутка сейчас отключена. Бот оповестит вас, когда мы включим бота").reply()
+        fsm_db.update_state(context, "starthack")
+        return answer.setText("Накрутка сейчас отключена. Бот оповестит вас, когда мы его включим.").reply()
 
     current_time = int(time.time())
     user_last_use = info_worker.get_value(context, 'last_use')

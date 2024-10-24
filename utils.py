@@ -16,6 +16,7 @@ import sys
 import logging
 import threading
 
+
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
     tesPath = "C:/Program Files/Tesseract-OCR/tesseract.exe"
@@ -27,7 +28,7 @@ custom_config = r'-c tessedit_char_whitelist=" :abcdefABCDEFTransferCodeConfirma
 
 lock = threading.RLock()
 mass_msg_cache = {}
-hack_locked = False
+hack_locked = "lock" in sys.argv
 
 
 def locked(func):
@@ -45,12 +46,14 @@ def add_mass_msg(context: MessageContext, msg: MessageBuilder):
 
 
 @locked
-def mass_msg():
+def mass_msg(text=None):
     global mass_msg_cache
     users = list(mass_msg_cache.values())
+    if text is None:
+        text = "Снято ограничение на взлом. Попробесь использовать бота"
     for msg in users:
         msg: MessageBuilder
-        msg.setText("Снято ограничение на взлом. Попробуйте использовать бота")
+        msg.setText(text)
         msg.setButtons(ButtonsBuilder().add("Перейти в корзину", "viewcart"))
         msg.reply()
     mass_msg_cache = {}
