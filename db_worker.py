@@ -130,6 +130,14 @@ class FSMDatabase(metaclass=SingletonMeta):
         self.conn.commit()
 
     @locked
+    @connected
+    def hack_reset(self):
+        self.conn.execute('''
+            UPDATE users SET state = 'first_msg' WHERE state = 'hack_process'
+        ''')
+        self.conn.commit()
+
+    @locked
     def get_state(self, context):
         user_id_combined = f"{context.src}_{context.user_id}"
         cursor = self.conn.cursor()
@@ -587,6 +595,10 @@ class DBInfoWorker(metaclass=SingletonMeta):
             count = boosts_ids[bid]
             if boost['type'] == 'passive':
                 active = True
+            if 'stackable' in boost:
+                if not boost['stackable']:
+                    if bid in passive_boosts:
+                        continue
             if active:
                 for i in range(count):
                     passive_boosts.append(bid)

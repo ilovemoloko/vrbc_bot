@@ -11,9 +11,10 @@ from fuzzywuzzy import process
 from unidecode import unidecode
 from translate import Translator
 from db_worker import bca_db, info_worker, fsm_db, localuser_db
-from script_base import MessageContext
+from script_base import MessageContext, MessageBuilder, ButtonsBuilder
 import sys
 import logging
+import threading
 
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
@@ -23,6 +24,36 @@ if not (sys.platform == "linux" or sys.platform == "linux2"):
 else:
     print("Running on Linux")
 custom_config = r'-c tessedit_char_whitelist=" :abcdefABCDEFTransferCodeConfirmation0123456789€¢Oo"'
+
+lock = threading.RLock()
+mass_msg_cache = {}
+hack_locked = False
+
+
+def locked(func):
+    def wrapper(*args, **kwargs):
+        with lock:
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+@locked
+def add_mass_msg(context: MessageContext, msg: MessageBuilder):
+    global mass_msg_cache
+    mass_msg_cache[f"{context.src}_{context.user_id}"] = msg
+
+
+@locked
+def mass_msg():
+    global mass_msg_cache
+    users = list(mass_msg_cache.values())
+    for msg in users:
+        msg: MessageBuilder
+        msg.setText("Снято ограничение на взлом. Попробуйте использовать бота")
+        msg.setButtons(ButtonsBuilder().add("Перейти в корзину", "viewcart"))
+        msg.reply()
+    mass_msg_cache = {}
 
 
 def get_image(url):

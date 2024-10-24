@@ -137,6 +137,10 @@ def starthack2(context: MessageContext, retry=False):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     user_bot_values = info_worker.get_bot_values(context)['default_user']
 
+    if utils.hack_locked:
+        utils.add_mass_msg(context, answer)
+        return answer.setText("Накрутка сейчас отключена. Бот оповестит вас, когда мы включим бота").reply()
+
     current_time = int(time.time())
     user_last_use = info_worker.get_value(context, 'last_use')
     user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)

@@ -25,6 +25,7 @@ def admin_panel(context: MessageContext):
     buttons.add("update bv", "update_bot_values")
     buttons.add("restart bot", "restart_bot")
     buttons.add("unpack bot", "unpack_bot")
+    buttons.add("hack reset", "hack_reset")
     buttons.add("->->", "evalbutbetter 4")
     answer.addText("!админка").reply()
 
@@ -50,7 +51,31 @@ def admin_panel(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("<-<-", "evalbutbetter 4")
-    answer.addText("тут пусто").reply()
+    buttons.add("lock bot", "lock_bot")
+    buttons.add("unlock bot", "unlock_bot")
+    answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("lock_bot")
+def lock_bot(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    utils.hack_locked = True
+
+
+@bot.command("unlock_bot")
+def unlock_bot(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    utils.hack_locked = False
+    utils.mass_msg()
+
+
+@bot.command("hack_reset")
+def hack_reset(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    fsm_db.hack_reset()
 
 
 @bot.command("upgrade_bot")
