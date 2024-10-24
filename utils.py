@@ -50,7 +50,7 @@ def mass_msg(text=None):
     global mass_msg_cache
     users = list(mass_msg_cache.values())
     if text is None:
-        text = "Снято ограничение на взлом. Попробесь использовать бота"
+        text = "Снято ограничение на взлом. Попробуйте использовать бота"
     for msg in users:
         msg: MessageBuilder
         msg.setText(text)

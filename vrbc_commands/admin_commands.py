@@ -66,6 +66,7 @@ def islocked(context: MessageContext):
         answer.addText("Бот заблокирован").reply()
     else:
         answer.addText("Бот разблокирован").reply()
+        
 
 @bot.command("lock_bot")
 def lock_bot(context: MessageContext):
@@ -144,6 +145,9 @@ def restart_bot(context: MessageContext):
         sys.argv.append("lock")
         utils.mass_msg("Бот перезапускается. "
                        "Это не гарантирует того, что бот будет работать исправно, но вы можете попытаться.")
+    else:
+        if "lock" in sys.argv:
+            sys.argv.remove("lock")
 
     bot.stop()
     me_thread = threading.current_thread().name
