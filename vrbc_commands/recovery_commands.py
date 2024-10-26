@@ -71,7 +71,7 @@ def save_account_input(context: MessageContext):
     user_id = fsm_db.get_local_user_id(context)
     files = {"save": data}
     status, msg = local_server.backup_account(user_id, inq, files)
-    answer.addText(f"Ваш код аккаунта: {inq}")
+    answer.addText(f"Аккаунт ({inq}) можно восстановить в меню восстановления (!восстановить)")
     answer.addText(msg).reply()
     fsm_db.update_state(context, "first_msg")
 
@@ -155,8 +155,9 @@ def select_account_conf(context: MessageContext):
     text = context.text
     if text != "ВОССТАНОВИТЬ":
         answer.setText("""❗❗❗ЭТО ВАЖНО, ПРОЧТИТЕ ВНИМАТЕЛЬНО❗❗❗
+Если вы восстановите аккаунт, то старый код аккаунта больше не будет доступен для КАКОГО-ЛИБО использования в боте.
 Код вашего аккаунта игры изменится после восстановления.
-Если вы восстановите аккаунт, то старый код аккаунта больше не будет доступен для какого-либо использования в боте.
+
 Используйте эту функцию лишь в том случае, если вам действительно нужно восстановить аккаунт.
 Если вы согласны с условиями, то напишите заглавными буквами слово ВОССТАНОВИТЬ""").reply()
     else:

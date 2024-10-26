@@ -19,7 +19,7 @@ def menu_message(context: MessageContext):
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
 
 
-@bot.command(["help", "помощь", "!помощь", "!help", "/help", "/помощь"], level=["*", "starthack_agreement"], ignore_case=True)
+@bot.command(["help", "помощь", "!помощь", "!help", "/help", "/помощь"], level=["*", "starthack_agreement", "letsgo"], ignore_case=True)
 def help_message(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
