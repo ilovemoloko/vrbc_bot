@@ -401,3 +401,7 @@ def recovery_rite(context: MessageContext, old_inq, new_inq):
 def exec_and_return(context, expression):
     exec("def __ex(context):" + ''.join('\n {0}'.format(l) for l in expression.split('\n')))
     return locals()["__ex"](context)
+
+
+def sendmsg(src, user, content):
+    pass
