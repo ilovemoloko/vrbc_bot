@@ -190,7 +190,7 @@ def boostshop(context: MessageContext):
     answer.addText(f"Ваш баланс: {balance}₽")
     answer.addText("Список бустов для покупки:\n\n")
     boosts_server = local_server.get_default_values()['boosts']
-    boosts_store = local_server.get_default_values()['boosts_store']
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
 
     for boost_id in boosts_store:
         addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
@@ -213,7 +213,7 @@ def buyboost(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("В магазин бустов", "boostshop")
     boost_id = context.text.split(" ", 1)[1]
-    boosts_store = local_server.get_default_values()['boosts_store']
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
     if boost_id not in boosts_store:
         return answer.addText("Такого буста нет в магазине").reply()
 
@@ -238,7 +238,7 @@ def boostshop3(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     boost_id = context.text
 
-    boosts_store = local_server.get_default_values()['boosts_store']
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
     if boost_id not in boosts_store:
         return answer.addText("Буста с таким ID нет.\n"
                               "Пожалуйста, отправьте боту ID, указанный около названия в магазине").reply()
@@ -276,7 +276,7 @@ def skip_cd(context: MessageContext):
 
     answer.addText("Список бустов для покупки:\n\n")
     boosts_server = local_server.get_default_values()['boosts']
-    boosts_store = local_server.get_default_values()['boosts_store']
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
 
     for boost_id in boosts_store:
         if not boost_id.startswith("skip"):
@@ -302,7 +302,7 @@ def boostshop3(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     boost_id = context.text
 
-    boosts_store = local_server.get_default_values()['boosts_store']
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
     if boost_id not in boosts_store:
         return answer.addText("Буста с таким ID нет.\n"
                               "Пожалуйста, отправьте боту ID, указанный около названия в магазине").reply()

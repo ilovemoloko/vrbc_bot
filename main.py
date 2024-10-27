@@ -14,6 +14,7 @@ def thread(func):
     def wrapper(*args, **kwargs):
         t = threading.Thread(target=func, args=args, kwargs=kwargs)
         t.start()
+
     return wrapper
 
 
@@ -21,6 +22,7 @@ script_vk = VkBotScript()
 script_tg = TgBotScript()
 modbot = techsup.Modbot()
 modbot.config(script_tg.bot, config.mod_channel)
+
 
 @script_tg.bot.callback_query_handler(func=lambda call: call.message.chat.id == config.mod_channel)
 def callback_query(call):

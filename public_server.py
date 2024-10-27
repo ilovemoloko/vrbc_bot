@@ -1,7 +1,9 @@
 from flask import Flask, request
-from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 import utils
+import logging
+
+logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -22,5 +24,5 @@ def trololo():
     return "thank you"
 
 
-if __name__ == '__main__':
-    app.run()
+def start():
+    app.run(host='0.0.0.0', port=80, threaded=True)
