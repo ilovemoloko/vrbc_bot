@@ -41,7 +41,7 @@ agreement_text = """❗❗❗ВНИМАНИЕ❗❗❗
 Стоит учитывать, что восстановление возможно лишь по сохранениям аккаунта.
 Каждый раз, когда бот получает аккаунт, прогресс сохранения перезаписывается.
 Восстановить аккаунт можно в меню команды !восстановить
-Ознакомьтесь с этим текстом до конца, после чего напишите боту большими буквами ПРОДОЛЖИТЬ
+Ознакомьтесь с этим текстом до конца, после чего напишите боту ПРОДОЛЖИТЬ
 
 3. При любых проблемах с аккаунтом/игрой вы можете обращаться в тех. поддержку бота.
 Чтобы нам написать, используйте команду !помощь
@@ -76,7 +76,7 @@ def starthack_agreement(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("Подсказка", "iamdumb")
     buttons.add("Вернуться", "viewcart")
-    if context.text == "ПРОДОЛЖИТЬ":
+    if context.text.lower() == "продолжить":
         return starthack(context, True)
     answer.addText(agreement_text).reply()
 
@@ -93,6 +93,7 @@ def starthack(context: MessageContext, agreed=False):
     uses_count = info_worker.get_uses(context)
     if uses_count == 0:
         if not agreed:
+            buttons.add("Подсказка", "iamdumb")
             buttons.add("Вернуться", "viewcart")
             fsm_db.update_state(context, "starthack_agreement")
             return answer.addText(agreement_text).reply()
@@ -216,7 +217,8 @@ def starthack2(context: MessageContext, retry=False):
     wait_time = round(float(wait_time))
     wait_time = utils.humanize_time(wait_time)
     buttons.add("Полезные факты о боте", "funfact")
-    answer.addText(f"Примерное время ожидания до получения кодов: {wait_time}").reply()
+    answer.addText(f"Примерное время ожидания до получения кодов: {wait_time}")
+    answer.addText("\nНе заходите в игру, пока бот не закончит процесс.").reply()
     buttons = ButtonsBuilder()
     answer.setButtons(buttons)
 

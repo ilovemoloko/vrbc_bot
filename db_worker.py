@@ -4,6 +4,8 @@ import local_server
 import os
 import threading
 
+import utils
+
 db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 conn = sqlite3.connect(db_path, check_same_thread=False)
@@ -588,13 +590,6 @@ class DBInfoWorker(metaclass=SingletonMeta):
         boosts_server = default_values['boosts']
         passive_boosts = []
 
-        donate = self.get_value(context, 'donate')
-        donate_server = default_values['donate_rules']
-        donate_boost_id = self.get_donate_boost_id(donate, donate_server)
-
-        if donate_boost_id:
-            passive_boosts.append(donate_boost_id)
-
         for bid in boosts_ids:
             boost = boosts_server[bid]
             active = False
@@ -612,6 +607,8 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
         for bid in passive_boosts:
             local_server.mod_values(default_values, bid)
+
+        default_values["boosts_store"] = utils.generate_shop(context, default_values["default_user"])
 
         categorized = local_server.categorize_items(default_values['items'])
         default_values['categorized'] = categorized
