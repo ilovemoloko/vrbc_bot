@@ -95,6 +95,11 @@ def selectboost2(context: MessageContext):
         answer.reply()
         return
 
+    if boosts_server[boost_id]['type'] == "passive":
+        answer.addText("Этот буст не является активируемым. Он и так всегда активен")
+        answer.reply()
+        return
+
     buttons.add("Да, это нужный буст", f"useboost {boost_id}")
     buttons.add("Нет, вернуться назад", "boosts")
 
@@ -227,7 +232,7 @@ def buyboost(context: MessageContext):
     buttons.insert(0, "Бусты", "boosts")
     answer.addText("Спасибо за покупку!\n\n"
                    "Теперь вы можете в любой момент "
-                   "использовать этот буст во разделе \"Бусты\"").reply()
+                   "использовать этот буст в разделе \"Бусты\"").reply()
     fsm_db.update_state(context, "*")
 
 
