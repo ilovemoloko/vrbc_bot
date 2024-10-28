@@ -134,18 +134,31 @@ def donate(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     balance = info_worker.get_value(context, 'donate')
+    boosts = info_worker.get_value(context, 'boosts')
+
+    current_level = None
+    for boost in boosts:
+        if boost.startswith("donate"):
+            current_level = boost.split("_")[1]
+            break
+
+    current_string = ""
+    if current_level is not None:
+        current_string = f"Текущий уровень: {current_level}\n"
+
     answer.addText(f"""Вы задонатили {balance}₽
+{current_string}
     
-Чтобы поддержать разработку бота, Вы можете пожертвовать любую сумму. 
-Сумма пожертвований может использоваться для покупки бустов.
+Чтобы поддержать разработку бота, Вы можете приобрести бонусы, добавляющие вам больше возможностей бота
  
 У донатеров есть следующие преимущества:
-1. От 35 руб.: 8 предметов в корзине, 27 часов между использованием бота
-2. От 75 руб.: 10 предметов в корзине, 23 часа между использованиями бота
-3. От 125 руб.: 12 предметов в корзине, 19 часов между использованием бота
-4. От 175 руб.: 14 предметов в корзине, 17 часов между использованием бота
-5. От 250 руб.: 17 предметов в корзине, 9 часов между использованием бота""")
+1. 35 руб.: 8 предметов в корзине, 27 часов между использованием бота
+2. 75 руб.: 10 предметов в корзине, 23 часа между использованиями бота
+3. 125 руб.: 12 предметов в корзине, 19 часов между использованием бота
+4. 175 руб.: 14 предметов в корзине, 17 часов между использованием бота
+5. 250 руб.: 17 предметов в корзине, 9 часов между использованием бота""")
     buttons.add("Пожертвовать", "donate2")
+    buttons.add("Купить уровень", "buy_dlevel")
     buttons.add("Магазин бустов", "boostshop")
     buttons.add("Меню", "menu")
     answer.reply()
@@ -176,6 +189,60 @@ def donate3(context: MessageContext):
     fsm_db.update_state(context, "first_msg")
 
 
+@bot.command("buy_dlevel")
+def boostshopd(context: MessageContext):
+    fsm_db.update_state(context, "*")
+    buttons = ButtonsBuilder()
+    buttons.add("Купить", "boostshop2d")
+    buttons.add("Пополнить баланс", "donate")
+    buttons.add("Главное меню", "start")
+
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    balance = info_worker.get_value(context, 'donate')
+    answer.addText(f"Ваш баланс: {balance}₽")
+    answer.addText("Список уровней для покупки:\n\n")
+    boosts_server = local_server.get_default_values()['boosts']
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
+
+    for boost_id in boosts_store:
+        if not boost_id.startswith("donate"):
+            continue
+        addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
+        answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
+    answer.reply()
+
+
+@bot.command("boostshop2d")
+def boostshop2d(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "buy_dlevel")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.addText("Введите ID уровня из магазина").reply()
+    fsm_db.update_state(context, context.text)
+
+
+@bot.command(r".*", level="boostshop2d", weak=True)
+def boostshop3d(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Назад", "buy_dlevel")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    boost_id = context.text
+
+    boosts_store = info_worker.get_bot_values(context)['boosts_store']
+    if boost_id not in boosts_store:
+        return answer.addText("Уровня с таким ID нет.\n"
+                              "Пожалуйста, отправьте боту ID, указанный около названия в списке").reply()
+
+    boost_cost = boosts_store[boost_id]
+    balance = info_worker.get_value(context, 'donate')
+    if balance < boost_cost:
+        buttons.add("Пополнить баланс", "donate")
+        return answer.addText(f"Недостаточно средств ({balance}₽, требуется {boost_cost}₽)").reply()
+
+    buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
+    answer.addText(f"Вы точно хотите купить этот уровень за {boosts_store[boost_id]}₽?").reply()
+
+
 @bot.command("boostshop")
 def boostshop(context: MessageContext):
     fsm_db.update_state(context, "*")
@@ -193,6 +260,8 @@ def boostshop(context: MessageContext):
     boosts_store = info_worker.get_bot_values(context)['boosts_store']
 
     for boost_id in boosts_store:
+        if boost_id.startswith("donate"):
+            continue
         addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
         answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
     answer.reply()
@@ -207,7 +276,7 @@ def boostshop2(context: MessageContext):
     fsm_db.update_state(context, context.text)
 
 
-@bot.command(r"buyboost .*", level=["boostshop2", "boostshop2cd"], weak=True)
+@bot.command(r"buyboost .*", level=["boostshop2", "boostshop2cd", "boostshop2d"], weak=True)
 def buyboost(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
