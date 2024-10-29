@@ -54,7 +54,47 @@ def admin_panel(context: MessageContext):
     buttons.add("lock bot", "lock_bot")
     buttons.add("unlock bot", "unlock_bot")
     buttons.add("islocked", "islocked")
+    buttons.add("->->", "evalbutbetter 6")
     answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command(["ыыы 6", "evalbutbetter 6"], ignore_case=True)
+def admin_panel(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("<-<-", "evalbutbetter 5")
+    buttons.add("stop_bot", "stop_bot")
+    answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("stop_bot")
+def stop_bot(context: MessageContext):
+    if check_admin(context) is False:
+        return
+
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText("Ожидание конца процессов...").reply()
+
+    if utils.hack_locked:
+        sys.argv.append("lock")
+        utils.mass_msg("Бот выключается. "
+                       "Дождитесь включения бота, после чего попробуйте использовать его.")
+    else:
+        if "lock" in sys.argv:
+            sys.argv.remove("lock")
+
+    bot.stop()
+    me_thread = threading.current_thread().name
+    while True:
+        time.sleep(0.1)
+        threads = threading.enumerate()
+        if any((("handle_action" in thread.name) and (thread.name != me_thread)) for thread in threads):
+            continue
+        break
+
+    answer.setText("Выключаю бота").reply()
 
 
 @bot.command("islocked")
