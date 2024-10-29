@@ -191,7 +191,7 @@ def donate3(context: MessageContext):
         return answer.addText("Введите число").reply()
 
     local_user_id = fsm_db.get_local_user_id(context)
-    donate_url = utils.get_donate_url(local_user_id, int(regex.group(0)), context.src)
+    donate_url = utils.get_donate_url(context.user_id, int(regex.group(0)), context.src)
     answer.addText("Ссылка на пожертвование: " + donate_url).reply()
     fsm_db.update_state(context, "first_msg")
 
