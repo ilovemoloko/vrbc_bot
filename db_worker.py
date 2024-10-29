@@ -4,8 +4,6 @@ import local_server
 import os
 import threading
 
-import utils
-
 db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 conn = sqlite3.connect(db_path, check_same_thread=False)
@@ -582,6 +580,56 @@ class DBInfoWorker(metaclass=SingletonMeta):
             return None
         return donate_server[msq]
 
+    def generate_shop(self, context, user_values):
+        boosts = info_worker.get_value(context, 'boosts')
+        boosts_store = local_server.get_default_values()['boosts_store']
+        donate_rules = local_server.get_default_values()['donate_rules']
+
+        # Определение цены на слот аккаунта
+        slot_count = user_values['accounts_limit']
+
+        price_account = 0
+        if slot_count <= 5:
+            mult = slot_count - 1
+        else:
+            mult = 4
+
+        price_account += 50 * mult
+        boosts_store['add_slot'] = price_account
+
+        # Определение цены донатов
+        current_level = 0
+        for boost_id in boosts:
+            if boost_id.startswith("donate"):
+                current_level = boost_id.split("_")[1]
+                current_level = int(current_level)
+                break
+
+        donate_available = []
+        donate_boosts = {}
+        for rule in donate_rules:
+            price = rule
+            boost_id = donate_rules[rule]
+            donate_boosts[boost_id] = price
+
+            donate_level = boost_id.split("_")[1]
+            donate_level = int(donate_level)
+
+            if donate_level > current_level:
+                continue
+            else:
+                donate_available.append(boost_id)
+        donate_available.sort(key=lambda x: int(x.split("_")[1]))
+
+        for boost_id in donate_available:
+            minus_price = 0
+            if current_level:
+                minus_price = donate_boosts[f"donate_{current_level}"]
+            price = donate_boosts[boost_id]
+            boosts_store[boost_id] = price - minus_price
+
+        return boosts_store
+
     def get_bot_values(self, context):
         default_values = local_server.get_default_values()
         default_values = copy.deepcopy(default_values)
@@ -608,7 +656,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
         for bid in passive_boosts:
             local_server.mod_values(default_values, bid)
 
-        default_values["boosts_store"] = utils.generate_shop(context, default_values["default_user"])
+        default_values["boosts_store"] = self.generate_shop(context, default_values["default_user"])
 
         categorized = local_server.categorize_items(default_values['items'])
         default_values['categorized'] = categorized
