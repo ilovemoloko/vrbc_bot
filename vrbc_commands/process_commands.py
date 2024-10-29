@@ -25,6 +25,16 @@ def tccc_help(context: MessageContext):
     answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
 
 
+@bot.command('tccc_ncorrect')
+def tccc_ncorrect(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    answer.addText("Вы отправили коды боту в нужном формате, но бот не может получить аккаунт.\n"
+                   "Это могло произойти по следующим причинам:\n"
+                   "1) Коды правильные, но устаревшие. Учтите, что каждая пара кодов Одноразовая!\n"
+                   "2) Вы вышли с экрана кодов до того, как бот закончил процесс. Эти коды работают лишь тогда, когда их можно увидеть на экране игры"
+                   "3) Вы пытаетесь использовать бота на неподдерживаемой версии. Бот работает только с английский и японской версиями игры (не перепутайте китайскую версию с японской)").reply()
+
+
 agreement_text = """❗❗❗ВНИМАНИЕ❗❗❗
 В тексте спрятано слово, которое нужно написать боту, чтобы вы могли начать выдачу предметов.
 У вас не получится использовать бота дальше, если вы внимательно не прочитаете этот текст ПОЛНОСТЬЮ
@@ -185,6 +195,7 @@ def starthack2(context: MessageContext, retry=False):
 
     if not success:
         fsm_db.update_state(context, "starthack")
+        buttons.add("Но коды правильные", "tccc_ncorrect")
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
     info_worker.set_value(context, 'japan_user', version == "ja")
