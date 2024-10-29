@@ -232,8 +232,8 @@ def humanize_time(seconds):
     return result
 
 
-def get_donate_url(user_id, amount):
-    return f"[ссылка]"
+def get_donate_url(user_id, amount, src):
+    return f"https://yoomoney.ru/quickpay/confirm?receiver=***REMOVED***&quickpay-form=shop&targets=a&sum={amount}&label={src}_{user_id}"
 
 
 def to_latin(text):

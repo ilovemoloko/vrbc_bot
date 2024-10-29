@@ -1,5 +1,6 @@
 from flask import Flask, request
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from script_base import MessageContext
 import utils
 import logging
 
@@ -16,11 +17,13 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def trololo():
     data = request.form
-    if data['currency'] != 643: return "-1"
-    user_id = data['label']
+    if int(data['currency']) != 643: return "-1"
+    platform, platform_id = data['label'].split('_')
+    platform_id = int(platform_id)
+    ctx = MessageContext(platform).setUserId(platform_id)
     amount = int(data['amount'])
-    utils.sendmsg('Одноклассники', 'Путин', 'Вы молодец!!!')
-    info_worker.add_donate(user_id, amount)
+    utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!')
+    info_worker.add_donate(ctx, amount)
     return "thank you"
 
 
