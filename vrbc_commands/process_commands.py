@@ -2,7 +2,6 @@ from bot_script import bot, level_on_error, generate_cart_str
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 from vrbc_commands.cart_commands import addCart
-from vrbc_commands.donate_commands import reducecd
 import local_server
 import utils
 import time
@@ -274,9 +273,3 @@ def starthack2(context: MessageContext, retry=False):
 @bot.command("tccc_help", level="first_msg")
 def tccc_help_fm(context: MessageContext):
     return tccc_help(context)
-
-
-@bot.command("reducecd", level="first_msg")
-def reducecd_fm(context: MessageContext):
-    fsm_db.update_state(context, "*")
-    return reducecd(context)

@@ -123,7 +123,7 @@ def useboost(context: MessageContext):
     answer.reply()
 
 
-@bot.command("reducecd")
+@bot.command("reducecd", level=["*", "first_msg"])
 def reducecd(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)

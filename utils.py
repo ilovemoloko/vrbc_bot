@@ -6,6 +6,8 @@ from PIL import Image, ImageEnhance
 import pytesseract
 import re
 import struct
+
+import db_worker
 import local_server
 from fuzzywuzzy import process
 from unidecode import unidecode
@@ -15,7 +17,6 @@ from script_base import MessageContext, MessageBuilder, ButtonsBuilder
 import sys
 import logging
 import threading
-
 
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
@@ -159,7 +160,7 @@ class DataSearcher:
 
         InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
         for i in range(9):
-            InqBytes[i] = self.sBytes[inqIdx+i]
+            InqBytes[i] = self.sBytes[inqIdx + i]
 
         self.inq = InqBytes.decode()
         if not ''.join(k for k in self.inq if k in 'abcdef0123456789'):
@@ -182,7 +183,7 @@ class DataSearcher:
                 inqIdx = self.sBytes.index(probablyinq.encode())
             InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
             for i in range(9):
-                InqBytes[i] = self.sBytes[inqIdx+i]
+                InqBytes[i] = self.sBytes[inqIdx + i]
             self.inq = InqBytes.decode()
 
         return self.inq
@@ -400,5 +401,10 @@ def exec_and_return(context, expression):
     return locals()["__ex"](context)
 
 
-def sendmsg(src, user, content):
-    pass
+def sendmsg(src, user, content, buttons=None):
+    bot_object = db_worker.bot_objects
+    if src not in bot_object:
+        return
+    bot_object = bot_object[src]
+    msg = MessageBuilder().setText(content).setPeerId(user).setButtons(buttons)
+    bot_object.send_message(msg)

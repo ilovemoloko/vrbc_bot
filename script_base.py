@@ -2,6 +2,7 @@ import re
 import traceback
 
 from db_worker import fsm_db
+import db_worker
 
 
 class MessageContext:
@@ -113,7 +114,8 @@ class Mapper:
             self.commands[level] = {}
         for p in pattern:
             p = "^" + p + "$"
-            self.commands[level][p] = {"func": func, "weak": weak, "ignore_case": ignore_case, "replace_newline": replace_newline}
+            self.commands[level][p] = {"func": func, "weak": weak, "ignore_case": ignore_case,
+                                       "replace_newline": replace_newline}
 
 
 class BotScript:
@@ -132,6 +134,7 @@ class BotScript:
             ignore_case = cmd[4]
             replace_newline = cmd[5]
             self.mapper.map(func, pattern, level, weak, ignore_case, replace_newline)
+        db_worker.bot_objects[self.get_name()] = self
 
     def send_message(self, message: MessageBuilder):
         pass

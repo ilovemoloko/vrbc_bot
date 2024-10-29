@@ -9,6 +9,8 @@ os.makedirs(os.path.dirname(db_path), exist_ok=True)
 conn = sqlite3.connect(db_path, check_same_thread=False)
 lock = threading.RLock()
 
+bot_objects = {}
+
 
 class SingletonMeta(type):
     _instances = {}
