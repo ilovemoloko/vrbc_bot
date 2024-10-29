@@ -93,8 +93,8 @@ def get_default_values():
     return bot_variables
 
 
-def get_user_backups(user_id):
-    retval = requests.get(list_backups_url, params={"user_id": user_id}).content.decode("utf-8")
+def get_user_backups(user_id, vk_id = -1):
+    retval = requests.get(list_backups_url, params={"user_id": user_id, "vk_id": vk_id}).content.decode("utf-8")
     json_data = json.loads(retval)
     if json_data['status'] == 0:
         return ["Ошибка сервера бота", "Попробуйте позже"]

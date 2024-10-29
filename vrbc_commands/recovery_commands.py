@@ -92,7 +92,10 @@ def recovery_account(context: MessageContext):
         return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
 
     user_id = fsm_db.get_local_user_id(context)
-    accounts = local_server.get_user_backups(user_id)
+    vk_id = -1
+    if context.src == "vk":
+        vk_id = context.user_id
+    accounts = local_server.get_user_backups(user_id, vk_id=vk_id)
 
     if len(accounts) == 0:
         return answer.setText("У вас еще нет сохранений.").reply()
@@ -122,7 +125,10 @@ def select_account(context: MessageContext, send_start_msg=True):
     buttons.add("Вернуться", "recovery_menu")
 
     user_id = fsm_db.get_local_user_id(context)
-    accounts = local_server.get_user_backups(user_id)
+    vk_id = -1
+    if context.src == "vk":
+        vk_id = context.user_id
+    accounts = local_server.get_user_backups(user_id, vk_id=vk_id)
 
     inq_regex = r"([\da-fA-F]{9})"
     result = re.search(inq_regex, context.text)

@@ -57,8 +57,8 @@ agreement_text = """❗❗❗ВНИМАНИЕ❗❗❗
 Чтобы нам написать, используйте команду !помощь
 """
 
-
-iamdumb_text = """❗ВНИМАНИЕ❗ (короткая версия)
+iamdumb_text = """❗ВНИМАНИЕ❗
+Прочтите, иначе в будущем вы не будете знать что делать, если возникнут проблемы с аккаунтом
 
 После отправки кодов аккаунта, бот пришлет новые.
 Аккаунт нужно активировать в игре с этими кодами (подробности по кнопке "Как активировать аккаунт?", которая у вас появится после выдачи кодов).
@@ -70,25 +70,25 @@ iamdumb_text = """❗ВНИМАНИЕ❗ (короткая версия)
 При проблемах с аккаунтом/игрой пишите в техподдержку через команду !помощь.
 
 Напишите ПРОДОЛЖИТЬ для продолжения.
-Вы виноваты сами, если не прочтёте хотя-бы краткую (эту) версию текста.
 """
-
-
-@bot.command("iamdumb", level="starthack_agreement")
-def iamdumb(context: MessageContext):
-    answer = MessageBuilder().setReplyMode(context)
-    answer.addText(iamdumb_text).reply()
 
 
 @bot.command(".*", level="starthack_agreement")
 def starthack_agreement(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    buttons.add("Подсказка", "iamdumb")
     buttons.add("Вернуться", "viewcart")
     if context.text.lower() == "продолжить":
         return starthack(context, True)
-    answer.addText(agreement_text).reply()
+    try:
+        if utils.extract_codes(context.text):
+            return answer.addText("Коды от вас потребуются на следующем этапе.\n"
+                                  "Сейчас боту нужно, чтобы вы прочитали текст выше "
+                                  "и написали слово, которое там скрыто. "
+                                  "Бот должен убедиться, что вы прочитали тот текст").reply()
+    except:
+        pass
+    answer.addText(iamdumb_text).reply()
 
 
 @bot.command(["starthack", "!взлом", "взлом"], ignore_case=True)
@@ -103,10 +103,9 @@ def starthack(context: MessageContext, agreed=False):
     uses_count = info_worker.get_uses(context)
     if uses_count == 0:
         if not agreed:
-            buttons.add("Подсказка", "iamdumb")
             buttons.add("Вернуться", "viewcart")
             fsm_db.update_state(context, "starthack_agreement")
-            return answer.addText(agreement_text).reply()
+            return answer.addText(iamdumb_text).reply()
 
     user_bot_values = info_worker.get_bot_values(context)['default_user']
 

@@ -85,7 +85,7 @@ def addBoost(message: MessageBuilder, boost, boost_id, amount=None, desc=False):
     boost_name = boost['name']
     boost_desc = boost['desc']
 
-    message.addText(f"{boost_name} (ID: {boost_id})", start="")
+    message.addText(f"{boost_name}\nID: {boost_id}", start="")
     if desc:
         message.addText(f"Описание: {boost_desc}")
     if amount is not None:

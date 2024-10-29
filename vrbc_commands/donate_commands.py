@@ -89,7 +89,7 @@ def selectboost2(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
-    boost_id = context.text
+    boost_id = context.text.lower()
     if boost_id not in boosts or boosts[boost_id] <= 0:
         answer.addText("У вас нет этого буста в списке")
         answer.reply()
@@ -216,6 +216,7 @@ def boostshop(context: MessageContext):
         addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
         answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
     answer.reply()
+    fsm_db.update_state(context, "boostshop2")
 
 
 @bot.command("boostshop2")
@@ -224,7 +225,7 @@ def boostshop2(context: MessageContext):
     buttons.add("Назад", "boostshop")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.addText("Введите ID буста из магазина").reply()
-    fsm_db.update_state(context, context.text)
+    fsm_db.update_state(context, "boostshop2")
 
 
 @bot.command(r"buyboost .*", level=["boostshop2", "boostshop2cd", "boostshop2d"], weak=True)
@@ -285,6 +286,7 @@ def boostshopd(context: MessageContext):
         addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
         answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
     answer.reply()
+    fsm_db.update_state(context, "boostshop2d")
 
 
 @bot.command("boostshop2d")
@@ -293,7 +295,7 @@ def boostshop2d(context: MessageContext):
     buttons.add("Назад", "buy_dlevel")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.addText("Введите ID уровня из магазина").reply()
-    fsm_db.update_state(context, context.text)
+    fsm_db.update_state(context, "boostshop2d")
 
 
 @bot.command(r".*", level="boostshop2d", weak=True)
@@ -301,7 +303,7 @@ def boostshop3d(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "buy_dlevel")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    boost_id = context.text
+    boost_id = context.text.lower()
 
     if boost_id.isnumeric():
         boost_id = f"donate_{boost_id}"
@@ -326,7 +328,7 @@ def boostshop3(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "boostshop")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    boost_id = context.text
+    boost_id = context.text.lower()
 
     boosts_store = info_worker.get_bot_values(context)['boosts_store']
     if boost_id not in boosts_store:
@@ -374,6 +376,7 @@ def skip_cd(context: MessageContext):
         addBoost(answer, boosts_server[boost_id], boost_id, desc=False)
         answer.addText(f"Цена: {boosts_store[boost_id]}₽\n\n")
     answer.reply()
+    fsm_db.update_state(context, "boostshop2cd")
 
 
 @bot.command("boostshop2cd")
@@ -382,7 +385,7 @@ def boostshop2(context: MessageContext):
     buttons.add("Назад", "skip_cd")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.addText("Введите ID буста из магазина").reply()
-    fsm_db.update_state(context, context.text)
+    fsm_db.update_state(context, "boostshop2cd")
 
 
 @bot.command(r".*", level="boostshop2cd", weak=True)
@@ -390,7 +393,7 @@ def boostshop3(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "skip_cd")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    boost_id = context.text
+    boost_id = context.text.lower()
 
     boosts_store = info_worker.get_bot_values(context)['boosts_store']
     if boost_id not in boosts_store:

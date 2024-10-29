@@ -11,7 +11,7 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
-@bot.command(["предметы", "cart"], ignore_case=True)
+@bot.command(["предметы", "cart", "!каталог.*", "каталог.*"], ignore_case=True)
 def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
