@@ -290,6 +290,9 @@ def boostshop3d(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     boost_id = context.text
 
+    if boost_id.isnumeric():
+        boost_id = f"donate_{boost_id}"
+
     boosts_store = info_worker.get_bot_values(context)['boosts_store']
     if boost_id not in boosts_store:
         return answer.addText("Уровня с таким ID нет.\n"
