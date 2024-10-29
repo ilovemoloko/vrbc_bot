@@ -580,10 +580,10 @@ class DBInfoWorker(metaclass=SingletonMeta):
             return None
         return donate_server[msq]
 
-    def generate_shop(self, context, user_values):
+    def generate_shop(self, context, user_values, default_values):
         boosts = info_worker.get_value(context, 'boosts')
-        boosts_store = local_server.get_default_values()['boosts_store']
-        donate_rules = local_server.get_default_values()['donate_rules']
+        boosts_store = default_values['boosts_store']
+        donate_rules = default_values['donate_rules']
 
         # Определение цены на слот аккаунта
         slot_count = user_values['accounts_limit']
@@ -615,7 +615,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
             donate_level = boost_id.split("_")[1]
             donate_level = int(donate_level)
 
-            if donate_level > current_level:
+            if donate_level <= current_level:
                 continue
             else:
                 donate_available.append(boost_id)
@@ -656,7 +656,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
         for bid in passive_boosts:
             local_server.mod_values(default_values, bid)
 
-        default_values["boosts_store"] = self.generate_shop(context, default_values["default_user"])
+        default_values["boosts_store"] = self.generate_shop(context, default_values["default_user"], default_values)
 
         categorized = local_server.categorize_items(default_values['items'])
         default_values['categorized'] = categorized
