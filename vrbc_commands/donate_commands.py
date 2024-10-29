@@ -242,6 +242,19 @@ def buyboost(context: MessageContext):
     if not status:
         return answer.addText(f"Произошла ошибка").reply()
 
+    if boost_id.startswith("donate"):
+        boosts = info_worker.get_value(context, 'boosts')
+        to_delete = []
+        for boost in boosts:
+            if boost.startswith("donate"):
+                to_delete.append(boost)
+
+        if len(to_delete) > 0:
+            for boost in to_delete:
+                boosts.pop(boost)
+
+            info_worker.set_value(context, 'boosts', boosts)
+
     give_boost(context, boost_id)
 
     buttons.insert(0, "Бусты", "boosts")
