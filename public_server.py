@@ -28,4 +28,4 @@ def trololo():
 
 
 def start():
-    app.run(host='0.0.0.0', port=80, threaded=True)
+    app.run(port=10010, threaded=True)

@@ -5,6 +5,7 @@ import logging
 import time
 import techsup
 import config
+import public_server
 
 logging.basicConfig(filename='app.log', level=logging.ERROR,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -46,3 +47,4 @@ def tg_bot_start():
 
 vk_bot_start()
 tg_bot_start()
+public_server.start()
