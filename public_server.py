@@ -2,9 +2,9 @@ from flask import Flask, request
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 from script_base import MessageContext
 import utils
-import logging
+# import logging
 
-logging.getLogger("werkzeug").setLevel(logging.ERROR)
+# logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -16,7 +16,9 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def trololo():
+    print("ПРИШЛО")
     data = request.form
+    print(data)
     if int(data['currency']) != 643: return "-1"
     platform, platform_id = data['label'].split('_')
     platform_id = int(platform_id)
@@ -27,5 +29,9 @@ def trololo():
     return "thank you"
 
 
+@app.route('/pr', methods=['GET'])
+def pr():
+    return "ПРЯНИКИ"
+
 def start():
-    app.run(port=10010, threaded=True)
+    app.run(port=8000, threaded=True, host='0.0.0.0')
