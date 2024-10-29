@@ -1,4 +1,4 @@
-is_AVTOMOIKA = 1
+is_AVTOMOIKA = 0
 
 if is_AVTOMOIKA:
     token_vk = "***REMOVED***"
