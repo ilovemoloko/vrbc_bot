@@ -644,7 +644,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
             if boost_id in boosts:
                 val = boosts[boost_id]
 
-            if val <= extenders[boost_id][1]:
+            if val < extenders[boost_id][1]:
                 price = extenders[boost_id][0]
                 boosts_store[boost_id] = price
 
