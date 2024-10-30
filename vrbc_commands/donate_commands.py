@@ -127,7 +127,7 @@ def useboost(context: MessageContext):
 def referral(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    answer.addText("Реферальная система пока что в разработке.")
+    answer.addText("Реферальная система пока что в разработке.").reply()
 
 
 @bot.command("reducecd", level=["*", "first_msg"])
