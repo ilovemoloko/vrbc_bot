@@ -98,7 +98,9 @@ def get_user_backups(user_id, vk_id = -1):
     json_data = json.loads(retval)
     if json_data['status'] == 0:
         return ["Ошибка сервера бота", "Попробуйте позже"]
-    return json_data['backups']
+    res = json_data['backups']
+    res.sort()
+    return res
 
 
 def recovery_backup(user_id, inq):
@@ -111,8 +113,9 @@ def recovery_backup(user_id, inq):
     new_inq = json_data.get('new_inq', "")
     tc = json_data.get('tc', "")
     cc = json_data.get('cc', "")
+    ver = json_data.get('ver', "")
 
-    return status, new_inq, msg, tc, cc
+    return status, new_inq, msg, tc, cc, ver
 
 
 def backup_account(user_id, inq, data):

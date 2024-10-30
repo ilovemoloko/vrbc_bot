@@ -387,11 +387,14 @@ def inq_checker(account, context: MessageContext):
         return add_account(context, user_id, account)
 
 
-def recovery_rite(context: MessageContext, old_inq, new_inq):
+def recovery_rite(context: MessageContext, old_inq, new_inq, is_jp="en"):
     user_id = fsm_db.get_local_user_id(context)
     local_server.change_code(user_id, old_inq, new_inq)
+
     account = bca_db.get_account_info(old_inq)
     if account is None:
+        isjp = is_jp
+        bca_db.add_account(user_id, new_inq, isjp, old_inq)
         return
     user_id, isjp, originalcode, disabled = account
     bca_db.add_account(user_id, new_inq, isjp, old_inq)
