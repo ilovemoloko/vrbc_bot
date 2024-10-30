@@ -161,6 +161,7 @@ def chooseitem2(context: MessageContext):
 
     limit_amount = items_data[item_id][0]
     if limit_amount != "Нет":
+        buttons.insert(0, "Увеличить лимит", "boostshop")
         buttons.insert(0, "Добавить максимальное количество", f"chooseitem {item_id} {limit_amount}")
     fsm_db.update_state(context, f"additem {item_id}")
     if item_id == 27:
