@@ -630,6 +630,24 @@ class DBInfoWorker(metaclass=SingletonMeta):
             price = donate_boosts[boost_id]
             boosts_store[boost_id] = price - minus_price
 
+        # заполнение магазина бустов расширителями
+        extenders = {
+            "cf_ext": [50, 4],
+            "cfruit_ext": [50, 5],
+            "ce_ext": [20, 6],
+            "tsr_ext": [40, 5],
+            "gam_ext": [50, 4]
+        }
+
+        for boost_id in extenders:
+            val = 0
+            if boost_id in boosts:
+                val = boosts[boost_id]
+
+            if val <= extenders[boost_id][1]:
+                price = extenders[boost_id][0]
+                boosts_store[boost_id] = price
+
         return boosts_store
 
     def get_bot_values(self, context):
