@@ -142,7 +142,7 @@ def reducecd(context: MessageContext):
     answer.reply()
 
 
-@bot.command("donate", level=["*", "first_msg"])
+@bot.command(["donate", "донат", "donate"], level=["*", "first_msg"])
 def donate(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
