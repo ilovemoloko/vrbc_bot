@@ -269,6 +269,7 @@ def buyboost(context: MessageContext):
     give_boost(context, boost_id)
 
     buttons.insert(0, "Бусты", "boosts")
+    boosts = local_server.get_default_values()['boosts']
     if boosts[boost_id]["type"] == "passive":
         answer.addText("Спасибо за покупку!\n\n"
                        "Этот буст работает всегда, поэтому его не нужно активировать").reply()
