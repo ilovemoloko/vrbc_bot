@@ -3,6 +3,8 @@ import sqlite3
 import local_server
 import os
 import threading
+from datetime import datetime
+import json
 
 db_path = 'db/userdata.db'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -195,6 +197,7 @@ def give_boost(context, boost_id, amount=1):
         user_boosts[boost_id] = 0
     user_boosts[boost_id] += 1
     info_worker.set_value(context, 'boosts', user_boosts)
+
 
 class CouponDB(metaclass=SingletonMeta):
     def __init__(self):
@@ -711,3 +714,91 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
 
 info_worker = DBInfoWorker()
+
+
+class MonthlyReportDatabase(metaclass=SingletonMeta):
+    def __init__(self):
+        self.conn = conn
+        self.create_table()
+
+    @locked
+    @connected
+    def create_table(self):
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS monthly_report (
+                month_year TEXT PRIMARY KEY,
+                earnings INTEGER DEFAULT 0,
+                boosts TEXT DEFAULT '{}'
+            )
+        ''')
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_payment(self, amount):
+        month_year = datetime.now().strftime("%Y-%m")
+        current_earnings = self.get_earnings(month_year)
+
+        if current_earnings == -1:
+            self.conn.execute('''
+                INSERT INTO monthly_report (month_year, earnings, boosts) VALUES (?, ?, ?)
+            ''', (month_year, amount, '{}'))
+        else:
+            new_earnings = current_earnings + amount
+            self.conn.execute('''
+                UPDATE monthly_report SET earnings = ? WHERE month_year = ?
+            ''', (new_earnings, month_year))
+
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_boost_stat(self, boost_key):
+        month_year = datetime.now().strftime("%Y-%m")
+        current_boosts = self.get_boosts(month_year)
+
+        if current_boosts == -1:
+            boosts = {}
+        else:
+            boosts = json.loads(current_boosts)
+
+        boosts[boost_key] = boosts.get(boost_key, 0) + 1
+
+        self.conn.execute('''
+            INSERT INTO monthly_report (month_year, boosts)
+            VALUES (?, ?)
+            ON CONFLICT(month_year) DO UPDATE SET boosts=excluded.boosts
+        ''', (month_year, json.dumps(boosts)))
+
+        self.conn.commit()
+
+    @locked
+    @connected
+    def get_earnings(self, month_year):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT earnings FROM monthly_report WHERE month_year = ?
+        ''', (month_year,))
+        result = cursor.fetchone()
+        if result is None:
+            return -1
+        return result[0]
+
+    @locked
+    @connected
+    def get_boosts(self, month_year):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT boosts FROM monthly_report WHERE month_year = ?
+        ''', (month_year,))
+        result = cursor.fetchone()
+        if result is None:
+            return -1
+        return result[0]
+
+    @locked
+    def close(self):
+        self.conn.close()
+
+
+mrdb = MonthlyReportDatabase()

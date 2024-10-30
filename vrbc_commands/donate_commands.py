@@ -1,6 +1,6 @@
 from bot_script import bot, addBoost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase
 import local_server
 import utils
 import re
@@ -9,6 +9,7 @@ fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
+mrdb = MonthlyReportDatabase()
 
 
 def give_boost(context: MessageContext, boost_id, amount=1):
@@ -272,6 +273,8 @@ def buyboost(context: MessageContext):
                    "Теперь вы можете в любой момент "
                    "использовать этот буст в разделе \"Бусты\"").reply()
     fsm_db.update_state(context, "*")
+
+    mrdb.add_boost_stat(boost_id)
 
 
 @bot.command("buy_dlevel")

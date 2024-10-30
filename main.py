@@ -47,6 +47,6 @@ def tg_bot_start():
 
 
 vk_bot_start()
-tg_bot_start()
+# tg_bot_start()
 public_server.start()
 utils.main_process_task_handler()

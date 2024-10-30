@@ -1,5 +1,5 @@
 from flask import Flask, request, Response
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase
 from script_base import MessageContext, ButtonsBuilder
 import utils
 import hashlib
@@ -9,6 +9,7 @@ fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
+mr_db = MonthlyReportDatabase()
 
 app = Flask(__name__)
 
@@ -36,7 +37,7 @@ def trololo():
         buttons = ButtonsBuilder()
         buttons.add("Донат", "donate")
         utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!', buttons=buttons)
-        print("Зачислено", amount)
+        mr_db.add_payment(amount)
         return Response(status=200)
     except Exception as e:
         print(e)
