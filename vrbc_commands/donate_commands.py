@@ -253,8 +253,8 @@ def buyboost(context: MessageContext):
     if not status:
         return answer.addText(f"Произошла ошибка").reply()
 
+    boosts = info_worker.get_value(context, 'boosts')
     if boost_id.startswith("donate"):
-        boosts = info_worker.get_value(context, 'boosts')
         to_delete = []
         for boost in boosts:
             if boost.startswith("donate"):
@@ -269,9 +269,13 @@ def buyboost(context: MessageContext):
     give_boost(context, boost_id)
 
     buttons.insert(0, "Бусты", "boosts")
-    answer.addText("Спасибо за покупку!\n\n"
-                   "Теперь вы можете в любой момент "
-                   "использовать этот буст в разделе \"Бусты\"").reply()
+    if boosts[boost_id]["type"] == "passive":
+        answer.addText("Спасибо за покупку!\n\n"
+                       "Этот буст работает всегда, поэтому его не нужно активировать").reply()
+    else:
+        answer.addText("Спасибо за покупку!\n\n"
+                       "Теперь вы можете в любой момент "
+                       "использовать этот буст в разделе \"Бусты\"").reply()
     fsm_db.update_state(context, "*")
 
     mrdb.add_boost_stat(boost_id)
