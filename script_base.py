@@ -137,6 +137,15 @@ class BotScript:
         db_worker.bot_objects[self.get_name()] = self
 
     def send_message(self, message: MessageBuilder):
+        try:
+            self._send_message(message)
+        except Exception as e:
+            print(e)
+            if self.TRACEBACK:
+                traceback.print_exc()
+            print(e)
+
+    def _send_message(self, message: MessageBuilder):
         pass
 
     def get_action(self):

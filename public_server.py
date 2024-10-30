@@ -18,24 +18,29 @@ SECRET_WORD = "***REMOVED***"
 @app.route('/', methods=['POST'])
 def trololo():
     data = request.form
-    if int(data['currency']) != 643:
-        return "-1"
-    platform, platform_id = data['label'].split('_')
-    platform_id = int(platform_id)
-    amount = float(data['withdraw_amount'])
+    try:
+        if int(data['currency']) != 643:
+            return "-1"
+        platform, platform_id = data['label'].split('_')
+        platform_id = int(platform_id)
+        amount = float(data['withdraw_amount'])
 
-    hash_string = f"{data['notification_type']}&{data['operation_id']}&{data['amount']}&{data['currency']}&{data['datetime']}&{data['sender']}&{data['codepro']}&{SECRET_WORD}&{data['label']}"
-    calculated_sha1_hash = hashlib.sha1(hash_string.encode('utf-8')).hexdigest()
-    if calculated_sha1_hash != data['sha1_hash']:
-        print("Wrong hash")
-        return "-1"
+        hash_string = f"{data['notification_type']}&{data['operation_id']}&{data['amount']}&{data['currency']}&{data['datetime']}&{data['sender']}&{data['codepro']}&{SECRET_WORD}&{data['label']}"
+        calculated_sha1_hash = hashlib.sha1(hash_string.encode('utf-8')).hexdigest()
+        if calculated_sha1_hash != data['sha1_hash']:
+            print("Wrong hash")
+            return "-1"
 
-    ctx = MessageContext(platform).setUserId(platform_id)
-    buttons = ButtonsBuilder()
-    buttons.add("Донат", "donate")
-    utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!', buttons=buttons)
-    info_worker.add_donate(ctx, amount)
-    return Response(status=200)
+        ctx = MessageContext(platform).setUserId(platform_id)
+        info_worker.add_donate(ctx, amount)
+        # buttons = ButtonsBuilder()
+        # buttons.add("Донат", "donate")
+        # utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!', buttons=buttons)
+        print("Зачислено", amount)
+        return Response(status=200)
+    except Exception as e:
+        print(e)
+        return Response(status=500)
 
 
 @app.route('/pr', methods=['GET'])

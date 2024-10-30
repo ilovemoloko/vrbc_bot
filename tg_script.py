@@ -13,7 +13,7 @@ class TgBotScript(sc.BotScript):
         self.start_time = None
         self.bot = telebot.TeleBot(token_tg)
 
-    def send_message(self, message: MessageBuilder):
+    def _send_message(self, message: MessageBuilder):
         chat_id = message.peerId
         text = message.text
         buttons = message.buttons

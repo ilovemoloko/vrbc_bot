@@ -61,7 +61,7 @@ class VkBotScript(sc.BotScript):
         photo_url = user_data['photo_200']
         return {"name": user_name, "image_url": photo_url}
 
-    def send_message(self, message: MessageBuilder):
+    def _send_message(self, message: MessageBuilder):
         buttons = message.buttons
         keyboard = None
         attachment = None
