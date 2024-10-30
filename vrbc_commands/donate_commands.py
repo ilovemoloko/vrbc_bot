@@ -174,7 +174,7 @@ def donate(context: MessageContext):
     buttons.add("Пожертвовать", "donate2")
     buttons.add("Купить уровень", "buy_dlevel")
     buttons.add("Магазин бустов", "boostshop")
-    buttons.add("Меню", "menu")
+    buttons.add("Главное меню", "start")
     answer.reply()
 
 

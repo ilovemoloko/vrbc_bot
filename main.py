@@ -1,3 +1,4 @@
+import utils
 from tg_script import TgBotScript
 from vk_script import VkBotScript
 import threading
@@ -48,3 +49,4 @@ def tg_bot_start():
 vk_bot_start()
 tg_bot_start()
 public_server.start()
+utils.main_process_task_handler()

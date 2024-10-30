@@ -33,9 +33,9 @@ def trololo():
 
         ctx = MessageContext(platform).setUserId(platform_id)
         info_worker.add_donate(ctx, amount)
-        # buttons = ButtonsBuilder()
-        # buttons.add("Донат", "donate")
-        # utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!', buttons=buttons)
+        buttons = ButtonsBuilder()
+        buttons.add("Донат", "donate")
+        utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!', buttons=buttons)
         print("Зачислено", amount)
         return Response(status=200)
     except Exception as e:
@@ -53,7 +53,7 @@ pserv_process: Process = None
 
 def start():
     global pserv_process
-    pserv_process = Process(target=app.run, kwargs={'port': 8000, 'host': '0.0.0.0'})
+    pserv_process = Process(target=app.run, kwargs={'port': 8000, 'host': '0.0.0.0', 'threaded': True})
     pserv_process.start()
 
 

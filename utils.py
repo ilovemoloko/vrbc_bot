@@ -6,7 +6,6 @@ from PIL import Image, ImageEnhance
 import pytesseract
 import re
 import struct
-
 import db_worker
 import local_server
 from fuzzywuzzy import process
@@ -17,6 +16,25 @@ from script_base import MessageContext, MessageBuilder, ButtonsBuilder
 import sys
 import logging
 import threading
+import multiprocessing
+import time
+
+task_queue = multiprocessing.Queue()
+
+TASKS = {}
+
+
+def register_task(name):
+    def decorator(func):
+        TASKS[name] = func
+
+        def wrapper(*args, **kwargs):
+            task_queue.put((name, args, kwargs))
+
+        return wrapper
+
+    return decorator
+
 
 tesPath = "D:/Tesseract/tesseract.exe"
 if "yy986" in os.path.abspath(__file__):
@@ -405,6 +423,7 @@ def exec_and_return(context, expression):
     return locals()["__ex"](context)
 
 
+@register_task("sendmsg")
 def sendmsg(src, user, content, buttons=None):
     bot_object = db_worker.bot_objects
     if src not in bot_object:
@@ -412,3 +431,12 @@ def sendmsg(src, user, content, buttons=None):
     bot_object = bot_object[src]
     msg = MessageBuilder().setText(content).setPeerId(user).setButtons(buttons)
     bot_object.send_message(msg)
+
+
+def main_process_task_handler():
+    while True:
+        time.sleep(10)
+        name, args, kwargs = task_queue.get()
+        func = TASKS.get(name)
+        if func:
+            func(*args, **kwargs)
