@@ -518,6 +518,11 @@ class DBInfoWorker(metaclass=SingletonMeta):
                     break
 
             item_info = user_bot_values['items'][item_id]
+            limit = item_info[0]
+            if isinstance(limit, int):
+                if amount > limit:
+                    amount = limit
+
             stackable = self.check_stackable(item_info)
             if not stackable:
                 cart[item_id] = amount
