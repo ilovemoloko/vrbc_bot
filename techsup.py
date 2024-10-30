@@ -113,7 +113,7 @@ class Modbot(metaclass=SingletonMeta):
         buttons = ButtonsBuilder()
         answer.setButtons(buttons)
         buttons.add("Написать снова", "letsgo")
-        buttons.add("Главное меню", "first_msg")
+        buttons.add("Главное меню", "start")
         if reply_text:
             # Скрываем исходное сообщение в спойлере
             original_message = f"||{ctx.original_message}||"
