@@ -2,6 +2,7 @@ from flask import Flask, request, Response
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 from script_base import MessageContext, ButtonsBuilder
 import utils
+import hashlib
 from multiprocessing import Process
 
 fsm_db = FSMDatabase()
@@ -10,6 +11,8 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 app = Flask(__name__)
+
+SECRET_WORD = "***REMOVED***"
 
 
 @app.route('/', methods=['POST'])
@@ -21,7 +24,11 @@ def trololo():
     platform_id = int(platform_id)
     amount = float(data['withdraw_amount'])
 
-    sha_hash = data['sha1_hash']
+    hash_string = f"{data['notification_type']}&{data['operation_id']}&{data['amount']}&{data['currency']}&{data['datetime']}&{data['sender']}&{data['codepro']}&{SECRET_WORD}&{data['label']}"
+    calculated_sha1_hash = hashlib.sha1(hash_string.encode('utf-8')).hexdigest()
+    if calculated_sha1_hash != data['sha1_hash']:
+        print("Wrong hash")
+        return "-1"
 
     ctx = MessageContext(platform).setUserId(platform_id)
     buttons = ButtonsBuilder()
