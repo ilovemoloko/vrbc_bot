@@ -9,11 +9,17 @@ import subprocess
 import threading
 import time
 import techsup
+import public_server
+
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
+
+
+def stop_flask_server():
+    public_server.kill()
 
 
 @bot.command(["ыыы 3", "ыыы", "evalbutbetter 3"], ignore_case=True)
@@ -95,6 +101,8 @@ def stop_bot(context: MessageContext):
         break
 
     answer.setText("Выключаю бота").reply()
+
+    stop_flask_server()
 
 
 @bot.command("islocked")
@@ -199,6 +207,7 @@ def restart_bot(context: MessageContext):
         break
 
     answer.setText("Перезапускаю бота").reply()
+    stop_flask_server()
     os.execv(sys.executable, ['python'] + sys.argv)
 
 
