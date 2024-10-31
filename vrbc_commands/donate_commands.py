@@ -359,7 +359,10 @@ def boostshop3(context: MessageContext):
         return answer.addText(f"Недостаточно средств ({balance}₽, требуется {boost_cost}₽)").reply()
 
     buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
-    answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()
+    answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?")
+    boosts_server = local_server.get_default_values()['boosts']
+    addBoost(answer, boosts_server[boost_id], boost_id, desc=True)
+    answer.reply()
 
 
 @bot.command(r"buy_slot")
@@ -424,4 +427,7 @@ def boostshop3(context: MessageContext):
         return answer.addText(f"Недостаточно средств ({balance}₽, требуется {boost_cost}₽)").reply()
 
     buttons.insert(0, "Подтвердить покупку", f"buyboost {boost_id}")
-    answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?").reply()
+    answer.addText(f"Вы точно хотите купить этот буст за {boosts_store[boost_id]}₽?\n")
+    boosts_server = local_server.get_default_values()['boosts']
+    addBoost(answer, boosts_server[boost_id], boost_id, desc=True)
+    answer.reply()
