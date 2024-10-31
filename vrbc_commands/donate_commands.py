@@ -198,8 +198,12 @@ def donate3(context: MessageContext):
     if not regex:
         return answer.addText("Введите число").reply()
 
-    local_user_id = fsm_db.get_local_user_id(context)
     donate_url = utils.get_donate_url(context.user_id, int(regex.group(0)), context.src)
+    answer.addText("Этот сервис оплаты часто может выдавать техническую ошибку.\n"
+                   "В первую очередь перепроверьте корректность ввода данных\n"
+                   "Если вы убедились, что все данные правильные, но всё равно не можете перевести, "
+                   "то обратитесь в поддержку бота с помощью команды !отправить\n"
+                   "Вам отправят альтернативные способы оплаты (В том числе для тех, кто не живет в РФ)\n")
     answer.addText("Ссылка на пожертвование: " + donate_url).reply()
     fsm_db.update_state(context, "first_msg")
 
