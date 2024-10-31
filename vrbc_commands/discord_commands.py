@@ -24,7 +24,7 @@ def start_fight(context: MessageContext):
     answer.setText("В этом меню вы можете обратиться к администраторам бота.").reply()
 
 
-@bot.command("letsgo", level=["*", "letsgo"])
+@bot.command("letsgo", level=["*", "letsgo", "first_msg"])
 def letsgo(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -47,7 +47,7 @@ def letsgo(context: MessageContext):
 modbot = techsup.Modbot()
 
 
-@bot.command(".*", level="letsgo")
+@bot.command(".*", level=["letsgo", "first_msg"])
 @level_on_error("start_msg")
 def letsgo(context: MessageContext):
     buttons = ButtonsBuilder()
