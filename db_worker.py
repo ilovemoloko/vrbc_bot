@@ -695,8 +695,6 @@ class DBInfoWorker(metaclass=SingletonMeta):
         active_boosts = self.get_value(context, 'active_boosts')
         amount = boosts[boost_id]
         if amount > 0:
-            if boost_id in active_boosts:
-                return False
             boosts[boost_id] -= 1
             active_boosts.append(boost_id)
             self.set_value(context, 'boosts', boosts)
