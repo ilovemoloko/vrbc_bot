@@ -412,9 +412,11 @@ def recovery_rite(context: MessageContext, old_inq, new_inq, is_jp="en"):
     if account is None:
         isjp = is_jp
         bca_db.add_account(user_id, new_inq, isjp, old_inq)
+        bca_db.set_disabled(new_inq, 2)
         return
     user_id, isjp, originalcode, disabled = account
     bca_db.add_account(user_id, new_inq, isjp, old_inq)
+    bca_db.set_disabled(new_inq, 2)
     bca_db.set_disabled(old_inq, True)
 
 
