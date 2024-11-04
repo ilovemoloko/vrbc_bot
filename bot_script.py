@@ -12,6 +12,7 @@ debug = False
 class Bot(metaclass=SingletonMeta):
     def __init__(self, commands):
         self.commands = commands
+        self.unknown_command = None
         self.running = True
 
     def stop(self):
@@ -29,6 +30,16 @@ class Bot(metaclass=SingletonMeta):
                 self.commands.append((lv, pattern, wrapper, weak, ignore_case, replace_newline))
             return wrapper
         return decorator
+
+    def unknown(self, func):
+        if self.unknown_command is not None:
+            raise Exception("Unknown command already set")
+
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        self.unknown_command = wrapper
+        return wrapper
 
 
 def initialize_bot_commands():
@@ -113,7 +124,7 @@ def start_message_2(context: MessageContext):
     start_message(context)
 
 
-@bot.command(".*")
+@bot.unknown
 def unknown_command(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     answer.setText('''Бот не понимает, что вы хотите. Пожалуйста, воспользуйтесь кнопками или отправьте "Начать" для возврата в меню.

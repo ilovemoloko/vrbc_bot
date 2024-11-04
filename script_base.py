@@ -204,8 +204,11 @@ class BotScript:
                 weak = self.check_weak(fsm_level, action)
 
                 if weak is None:
-                    self.check_command("*", action)
-                    return
+                    if self.check_command("*", action):
+                        return
+                    else:
+                        self.bot_script.unknown_command(action)
+                        return
 
                 if weak:
                     if self.check_command("*", action):
@@ -218,6 +221,8 @@ class BotScript:
                         return
                     if self.check_command("*", action):
                         return
+
+                self.bot_script.unknown_command(action)
 
         except Exception as e:
             print(f"[{self.get_name()}] {e}")
