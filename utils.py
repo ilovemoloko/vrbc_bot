@@ -154,6 +154,9 @@ class DataSearcher:
         self.Offsets = {}
         self.inq = "LOL"
 
+    def getVersion(self):
+        return struct.unpack("<I", self.sBytes[:4])[0]
+
     def getInq(self):
         inqIdx = 0
         try:
@@ -229,6 +232,16 @@ def getInq(data):
         logging.error(e)
         inq = "LOL"
     return inq
+
+
+def getVersion(data):
+    try:
+        ds = DataSearcher(data)
+        version = ds.getVersion()
+    except Exception as e:
+        logging.error(e)
+        version = 0
+    return version
 
 
 def humanize_time(seconds):

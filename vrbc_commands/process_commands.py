@@ -1,3 +1,4 @@
+import config
 from bot_script import bot, level_on_error, generate_cart_str
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
@@ -216,6 +217,11 @@ def starthack2(context: MessageContext, retry=False):
             buttons.insert(0, "Увеличить лимит", "buy_slot")
         buttons.add("Вернуться в корзину", "viewcart")
         return answer.reply()
+
+    num_version = utils.getVersion(data)
+    if num_version <= config.min_version:
+        buttons.add("Вернуться в корзину", "viewcart")
+        return answer.setText("Ваша версия игры слишком старая. Обновитесь, и тогда бот сможет закончить процесс").reply()
 
     try:
         wait_time = local_server.get_wait_time()

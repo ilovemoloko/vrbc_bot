@@ -11,3 +11,5 @@ else:
 token_tg = ("***REMOVED***")
 
 mod_channel = -***REMOVED***
+
+min_version = 130600
