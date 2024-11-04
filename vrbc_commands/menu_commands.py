@@ -165,5 +165,5 @@ def recovery_menu(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Восстановить аккаунт", "recovery_account")
     buttons.add("Сохранить аккаунт", "save_account")
-    buttons.add("Вернуться в меню", "menu")
+    buttons.add("Вернуться в меню", "start")
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
