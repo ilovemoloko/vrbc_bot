@@ -10,6 +10,7 @@ backup_account_url = base_url + "/api/backup_account"
 change_code_url = base_url + "/api/change_code"
 get_variables_url = base_url + "/api/get_variables"
 get_cats_url = base_url + "/api/get_cats"
+get_queue_url = base_url + "/api/get_queue"
 
 
 bot_variables = {}
@@ -137,6 +138,11 @@ def get_wait_time():
 def hack_account(files, headers):
     res = requests.post(api_url, files=files, headers=headers)
     return json.loads(res.content.decode("utf-8"))
+
+
+def get_queue():
+    res = requests.get(get_queue_url).content.decode("utf-8")
+    return json.loads(res)
 
 
 updated_cats = False

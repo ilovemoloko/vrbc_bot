@@ -72,7 +72,16 @@ def admin_panel(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("<-<-", "evalbutbetter 5")
     buttons.add("stop_bot", "stop_bot")
+    buttons.add("get queue", "get_queue")
     answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("get_queue")
+def get_queue(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText(str(local_server.get_queue())).reply()
 
 
 @bot.command("stop_bot")
