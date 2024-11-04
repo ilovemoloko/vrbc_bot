@@ -261,10 +261,10 @@ def starthack2(context: MessageContext, retry=False):
 
         user_bot_values = info_worker.get_bot_values(context)['default_user']
         user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)
-        answer.setText(f"Следующее использование бота будет возможно через {utils.humanize_time(user_cooldown)}\n\n"
-                       f"Хотите снизить время ожидания, увеличить размер корзины или увеличить лимиты на предметы?\n"
-                       f"В таком случае вы можете поддержать нас материально, "
-                       f"чтобы получить эти бонусы с помощью команды !донат")
+        answer.setText(f"Следующее использование бота будет через {utils.humanize_time(user_cooldown)}\n\n"
+                       f"Хотите снизить время ожидания или увеличить лимиты? "
+                       f"Поддержите нас материально с помощью команды !донат для получения бонусов!")
+
         info_worker.add_uses(context)
     else:
         fsm_db.update_state(context, "starthack")
