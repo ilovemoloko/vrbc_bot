@@ -206,7 +206,7 @@ def restart_bot(context: MessageContext):
         if "lock" in sys.argv:
             sys.argv.remove("lock")
 
-    bot.stop()
+    # bot.stop()
     me_thread = threading.current_thread().name
     while True:
         time.sleep(0.1)
