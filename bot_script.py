@@ -107,6 +107,14 @@ def start_message(context: MessageContext):
     fsm_db.update_state(context, "*")
 
 
-@bot.command(["начать", "!начать", "почати", "start"], ignore_case=True)
+@bot.command(["начать", "!начать", "почати", "start", '"начать"'], ignore_case=True)
 def start_message_2(context: MessageContext):
     start_message(context)
+
+
+@bot.command(".*")
+def unknown_command(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText('''Бот не понимает, что вы хотите. Пожалуйста, воспользуйтесь кнопками или отправьте "Начать" для возврата в меню.
+
+Если нужна помощь админов, отправьте !отправить.''').reply()
