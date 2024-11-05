@@ -123,6 +123,15 @@ class Mapper:
                                        "replace_newline": replace_newline}
 
 
+def notificate_after(func):
+    def wrapper(self, *args, **kwargs):
+        func(self, *args, **kwargs)
+        action = args[0]
+        self.send_notification(action.user_id)
+
+    return wrapper
+
+
 class BotScript:
     TRACEBACK = True
 
@@ -140,6 +149,19 @@ class BotScript:
             replace_newline = cmd[5]
             self.mapper.map(func, pattern, level, weak, ignore_case, replace_newline)
         db_worker.bot_objects[self.get_name()] = self
+
+        self.notification_text = ""
+        self.notification_sent = set()
+
+    def update_notification(self, text):
+        self.notification_text = text
+        self.notification_sent = set()
+
+    def send_notification(self, user_id):
+        if self.notification_text:
+            if user_id not in self.notification_sent:
+                self.send_message(MessageBuilder().setPeerId(user_id).setText(self.notification_text))
+                self.notification_sent.add(user_id)
 
     def send_message(self, message: MessageBuilder):
         try:
@@ -190,6 +212,7 @@ class BotScript:
     def get_user_description(self, context: MessageContext):
         return context.setUserData(self._get_user_description(context))
 
+    @notificate_after
     def handle_action(self, action):
         try:
             if not self.bot_script.running:

@@ -73,7 +73,52 @@ def admin_panel(context: MessageContext):
     buttons.add("<-<-", "evalbutbetter 5")
     buttons.add("stop_bot", "stop_bot")
     buttons.add("get queue", "get_queue")
+    buttons.add("manage notification", "manage_notifications")
     answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("manage_notifications")
+def manage_notifications(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("delete", "delete_notification")
+    buttons.add("set", "set_notification")
+    answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("delete_notification")
+def delete_notification(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    bot_obj = context.srcobj
+    bot_obj.update_notification("")
+    answer.setText("done").reply()
+
+
+@bot.command("set_notification")
+def set_notification(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    buttons.add("goback", "manage_notifications")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.setText("какой ставить текст говори").reply()
+    fsm_db.update_state(context, "set_notification")
+
+
+@bot.command(".*", level="set_notification")
+def set_notification(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    text = context.text
+    bot_obj = context.srcobj
+    bot_obj.update_notification(text)
+    answer.setText("done").reply()
+    fsm_db.update_state(context, "*")
 
 
 @bot.command("get_queue")
