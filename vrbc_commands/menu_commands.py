@@ -173,6 +173,7 @@ def recovery_menu(context: MessageContext):
     buttons = ButtonsBuilder()
     attachments = context.attached_photos
     msg = context.text
+    fsm_db.update_state(context, "*")
 
     if "сохр" in msg.lower():
         if len(attachments) > 0:
