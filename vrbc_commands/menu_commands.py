@@ -163,7 +163,7 @@ def change_preset_name(context: MessageContext):
         return answer.addText("Внутренняя ошибка.").reply()
 
 
-@bot.command(["восстан.*", "!восстан.*", "верн.*", "!верн.*", ])
+@bot.command(["восстан.*", "!восстан.*", "верн.*", "!верн.*", ], ignore_case=True)
 def recovery_menu1(context: MessageContext):
     recovery_menu(context)
 
