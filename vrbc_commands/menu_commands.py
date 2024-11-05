@@ -1,6 +1,9 @@
 from bot_script import bot, generate_cart_str
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from vrbc_commands.recovery_commands import save_account_input
+import utils
+
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -163,6 +166,23 @@ def change_preset_name(context: MessageContext):
 @bot.command(["recovery_menu", "восстан.*", "!восстан.*", "верн.*", "!верн.*", "сохран.*", "!сохран.*"], ignore_case=True)
 def recovery_menu(context: MessageContext):
     buttons = ButtonsBuilder()
+    attachments = context.attached_photos
+    msg = context.text
+
+    if "сохр" in msg.lower():
+        if len(attachments) > 0:
+            url = attachments[0]
+            image = utils.get_image(url)
+            msg = utils.getText(image)
+
+        try:
+            codes = utils.extract_codes(msg)
+            context.attached_photos = []
+            context.text = " ".join(codes)
+            return save_account_input(context)
+        except:
+            pass
+
     buttons.add("Восстановить аккаунт", "recovery_account")
     buttons.add("Сохранить аккаунт", "save_account")
     buttons.add("Вернуться в меню", "start")
