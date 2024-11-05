@@ -36,9 +36,9 @@ def vk_bot_start():
     while True:
         try:
             script_vk.start()
-        except:
-            time.sleep(60)
-            print("vk polling...")
+        except Exception as e:
+            print("VK FAILED", e)
+            time.sleep(5)
 
 
 @thread

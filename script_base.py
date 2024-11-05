@@ -17,6 +17,11 @@ class MessageContext:
         self.fsm_full = ""
         self.userData = None
         self.rawAction = None
+        self.trusted = False
+
+    def trust(self, trusted):
+        self.trusted = trusted
+        return self
 
     def setPeerId(self, peerId):
         self.peer_id = peerId
@@ -194,11 +199,15 @@ class BotScript:
                     action.text = ""
                 if action.user_id != action.peer_id:
                     return
-                fsm_level = fsm_db.get_state(action)
+
+                fsm_level = "*"
+                if not action.trusted:
+                    fsm_level = fsm_db.get_state(action)
                 action.fsm_full = fsm_level
                 context = fsm_level.split(" ")[1:]
                 fsm_level = fsm_level.split(" ")[0]
                 action.setFSM(context)
+
                 action.setSrcObject(self)
 
                 weak = self.check_weak(fsm_level, action)

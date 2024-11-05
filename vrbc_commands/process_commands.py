@@ -231,7 +231,7 @@ def starthack2(context: MessageContext, retry=False):
 
     wait_time = round(float(wait_time))
     wait_time = utils.humanize_time(wait_time)
-    buttons.add("Полезные факты о боте", "funfact")
+    buttons.add("Случайный факт", "funfact")
     answer.addText(f"Примерное время ожидания до получения кодов: {wait_time}")
     answer.addText("\nНе заходите в игру, пока бот не закончит процесс.").reply()
     buttons = ButtonsBuilder()

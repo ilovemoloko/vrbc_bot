@@ -121,6 +121,32 @@ class VkBotScript(sc.BotScript):
                                 break
 
                 return res
+            elif action.type == VkBotEventType.GROUP_LEAVE:
+                res = sc.MessageContext(self.get_name())
+                obj = action.object
+                user_id = obj['user_id']
+                is_self = obj['self']
+                if not is_self:
+                    break
+
+                res.setText("ileft").setUserId(user_id).setPeerId(user_id)
+                res.setRawAction(action)
+                res.trust(True)
+
+                return res
+            elif action.type == VkBotEventType.GROUP_JOIN:
+                res = sc.MessageContext(self.get_name())
+                obj = action.object
+                user_id = obj['user_id']
+                is_self = obj['self']
+                if not is_self:
+                    break
+
+                res.setText("ijoin").setUserId(user_id).setPeerId(user_id)
+                res.setRawAction(action)
+                res.trust(True)
+
+                return res
             break
 
     def get_name(self):

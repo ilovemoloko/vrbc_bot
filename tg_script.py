@@ -12,6 +12,19 @@ class TgBotScript(sc.BotScript):
         self.started_sent = {}
         self.start_time = None
         self.bot = telebot.TeleBot(token_tg)
+        self.subchannel = "@vorontbc"
+
+    def check_subscription(self, action):
+        user_id = action.user_id
+
+        try:
+            chat_info = self.bot.get_chat_member(self.subchannel, user_id)
+            if chat_info.status == "left":
+                return False
+        except:
+            return False
+
+        return True
 
     def _send_message(self, message: MessageBuilder):
         chat_id = message.peerId
@@ -46,6 +59,9 @@ class TgBotScript(sc.BotScript):
                 else:
                     self.started_sent[peer_id] = time_now
                     return self.bot.send_message(peer_id, "Бот перезапущен. Вы можете попробовать снова.")
+
+        if not self.check_subscription(action):
+            action.setText("notsubscribed").trust(True)
 
         super().handle_action(action)
 

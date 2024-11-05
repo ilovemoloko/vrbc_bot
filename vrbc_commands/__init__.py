@@ -1,3 +1,5 @@
+import vrbc_commands.service_actions
+
 import vrbc_commands.admin_commands
 import vrbc_commands.menu_commands
 import vrbc_commands.cart_commands
