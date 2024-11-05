@@ -312,6 +312,14 @@ class BCAccountDB(metaclass=SingletonMeta):
         self.conn.commit()
 
     @locked
+    @connected
+    def delete_account(self, account_code):
+        self.conn.execute('''
+            DELETE FROM accounts WHERE account_code = ?
+        ''', (account_code,))
+        self.conn.commit()
+
+    @locked
     def get_user_id(self, account_code):
         cursor = self.conn.cursor()
         cursor.execute('''
