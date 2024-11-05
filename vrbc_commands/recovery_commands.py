@@ -1,7 +1,6 @@
 from bot_script import bot, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
-from vrbc_commands.menu_commands import recovery_menu
 import local_server
 import utils
 import time
@@ -145,12 +144,6 @@ def select_account(context: MessageContext, send_start_msg=True):
 Если вы согласны с условиями, то напишите заглавными буквами слово ВОССТАНОВИТЬ""").reply()
 
     fsm_db.update_state(context, f"select_account_conf {int(send_start_msg)} {old_inq}")
-
-
-@bot.command("recovery_menu", level="select_account_conf")
-def recovery_menu_back_conf(context: MessageContext):
-    fsm_db.update_state(context, "*")
-    recovery_menu(context)
 
 
 @bot.command(".*", level="select_account_conf")
