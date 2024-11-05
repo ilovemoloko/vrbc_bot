@@ -221,6 +221,7 @@ def starthack2(context: MessageContext, retry=False):
     num_version = utils.getVersion(data)
     if num_version <= config.min_version:
         buttons.add("Вернуться в корзину", "viewcart")
+        fsm_db.update_state(context, "starthack")
         return answer.setText("Ваша версия игры слишком старая. Обновитесь, и тогда бот сможет закончить процесс").reply()
 
     try:
