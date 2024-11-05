@@ -163,7 +163,12 @@ def change_preset_name(context: MessageContext):
         return answer.addText("Внутренняя ошибка.").reply()
 
 
-@bot.command(["recovery_menu", "восстан.*", "!восстан.*", "верн.*", "!верн.*", "сохран.*", "!сохран.*"], ignore_case=True, level=["*", "select_account_conf"])
+@bot.command(["recovery_menu", "восстан.*", "!восстан.*", "верн.*", "!верн.*", ])
+def recovery_menu1(context: MessageContext):
+    recovery_menu(context)
+
+
+@bot.command(["сохран.*", "!сохран.*"], ignore_case=True, level=["*", "select_account_conf"])
 def recovery_menu(context: MessageContext):
     buttons = ButtonsBuilder()
     attachments = context.attached_photos
