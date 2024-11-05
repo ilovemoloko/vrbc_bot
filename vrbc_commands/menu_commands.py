@@ -1,7 +1,7 @@
 from bot_script import bot, generate_cart_str
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
-from vrbc_commands.recovery_commands import save_account_input
+from vrbc_commands.backup_commands import save_account_input
 import utils
 
 

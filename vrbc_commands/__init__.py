@@ -5,6 +5,7 @@ import vrbc_commands.menu_commands
 import vrbc_commands.cart_commands
 import vrbc_commands.funfact_commands
 import vrbc_commands.process_commands
+import vrbc_commands.backup_commands
 import vrbc_commands.recovery_commands
 import vrbc_commands.donate_commands
 import vrbc_commands.discord_commands
