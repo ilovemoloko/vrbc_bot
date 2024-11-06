@@ -1,3 +1,4 @@
+import config
 import script_base as sc
 from config import token_vk, id_vk
 import vk_api
@@ -159,3 +160,17 @@ class VkBotScript(sc.BotScript):
         msg = "Бот перезапущен. Вы можете попробовать снова."
         self.massmsg(userids, msg)
         super().start()
+
+    def get_group_members(self):
+        members = self.vk.groups.getMembers(group_id=config.id_vk)
+        count = members['count']
+        offset = 1000
+        members = members['items']
+        print("+1000")
+        while offset < count:
+            members.extend(self.vk.groups.getMembers(group_id=config.id_vk, count=1000, offset=offset)['items'])
+            offset += 1000
+            print("+1000")
+        print(f"Всего участников: {count}")
+        return members
+

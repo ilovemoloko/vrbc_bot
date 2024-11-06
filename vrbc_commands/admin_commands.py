@@ -1,3 +1,4 @@
+import db_worker
 from bot_script import bot, level_on_error, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
@@ -74,7 +75,32 @@ def admin_panel(context: MessageContext):
     buttons.add("stop_bot", "stop_bot")
     buttons.add("get queue", "get_queue")
     buttons.add("manage notification", "manage_notifications")
+    buttons.add("->->", "evalbutbetter 7")
     answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command(["ыыы 7", "evalbutbetter 7"], ignore_case=True)
+def admin_panel(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("<-<-", "evalbutbetter 6")
+    buttons.add("update vk members", "update_vk_members")
+    answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("update_vk_members")
+def update_vk_members(context: MessageContext):
+    if check_admin(context) is False:
+        return
+
+    vk_obj = db_worker.bot_objects['vk']
+    members_list = vk_obj.get_group_members()
+    db_worker.vk_members_db.add_member_mass(members_list)
+
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText("done").reply()
 
 
 @bot.command("manage_notifications")

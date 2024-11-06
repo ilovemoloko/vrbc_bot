@@ -127,6 +127,8 @@ def notificate_after(func):
     def wrapper(self, *args, **kwargs):
         func(self, *args, **kwargs)
         action = args[0]
+        if action is None:
+            return
         self.send_notification(action.user_id)
 
     return wrapper

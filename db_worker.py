@@ -808,3 +808,57 @@ class MonthlyReportDatabase(metaclass=SingletonMeta):
 
 
 mrdb = MonthlyReportDatabase()
+
+
+class VkMembers(metaclass=SingletonMeta):
+    def __init__(self):
+        self.conn = conn
+        self.create_table()
+
+    @locked
+    @connected
+    def create_table(self):
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS vk_members (
+                vk_id INTEGER PRIMARY KEY
+            )
+        ''')
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_member(self, vk_id):
+        self.conn.execute('''
+            INSERT INTO vk_members (vk_id) VALUES (?)
+        ''', (vk_id,))
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_member_mass(self, vk_ids):
+        self.conn.executemany('''
+            INSERT INTO vk_members (vk_id) VALUES (?)
+        ''', [(vk_id,) for vk_id in vk_ids])
+        self.conn.commit()
+
+    @locked
+    @connected
+    def remove_member(self, vk_id):
+        self.conn.execute('''
+            DELETE FROM vk_members WHERE vk_id = ?
+        ''', (vk_id,))
+        self.conn.commit()
+
+    @locked
+    def is_member(self, vk_id):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT vk_id FROM vk_members WHERE vk_id = ?
+        ''', (vk_id,))
+        result = cursor.fetchone()
+        if result is None:
+            return False
+        return True
+
+
+vk_members_db = VkMembers()
