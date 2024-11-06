@@ -118,6 +118,8 @@ def starthack(context: MessageContext, agreed=False):
         buttons.add("Пропустить время", "skip_cd")
         buttons.add("Вернуться в корзину", "viewcart")
         fsm_db.update_state(context, "starthack")
+        if not user_bot_values["is_member"]:
+            answer.addText("Подпишитесь на группу, чтобы время ожидания было меньше на 10 часов.\n")
         return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
 
     answer.setText("Ваша корзина:\n")
