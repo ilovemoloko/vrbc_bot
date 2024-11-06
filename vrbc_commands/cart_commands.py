@@ -130,10 +130,10 @@ def return_27(context: MessageContext):
     chooseitem2(context)
 
 
-@bot.command("find_cat", level=["additem", "chooseitem"], weak=True)
+@bot.command(["find_cat", "!поиск", "поиск"], level=["additem", "chooseitem", "*"], weak=True, ignore_case=True)
 def find_cat(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Назад", "return_27")
+    buttons.add("Добавление кота", "return_27")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите найти")
     answer.reply()

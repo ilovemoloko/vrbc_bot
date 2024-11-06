@@ -29,9 +29,13 @@ def help_message(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
     buttons.add("Связь с администрацией", "startfight")
     buttons.add("Проблемы с аккаунтом", "account_issues")
+    buttons.add("Список команд", "commands")
     buttons.add("Вернуться", "start")
 
-    answer.setText("Меню помощи по боту\nЭто меню будет заполняться ответами на частые вопросы.\n\nЕсли вы не нашли здесь ответа на свой вопрос, то смело обращайтесь к администрации").setButtons(buttons).reply()
+    answer.setText("Меню помощи по боту\n"
+                   "Это меню будет заполняться ответами на частые вопросы.\n\n"
+                   "Если вы не нашли здесь ответа на свой вопрос, "
+                   "то смело обращайтесь к администрации").setButtons(buttons).reply()
 
 
 @bot.command("account_issues")
@@ -57,7 +61,7 @@ def presets(context: MessageContext):
                     "чтобы потом быстро добавлять предметы в свой список").reply()
 
 
-@bot.command("add_last_cart")
+@bot.command(["add_last_cart", "!повтор.*", "повтор.*"], ignore_case=True)
 def add_last_cart(context: MessageContext):
     buttons = ButtonsBuilder()
     message = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -193,3 +197,41 @@ def recovery_menu(context: MessageContext):
     buttons.add("Сохранить аккаунт", "save_account")
     buttons.add("Вернуться в меню", "start")
     MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
+
+
+@bot.command(["!команды", "команды", "commands"], ignore_case=True)
+def commands(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Главное меню", "start")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.setText("""Это список доступных команд для управления ботом. 
+Каждую команду можно использовать без префикса (восклицательного знака) для удобства.
+
+Основные команды
+!начать — Главное меню
+!помощь — Меню помощи
+
+Управление корзиной
+!корзина — Меню корзины
+!добавить ID кол-во — Добавить предмет в корзину
+!убрать — Удалить предметы из корзины
+!повтор — Копировать прошлую корзину
+!пресеты — Меню пресетов корзины
+
+Работа с предметами
+!список — Доступные предметы
+!поиск — Поиск по библиотеке котов
+!процесс — Меню процесса выдачи предметов
+
+Аккаунт и резервные копии
+!сохранить TC CC — Сохранить резервную копию аккаунта
+!восстановить — Восстановить аккаунт из копии
+
+Поддержка и донаты
+!отправить — Меню обращения в техподдержку
+!донат — Меню доната
+
+Бусты и магазин
+!бусты — Список бустов
+!магазин — Магазин бустов
+!пропуск — Пропуск задержки""").reply()

@@ -20,7 +20,7 @@ def give_boost(context: MessageContext, boost_id, amount=1):
     info_worker.set_value(context, 'boosts', user_boosts)
 
 
-@bot.command("boosts")
+@bot.command(["boosts", "бусты", "!бусты"], ignore_case=True)
 def boosts(context: MessageContext):
     boosts = info_worker.get_value(context, 'boosts')
     boosts_server = local_server.get_default_values()['boosts']
@@ -124,7 +124,7 @@ def useboost(context: MessageContext):
     answer.reply()
 
 
-@bot.command("referral")
+@bot.command(["referral", "!реф", "реф"])
 def referral(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
@@ -208,7 +208,7 @@ def donate3(context: MessageContext):
     fsm_db.update_state(context, "first_msg")
 
 
-@bot.command("boostshop")
+@bot.command(["boostshop", "!магазин", "магазин"], ignore_case=True)
 def boostshop(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
@@ -286,7 +286,7 @@ def buyboost(context: MessageContext):
     mrdb.add_boost_stat(boost_id)
 
 
-@bot.command("buy_dlevel")
+@bot.command(["buy_dlevel", "!уровни", "уровни"], ignore_case=True)
 def boostshopd(context: MessageContext):
     fsm_db.update_state(context, "*")
     buttons = ButtonsBuilder()
