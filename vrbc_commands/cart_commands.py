@@ -86,6 +86,8 @@ def chooseitem(context: MessageContext):
     cart_size = info_worker.get_cart_size(context)
     if cart_size >= info_worker.get_value(context, 'cart_size', src=user_bot_values['default_user']):
         answer.addText("Корзина переполнена")
+        if not user_bot_values['default_user']["is_member"]:
+            answer.addText("Подпишитесь на группу, чтобы в вашей корзине было больше места")
         buttons.add("Начать взлом", "starthack").add("Убрать предмет из корзины", "removeitem").add("Назад", "cart")
         return answer.reply()
 
@@ -361,7 +363,10 @@ def viewcart(context: MessageContext):
 
     buttons.add("Бусты", "boosts")
     buttons.add("Больше функций/Помощь", "menu")
-    answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов").reply()
+    answer.addText(f"\nЗаполненность корзины: {cart_size} из {max_cart_size} предметов")
+    if not user_bot_values["is_member"]:
+        answer.addText("Подпишитесь на группу, чтобы в вашей корзине было больше места")
+    answer.reply()
 
 
 @bot.command(["removeitem", "!убрать.*", "убрать.*"], ignore_case=True)

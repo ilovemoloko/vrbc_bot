@@ -164,6 +164,8 @@ def starthack2(context: MessageContext, retry=False):
     if next_use > 0:
         buttons.add("Вернуться в корзину", "viewcart")
         fsm_db.update_state(context, "starthack")
+        if not user_bot_values["is_member"]:
+            answer.addText("Подпишитесь на группу, чтобы время ожидания было меньше на 10 часов.\n")
         return answer.addText(f"Пожалуйста, подождите ещё {utils.humanize_time(next_use)}").reply()
 
     if len(attachments) > 0:
@@ -268,6 +270,8 @@ def starthack2(context: MessageContext, retry=False):
 
         user_bot_values = info_worker.get_bot_values(context)['default_user']
         user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)
+        if not user_bot_values["is_member"]:
+            answer.setText("Подпишитесь на группу, чтобы ожидать на 10 часов меньше и иметь более широкую корзину").reply()
         answer.setText(f"Следующее использование бота будет через {utils.humanize_time(user_cooldown)}\n\n"
                        f"Хотите снизить время ожидания или увеличить лимиты? "
                        f"Поддержите нас материально с помощью команды !донат для получения бонусов!")

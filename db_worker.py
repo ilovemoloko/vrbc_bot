@@ -52,6 +52,60 @@ def return_false_on_error(func):
     return wrapper
 
 
+class VkMembers(metaclass=SingletonMeta):
+    def __init__(self):
+        self.conn = conn
+        self.create_table()
+
+    @locked
+    @connected
+    def create_table(self):
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS vk_members (
+                vk_id INTEGER PRIMARY KEY
+            )
+        ''')
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_member(self, vk_id):
+        self.conn.execute('''
+            INSERT INTO vk_members (vk_id) VALUES (?)
+        ''', (vk_id,))
+        self.conn.commit()
+
+    @locked
+    @connected
+    def add_member_mass(self, vk_ids):
+        self.conn.executemany('''
+            INSERT INTO vk_members (vk_id) VALUES (?)
+        ''', [(vk_id,) for vk_id in vk_ids])
+        self.conn.commit()
+
+    @locked
+    @connected
+    def remove_member(self, vk_id):
+        self.conn.execute('''
+            DELETE FROM vk_members WHERE vk_id = ?
+        ''', (vk_id,))
+        self.conn.commit()
+
+    @locked
+    def is_member(self, vk_id):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT vk_id FROM vk_members WHERE vk_id = ?
+        ''', (vk_id,))
+        result = cursor.fetchone()
+        if result is None:
+            return False
+        return True
+
+
+vk_members_db = VkMembers()
+
+
 class FSMDatabase(metaclass=SingletonMeta):
     def __init__(self):
         self.conn = conn
@@ -674,6 +728,11 @@ class DBInfoWorker(metaclass=SingletonMeta):
         boosts_server = default_values['boosts']
         passive_boosts = []
 
+        is_member = True
+        if context.src == "vk":
+            if not vk_members_db.is_member(context.user_id):
+                is_member = False
+
         for bid in boosts_ids:
             boost = boosts_server[bid]
             active = False
@@ -689,6 +748,10 @@ class DBInfoWorker(metaclass=SingletonMeta):
                     passive_boosts.append(bid)
         passive_boosts.extend(active_boosts)
 
+        is_member |= any(bid.startswith("donate") for bid in passive_boosts)
+        if not is_member:
+            passive_boosts.append("notsubscr")
+
         for bid in passive_boosts:
             local_server.mod_values(default_values, bid)
 
@@ -696,6 +759,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
         categorized = local_server.categorize_items(default_values['items'])
         default_values['categorized'] = categorized
+        default_values["default_user"]["is_member"] = is_member
         return default_values
 
     def use_boost(self, context, boost_id):
@@ -808,57 +872,3 @@ class MonthlyReportDatabase(metaclass=SingletonMeta):
 
 
 mrdb = MonthlyReportDatabase()
-
-
-class VkMembers(metaclass=SingletonMeta):
-    def __init__(self):
-        self.conn = conn
-        self.create_table()
-
-    @locked
-    @connected
-    def create_table(self):
-        self.conn.execute('''
-            CREATE TABLE IF NOT EXISTS vk_members (
-                vk_id INTEGER PRIMARY KEY
-            )
-        ''')
-        self.conn.commit()
-
-    @locked
-    @connected
-    def add_member(self, vk_id):
-        self.conn.execute('''
-            INSERT INTO vk_members (vk_id) VALUES (?)
-        ''', (vk_id,))
-        self.conn.commit()
-
-    @locked
-    @connected
-    def add_member_mass(self, vk_ids):
-        self.conn.executemany('''
-            INSERT INTO vk_members (vk_id) VALUES (?)
-        ''', [(vk_id,) for vk_id in vk_ids])
-        self.conn.commit()
-
-    @locked
-    @connected
-    def remove_member(self, vk_id):
-        self.conn.execute('''
-            DELETE FROM vk_members WHERE vk_id = ?
-        ''', (vk_id,))
-        self.conn.commit()
-
-    @locked
-    def is_member(self, vk_id):
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            SELECT vk_id FROM vk_members WHERE vk_id = ?
-        ''', (vk_id,))
-        result = cursor.fetchone()
-        if result is None:
-            return False
-        return True
-
-
-vk_members_db = VkMembers()
