@@ -24,8 +24,12 @@ def ileft(context: MessageContext):
 
 @bot.command("ijoin")
 def ijoin(context: MessageContext):
+    answer = MessageBuilder().setReplyMode(context)
+    if not context.trusted:
+        return answer.addText("Точно?").reply()
+
     vk_members_db.add_member(context.user_id)
-    MessageBuilder().setReplyMode(context).setText("Спасибо, что вступили в группу!").reply()
+    answer.setText("Спасибо, что вступили в группу!").reply()
 
 
 @bot.command("notsubscribed")
