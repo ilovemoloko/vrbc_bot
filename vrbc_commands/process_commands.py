@@ -263,6 +263,9 @@ def starthack2(context: MessageContext, retry=False):
         info_worker.set_value(context, 'last_use', current_time)
         fsm_db.update_state(context, "first_msg")
 
+        if not user_bot_values["is_member"]:
+            answer.setText("Подпишитесь на группу, чтобы ожидать на 10 часов меньше и иметь более широкую корзину").reply()
+
         uses_count = info_worker.get_uses(context)
         if uses_count == 0:
             buttons.add("Как активировать аккаунт?", "tccc_help")
@@ -270,8 +273,6 @@ def starthack2(context: MessageContext, retry=False):
 
         user_bot_values = info_worker.get_bot_values(context)['default_user']
         user_cooldown = info_worker.get_value(context, 'cooldown', src=user_bot_values)
-        if not user_bot_values["is_member"]:
-            answer.setText("Подпишитесь на группу, чтобы ожидать на 10 часов меньше и иметь более широкую корзину").reply()
         answer.setText(f"Следующее использование бота будет через {utils.humanize_time(user_cooldown)}\n\n"
                        f"Хотите снизить время ожидания или увеличить лимиты? "
                        f"Поддержите нас материально с помощью команды !донат для получения бонусов!")

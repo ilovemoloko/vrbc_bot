@@ -7,6 +7,7 @@ import time
 import techsup
 import config
 import public_server
+import traceback
 
 logging.basicConfig(filename='app.log', level=logging.ERROR,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -38,7 +39,8 @@ def vk_bot_start():
             script_vk.start()
         except Exception as e:
             print("VK FAILED", e)
-            time.sleep(5)
+            traceback.print_exc()
+            time.sleep(1)
 
 
 @thread

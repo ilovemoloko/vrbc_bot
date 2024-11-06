@@ -139,7 +139,9 @@ class VkBotScript(sc.BotScript):
                 res = sc.MessageContext(self.get_name())
                 obj = action.object
                 user_id = obj['user_id']
-                is_self = obj['self']
+                is_self = True
+                if "self" in obj:
+                    is_self = obj['self']
                 if not is_self:
                     break
 

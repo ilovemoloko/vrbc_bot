@@ -25,6 +25,7 @@ def ileft(context: MessageContext):
 @bot.command("ijoin")
 def ijoin(context: MessageContext):
     vk_members_db.add_member(context.user_id)
+    MessageBuilder().setReplyMode(context).setText("Спасибо, что вступили в группу!").reply()
 
 
 @bot.command("notsubscribed")
