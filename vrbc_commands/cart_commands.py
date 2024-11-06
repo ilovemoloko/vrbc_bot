@@ -97,7 +97,7 @@ def chooseitem(context: MessageContext):
     if len(command_parts) == 3:
         context.text = command_parts[2]
         if not command_parts[1].isnumeric():
-            return answer.addText("Некорретный ID предмета").reply()
+            answer.addText("Неправильно введено ID. Пожалуйста, напишите целое число.").reply()
         item_id = int(command_parts[1])
         if item_id not in user_bot_values["items"]:
             buttons.add("Список предметов", "cart")
@@ -108,6 +108,8 @@ def chooseitem(context: MessageContext):
     elif len(command_parts) == 2:
         if not command_parts[0] == "chooseitem":
             context.text = command_parts[1]
+            if not context.text.isnumeric():
+                answer.addText("Неправильно введено ID. Пожалуйста, напишите целое число.").reply()
             item_id = int(context.text)
             if item_id not in user_bot_values["items"]:
                 buttons.add("Список предметов", "cart")
