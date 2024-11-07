@@ -752,7 +752,7 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
         is_member |= any(bid.startswith("donate") for bid in passive_boosts)
         if not is_member:
-            passive_boosts.append("notsubscr")
+            passive_boosts.insert(0,"notsubscr")
 
         for bid in passive_boosts:
             local_server.mod_values(default_values, bid)
