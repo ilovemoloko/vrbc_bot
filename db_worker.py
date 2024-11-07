@@ -72,6 +72,7 @@ class VkMembers(metaclass=SingletonMeta):
     def add_member(self, vk_id):
         self.conn.execute('''
             INSERT INTO vk_members (vk_id) VALUES (?)
+            ON CONFLICT(vk_id) DO NOTHING
         ''', (vk_id,))
         self.conn.commit()
 
@@ -79,7 +80,8 @@ class VkMembers(metaclass=SingletonMeta):
     @connected
     def add_member_mass(self, vk_ids):
         self.conn.executemany('''
-            INSERT INTO vk_members (vk_id) VALUES (?)
+            INSERT INTO vk_members (vk_id) VALUES (?) 
+            ON CONFLICT(vk_id) DO NOTHING
         ''', [(vk_id,) for vk_id in vk_ids])
         self.conn.commit()
 
