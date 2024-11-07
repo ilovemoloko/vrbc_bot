@@ -229,11 +229,11 @@ def starthack2(context: MessageContext, retry=False):
         return answer.setText("Ваша версия игры слишком старая. "
                               "Обновитесь, и тогда бот сможет закончить процесс").reply()
 
-    if num_version == 140000:
-        buttons.add("Вернуться в корзину", "viewcart")
-        fsm_db.update_state(context, "starthack")
-        return answer.setText("Эта версия игры пока что не поддерживается. "
-                              "В группе будет пост, когда мы наладим её").reply()
+    # if num_version == 140000:
+    #     buttons.add("Вернуться в корзину", "viewcart")
+    #     fsm_db.update_state(context, "starthack")
+    #     return answer.setText("Эта версия игры пока что не поддерживается. "
+    #                           "В группе будет пост, когда мы наладим её").reply()
 
     try:
         wait_time = local_server.get_wait_time()
