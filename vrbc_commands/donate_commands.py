@@ -1,6 +1,8 @@
+from discord.ui import button
+
 from bot_script import bot, addBoost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase, CouponDB
 import local_server
 import utils
 import re
@@ -10,6 +12,7 @@ local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 mrdb = MonthlyReportDatabase()
+coupon_db = CouponDB()
 
 
 def give_boost(context: MessageContext, boost_id, amount=1):
@@ -435,3 +438,20 @@ def boostshop3(context: MessageContext):
     boosts_server = local_server.get_default_values()['boosts']
     addBoost(answer, boosts_server[boost_id], boost_id, desc=True)
     answer.reply()
+
+
+@bot.command(["!купон.*", "купон.*"], ignore_case=True)
+def enter_coupon(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    args = context.text.split(" ", 1)[1:]
+    if len(args) == 0:
+        return answer.addText("Вы не ввели код купона").reply()
+
+    code = args[0]
+    status, msg = coupon_db.useCoup(code, context)
+
+    if status == 1:
+        buttons.add("Бусты", "boosts")
+
+    answer.addText(msg).reply()

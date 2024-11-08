@@ -1,7 +1,9 @@
+from discord.ui import button
+
 import db_worker
 from bot_script import bot, level_on_error, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
-from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, CouponDB
 import local_server
 import utils
 import os
@@ -17,6 +19,7 @@ fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
 info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
+coupon_db = CouponDB()
 
 
 def stop_flask_server():
@@ -87,7 +90,91 @@ def admin_panel(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("<-<-", "evalbutbetter 6")
     buttons.add("update vk members", "update_vk_members")
+    buttons.add("create coupon", "create_coupon")
     answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("create_coupon")
+def create_coupon(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText("введи название купона").reply()
+    fsm_db.update_state(context, "create_coupon_enter_name")
+
+
+@bot.command("mega_leave", level=[
+    "create_coupon_enter_name",
+    "create_coupon_enter_uses",
+    "create_coupon_enter_id",
+    "create_coupon_enter_desc"
+])
+def mega_leave(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    fsm_db.update_state(context, "*")
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText("вы спаслись отсюда").reply()
+
+
+@bot.command(".*", level="create_coupon_enter_name")
+def create_coupon_enter_name(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    coupon_name = context.text
+    buttons = ButtonsBuilder().add("вернуться", "mega_leave")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.setText("введи количество использований").reply()
+    fsm_db.update_state(context, f"create_coupon_enter_uses {coupon_name}")
+
+
+@bot.command(".*", level="create_coupon_enter_uses")
+def create_coupon_enter_uses(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    coupon_name = context.fsm[0]
+    uses = context.text
+    buttons = ButtonsBuilder().add("вернуться", "mega_leave")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.setText("введи буст выдаваемый купоном").reply()
+    fsm_db.update_state(context, f"create_coupon_enter_id {coupon_name} {uses}")
+
+
+@bot.command(".*", level="create_coupon_enter_id")
+def create_coupon_enter_id(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    coupon_name = context.fsm[0]
+    uses = context.fsm[1]
+    id = context.text
+    buttons = ButtonsBuilder().add("вернуться", "mega_leave")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    boosts = local_server.get_default_values()['boosts']
+    if id not in boosts:
+        return answer.addText("такого буста нет").reply()
+
+    boost_type = boosts[id]['type']
+    if boost_type == "passive":
+        return answer.addText("ТЫ ЧЕ ЕБЛАН ОН ПАССИВНЫЙ").reply()
+
+    answer.setText("введи desc купона").reply()
+    fsm_db.update_state(context, f"create_coupon_enter_desc {coupon_name} {uses} {id}")
+
+
+@bot.command(".*", level="create_coupon_enter_desc")
+def create_coupon_enter_desc(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    coupon_name = context.fsm[0]
+    uses = context.fsm[1]
+    id = context.fsm[2]
+    desc = context.text
+    coupon_db.add_coup(coupon_name, uses, id, desc)
+
+    buttons = ButtonsBuilder().add("вернуться", "mega_leave")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    answer.setText("молись чтобы оно работало").reply()
+    fsm_db.update_state(context, "*")
 
 
 @bot.command("update_vk_members")

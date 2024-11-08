@@ -262,30 +262,40 @@ class CouponDB(metaclass=SingletonMeta):
 
     @locked
     @connected
+    def recreate_table(self):
+        self.conn.execute('''
+            DROP TABLE coupon
+        ''')
+        self.conn.commit()
+        self.create_table()
+
+    @locked
+    @connected
     def create_table(self):
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS coupon (
                 coup_name TEXT PRIMARY KEY,
                 uses_left INTEGER,
                 id TEXT,
-                users TEXT
+                users TEXT,
+                desc TEXT
             )
         ''')
         self.conn.commit()
 
     @locked
     @connected
-    def add_coup(self, cname, uses, cId):
+    def add_coup(self, cname, uses, cId, desc):
         self.conn.execute('''
-            INSERT INTO coupon (coup_name, uses_left, id, users) VALUES (?, ?, ?, ?)
-        ''', (cname, uses, cId, ""))
+            INSERT INTO coupon (coup_name, uses_left, id, users, desc) VALUES (?, ?, ?, ?, ?)
+        ''', (cname, uses, cId, "", desc))
         self.conn.commit()
 
     @locked
     def get_coup_info(self, coupName):
         cursor = self.conn.cursor()
         cursor.execute('''
-                    SELECT uses_left, id, users FROM coupon WHERE coup_name = ?
+                    SELECT uses_left, id, users, desc FROM coupon WHERE coup_name = ?
                 ''', (coupName,))
         result = cursor.fetchone()
         return result
@@ -310,10 +320,10 @@ class CouponDB(metaclass=SingletonMeta):
         cursor = self.conn.cursor()
         data = self.get_coup_info(coupName)
         if not data:
-            return 0
-        uses_left, coupon_id, all_used = data
+            return 0, "Купон неактивен."
+        uses_left, coupon_id, all_used, desc = data
         if local_id in all_used.split(' '):
-            return -1
+            return -1, "Вы уже использовали этот купон."
 
         give_boost(context, coupon_id)
 
@@ -325,7 +335,7 @@ class CouponDB(metaclass=SingletonMeta):
             cursor.execute('''
             UPDATE coupon SET uses_left = ?, users = ? WHERE coup_name = ?
             ''', (uses_left, all_used, coupName))
-        return 1
+        return 1, desc
 
 
 coupon_db = CouponDB()
@@ -584,6 +594,8 @@ class DBInfoWorker(metaclass=SingletonMeta):
                 if not ignore_max:
                     break
 
+            if item_id not in user_bot_values['items']:
+                continue
             item_info = user_bot_values['items'][item_id]
             limit = item_info[0]
             if isinstance(limit, int):
