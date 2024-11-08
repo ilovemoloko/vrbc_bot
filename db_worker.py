@@ -262,15 +262,6 @@ class CouponDB(metaclass=SingletonMeta):
 
     @locked
     @connected
-    def recreate_table(self):
-        self.conn.execute('''
-            DROP TABLE coupon
-        ''')
-        self.conn.commit()
-        self.create_table()
-
-    @locked
-    @connected
     def create_table(self):
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS coupon (

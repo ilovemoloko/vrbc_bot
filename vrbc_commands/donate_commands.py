@@ -1,5 +1,3 @@
-from discord.ui import button
-
 from bot_script import bot, addBoost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase, CouponDB

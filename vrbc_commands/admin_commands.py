@@ -1,5 +1,3 @@
-from discord.ui import button
-
 import db_worker
 from bot_script import bot, level_on_error, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
