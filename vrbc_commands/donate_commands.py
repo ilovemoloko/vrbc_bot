@@ -442,6 +442,12 @@ def boostshop3(context: MessageContext):
 def enter_coupon(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    user_id = fsm_db.get_local_user_id(context)
+    account_count = bca_db.count_accounts(user_id)
+    if account_count == 0:
+        return answer.addText("Вы должны хотя бы раз воспользоваться ботом, чтобы открыть возможность вводить купоны").reply()
+
     args = context.text.split(" ", 1)[1:]
     if len(args) == 0:
         return answer.addText("Вы не ввели код купона").reply()
