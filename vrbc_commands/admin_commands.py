@@ -415,7 +415,7 @@ def reverse_rite_check(context: MessageContext):
         return answer.addText("такого аккаунта нет").reply()
 
     user_id, isjp, originalcode, disabled = account
-    if disabled:
+    if disabled == 1:
         fsm_db.update_state(context, "*")
         return answer.addText("аккаунт уже реверснут").reply()
 

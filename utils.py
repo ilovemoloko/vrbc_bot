@@ -358,7 +358,7 @@ def merge_accounts(context: MessageContext, uid, uid_fin):
             info_fin["boosts"] = {}
         for boost in info["boosts"]:
             if boost not in info_fin["boosts"]:
-                info_fin["boost"][boost] = info["boosts"][boost]
+                info_fin["boosts"][boost] = info["boosts"][boost]
             else:
                 info_fin["boosts"][boost] += info["boosts"][boost]
 
