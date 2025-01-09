@@ -106,6 +106,8 @@ def starthack(context: MessageContext, agreed=False):
             buttons.add("Вернуться", "viewcart")
             fsm_db.update_state(context, "starthack_agreement")
             return answer.addText(iamdumb_text).reply()
+        else:
+            fsm_db.update_state(context, "*")
 
     user_bot_values = info_worker.get_bot_values(context)['default_user']
 
