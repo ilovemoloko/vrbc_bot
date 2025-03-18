@@ -11,6 +11,7 @@ change_code_url = base_url + "/api/change_code"
 get_variables_url = base_url + "/api/get_variables"
 get_cats_url = base_url + "/api/get_cats"
 get_queue_url = base_url + "/api/get_queue"
+set_proxy_url = base_url + "/api/set_proxy"
 
 
 bot_variables = {}
@@ -125,6 +126,10 @@ def backup_account(user_id, inq, data):
     status = resp.get("status")
     msg = resp.get("msg")
     return status, msg
+
+
+def set_proxy(proxy_url):
+    return requests.get(set_proxy_url, params={"proxy": proxy_url}).content.decode("utf-8")
 
 
 def change_code(user_id, inq, new_inq):

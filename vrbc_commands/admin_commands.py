@@ -89,7 +89,28 @@ def admin_panel(context: MessageContext):
     buttons.add("<-<-", "evalbutbetter 6")
     buttons.add("update vk members", "update_vk_members")
     buttons.add("create coupon", "create_coupon")
+    buttons.add("set proxy", "set_proxy")
     answer.addText("oijsdfijsdf").reply()
+
+
+@bot.command("set_proxy")
+def set_proxy(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText("введи прокси").reply()
+    fsm_db.update_state(context, "set_proxy")
+
+
+@bot.command(".*", level="set_proxy")
+def set_proxy(context: MessageContext):
+    if check_admin(context) is False:
+        return
+    proxy_url = context.text
+    res = local_server.set_proxy(proxy_url)
+    answer = MessageBuilder().setReplyMode(context)
+    answer.setText(res).reply()
+    fsm_db.update_state(context, "*")
 
 
 @bot.command("create_coupon")

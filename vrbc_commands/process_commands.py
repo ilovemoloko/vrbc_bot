@@ -196,7 +196,14 @@ def starthack2(context: MessageContext, retry=False):
         return
 
     transfer, pin = codes
-    data, success, version = utils.getSave(transfer, pin)
+    try:
+        data, success, version = utils.getSave(transfer, pin)
+    except Exception as e:
+        res = f"Произошла неожиданная ошибка. Возможно, что на серверах игры имеются проблемы. Попробуйте снова"
+        print("GET SAVE ERROR", e)
+        answer.setText(res).reply()
+        fsm_db.update_state(context, "starthack")
+        return
 
     if not success:
         fsm_db.update_state(context, "starthack")
