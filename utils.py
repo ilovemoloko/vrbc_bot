@@ -139,7 +139,7 @@ def getSave(t, c, ver='en'):  # Возвращает (инфо, успешно �
     jsonStr = "{\"clientInfo\":{\"client\":{\"countryCode\":\"" + ver + "\",\"version\":\"" + '120300' + "\"},\"device\":{\"model\":\"ASUS_Z01QD\"},\"os\":{\"type\":\"android\",\"version\":\"5.1.1\"}},\"nonce\":\"" + randhex(
         16) + "\",\"pin\":\"" + c + "\"}"
     byt = jsonStr.encode('utf-8')
-    r = requests.post(url, headers={'Content-type': 'application/json'}, data=byt, stream=True)
+    r = requests.post(url, headers={'Content-type': 'application/json'}, data=byt, stream=True, timeout=10)
     if r.status_code == 200 and len(r.content) > 400:
         return r.content, True, ver
     else:

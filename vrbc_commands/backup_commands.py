@@ -48,7 +48,14 @@ def save_account_input(context: MessageContext):
         return answer.setText(res).reply()
 
     transfer, pin = codes
-    data, success, version = utils.getSave(transfer, pin)
+    try:
+        data, success, version = utils.getSave(transfer, pin)
+    except Exception as e:
+        res = f"Произошла неожиданная ошибка. Возможно, что на серверах игры имеются проблемы. Попробуйте снова"
+        print("GET SAVE ERROR", e)
+        answer.setText(res).reply()
+        return
+
     if not success:
         return answer.setText("Не удалось получить сохранение. Убедитесь в правильности кодов.").reply()
 
