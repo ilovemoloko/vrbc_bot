@@ -154,6 +154,9 @@ class DataSearcher:
         self.Offsets = {}
         self.inq = "LOL"
 
+    def getVersion(self):
+        return struct.unpack("<I", self.sBytes[:4])[0]
+
     def getInq(self, start=300000):
         candidates = {}
         for i in range(5):
