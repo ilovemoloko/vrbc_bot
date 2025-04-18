@@ -154,13 +154,23 @@ class DataSearcher:
         self.Offsets = {}
         self.inq = "LOL"
 
-    def getVersion(self):
-        return struct.unpack("<I", self.sBytes[:4])[0]
+    def getInq(self, start=300000):
+        candidates = {}
+        for i in range(5):
+            ampl = i * 1000
+            try:
+                inq = self._getInq(start+ampl)
+                if inq not in candidates:
+                    candidates[inq] = 0
+                candidates[inq] += 1
+            except:
+                pass
 
-    def getInq(self):
-        inqIdx = 0
+        return max(candidates, key=candidates.get)
+
+    def _getInq(self, start=300000):
         try:
-            inqIdx = self.search(struct.pack("<I", 9), 300000) + 4
+            inqIdx = self.search(struct.pack("<I", 9), start) + 4
         except:
             sBytes = self.sBytes
             str_from_bytes = sBytes.decode('utf-8', errors='ignore')
@@ -181,7 +191,7 @@ class DataSearcher:
 
         InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
         for i in range(9):
-            InqBytes[i] = self.sBytes[inqIdx + i]
+            InqBytes[i] = self.sBytes[inqIdx+i]
 
         self.inq = InqBytes.decode()
         if not ''.join(k for k in self.inq if k in 'abcdef0123456789'):
@@ -204,10 +214,10 @@ class DataSearcher:
                 inqIdx = self.sBytes.index(probablyinq.encode())
             InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
             for i in range(9):
-                InqBytes[i] = self.sBytes[inqIdx + i]
+                InqBytes[i] = self.sBytes[inqIdx+i]
             self.inq = InqBytes.decode()
 
-        return self.inq
+        return self.inq, inqIdx
 
     def search(self, Pattern: list, startIndex: int):
         if startIndex > len(self.sBytes) or len(Pattern) > (len(self.sBytes) - startIndex):
@@ -227,7 +237,7 @@ class DataSearcher:
 def getInq(data):
     try:
         ds = DataSearcher(data)
-        inq = ds.getInq()
+        inq, _ = ds.getInq()
     except Exception as e:
         logging.error(e)
         inq = "LOL"
