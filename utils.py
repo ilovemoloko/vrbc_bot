@@ -157,21 +157,32 @@ class DataSearcher:
     def getVersion(self):
         return struct.unpack("<I", self.sBytes[:4])[0]
 
-    def getInq(self, start=300000):
+    def getInq(self, start=300000, try_amount=5, re_enter=True):
         candidates = {}
-        for i in range(5):
+        for i in range(try_amount):
             ampl = i * 1000
             try:
-                inq = self._getInq(start+ampl)
+                inq = self._getInq(start + ampl)
                 if inq not in candidates:
                     candidates[inq] = 0
                 candidates[inq] += 1
             except:
                 pass
 
-        return max(candidates, key=candidates.get)
+        candidates = {
+            k: v for k, v in candidates.items()
+            if isinstance(k[0], str) and k[0].isascii() and all(c in '0123456789abcdef' for c in k[0])}
+
+        try:
+            inq = max(candidates, key=candidates.get)
+            return inq
+        except:
+            if re_enter:
+                return self.getInq(start, try_amount=100, re_enter=False)
+            raise IndexError("Ну не берется инкури.")
 
     def _getInq(self, start=300000):
+        inqIdx = 0
         try:
             inqIdx = self.search(struct.pack("<I", 9), start) + 4
         except:
@@ -194,7 +205,7 @@ class DataSearcher:
 
         InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
         for i in range(9):
-            InqBytes[i] = self.sBytes[inqIdx+i]
+            InqBytes[i] = self.sBytes[inqIdx + i]
 
         self.inq = InqBytes.decode()
         if not ''.join(k for k in self.inq if k in 'abcdef0123456789'):
@@ -217,7 +228,7 @@ class DataSearcher:
                 inqIdx = self.sBytes.index(probablyinq.encode())
             InqBytes = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0])
             for i in range(9):
-                InqBytes[i] = self.sBytes[inqIdx+i]
+                InqBytes[i] = self.sBytes[inqIdx + i]
             self.inq = InqBytes.decode()
 
         return self.inq, inqIdx
