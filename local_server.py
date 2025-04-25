@@ -129,7 +129,17 @@ def backup_account(user_id, inq, data):
 
 
 def set_proxy(proxy_url):
-    return requests.get(set_proxy_url, params={"proxy": proxy_url}).content.decode("utf-8")
+    import utils
+    result = requests.get(set_proxy_url, params={"proxy": proxy_url}).content.decode("utf-8")
+    status = json.loads(result)['status']
+    if status:
+        if proxy_url == "null":
+            proxy = None
+        else:
+            proxy = {"http": proxy_url, "https": proxy_url}
+
+        utils.proxy = proxy
+    return result
 
 
 def change_code(user_id, inq, new_inq):
