@@ -2,16 +2,16 @@ import requests
 import json
 
 base_url = "http://127.0.0.1:5000"
-api_url = base_url + "/api/hack"
-wait_time_url = base_url + "/api/wait"
-unban_url = base_url + "/api/ub"
-list_backups_url = base_url + "/api/list_backups"
-backup_account_url = base_url + "/api/backup_account"
-change_code_url = base_url + "/api/change_code"
-get_variables_url = base_url + "/api/get_variables"
-get_cats_url = base_url + "/api/get_cats"
-get_queue_url = base_url + "/api/get_queue"
-set_proxy_url = base_url + "/api/set_proxy"
+api_url = f"{base_url}/api/hack"
+wait_time_url = f"{base_url}/api/wait"
+unban_url = f"{base_url}/api/ub"
+list_backups_url = f"{base_url}/api/list_backups"
+backup_account_url = f"{base_url}/api/backup_account"
+change_code_url = f"{base_url}/api/change_code"
+get_variables_url = f"{base_url}/api/get_variables"
+get_cats_url = f"{base_url}/api/get_cats"
+get_queue_url = f"{base_url}/api/get_queue"
+set_proxy_url = f"{base_url}/api/set_proxy"
 
 
 bot_variables = {}
@@ -58,9 +58,7 @@ def boost_change_catalog_limit(values, effect):
 def boost_change_cooldown(values, effect):
     time = effect['params'][0]
     values['default_user']['cooldown'] += time
-    if values['default_user']['cooldown'] < 0:
-        values['default_user']['cooldown'] = 0
-
+    values['default_user']['cooldown'] = max(values['default_user']['cooldown'], 0)
     return values
 
 
@@ -131,8 +129,7 @@ def backup_account(user_id, inq, data):
 def set_proxy(proxy_url):
     import utils
     result = requests.get(set_proxy_url, params={"proxy": proxy_url}).content.decode("utf-8")
-    status = json.loads(result)['status']
-    if status:
+    if status := json.loads(result)['status']:
         if proxy_url == "null":
             proxy = None
         else:
@@ -174,10 +171,7 @@ def update_variables():
     int_keys = ['items', 'donate_rules', 'categories']
 
     for key in int_keys:
-        items = list(bot_variables[key].items())
-        for item in items:
-            bot_variables[key][int(item[0])] = item[1]
-            bot_variables[key].pop(item[0])
+        bot_variables[key] = {int(k): v for k, v in bot_variables[key].items()}
 
     r = requests.get(get_cats_url)
     cats_vars = r.json()
@@ -207,12 +201,8 @@ update_variables()
 
 
 def get_cats_names(is_jp=False):
-    if is_jp:
-        return cats_names_ja
-    return cats_names
+    return cats_names_ja if is_jp else cats_names
 
 
 def get_icons(is_jp=False):
-    if is_jp:
-        return cats_icons_ja
-    return cats_icons
+    return cats_icons_ja if is_jp else cats_icons

@@ -173,7 +173,7 @@ def donate(context: MessageContext):
 5. 350 руб.: 17 предметов в корзине, 9 часов между использованием бота
 
 Количество бонусов от привилегий будет увеличиваться в будущем!""")
-    buttons.add("Пожертвовать", "donate2")
+    buttons.add("Пополнить баланс", "donate2")
     buttons.add("Купить уровень", "buy_dlevel")
     buttons.add("Магазин бустов", "boostshop")
     buttons.add("Главное меню", "start")
@@ -185,7 +185,7 @@ def donate2(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Назад", "reducecd")
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
-    answer.addText("Напишите сумму пожертвования").reply()
+    answer.addText("Введите сумму пожертвования").reply()
     fsm_db.update_state(context, context.text)
 
 
@@ -205,7 +205,7 @@ def donate3(context: MessageContext):
                    "Если вы убедились, что все данные правильные, но всё равно не можете перевести, "
                    "то обратитесь в поддержку бота с помощью команды !отправить\n"
                    "Вам отправят альтернативные способы оплаты (В том числе для тех, кто не живет в РФ)\n")
-    answer.addText("Ссылка на пожертвование: " + donate_url).reply()
+    answer.addText("Ссылка на оплату: " + donate_url).reply()
     fsm_db.update_state(context, "first_msg")
 
 
