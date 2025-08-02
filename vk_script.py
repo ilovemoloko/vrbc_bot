@@ -7,6 +7,7 @@ from script_base import MessageBuilder, MessageContext
 import random
 import json
 import threading
+import traceback
 
 
 class VkBotScript(sc.BotScript):
@@ -41,6 +42,7 @@ class VkBotScript(sc.BotScript):
 
     def massmsg(self, user_ids, message):
         max_users = 100
+        user_ids = [x for x in user_ids if x != 2000000023]
 
         while user_ids:
             try:
@@ -156,11 +158,14 @@ class VkBotScript(sc.BotScript):
         return "vk"
 
     def start(self):
-        userids = []
-        for x in self.get_users(1000):
-            userids.append(x[0])
-        msg = "Бот перезапущен. Вы можете попробовать снова."
-        self.massmsg(userids, msg)
+        try:
+            userids = []
+            for x in self.get_users(1000):
+                userids.append(x[0])
+            msg = "Бот перезапущен. Вы можете попробовать снова."
+            self.massmsg(userids, msg)
+        except Exception as e:
+            print(traceback.format_exc())
         super().start()
 
     def get_group_members(self):
