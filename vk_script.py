@@ -158,6 +158,13 @@ class VkBotScript(sc.BotScript):
         return "vk"
 
     def start(self):
+        if config.start_massmsg:
+            self.start_massmsg()
+        super().start()
+
+    def start_massmsg(self):
+        print("UEEEET дружище ты кудааа")
+        return
         try:
             userids = []
             for x in self.get_users(1000):
@@ -166,7 +173,6 @@ class VkBotScript(sc.BotScript):
             self.massmsg(userids, msg)
         except Exception as e:
             print(traceback.format_exc())
-        super().start()
 
     def get_group_members(self):
         members = self.vk.groups.getMembers(group_id=config.id_vk)

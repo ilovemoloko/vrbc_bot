@@ -1,5 +1,6 @@
 import requests
 import json
+import config
 
 base_url = "http://127.0.0.1:5000"
 api_url = f"{base_url}/api/hack"
@@ -196,8 +197,8 @@ def update_variables():
 
     return True
 
-
-update_variables()
+if config.initialize_server_data:
+    update_variables()
 
 
 def get_cats_names(is_jp=False):

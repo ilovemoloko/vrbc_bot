@@ -48,7 +48,11 @@ def tg_bot_start():
     script_tg.start()
 
 
-vk_bot_start()
-tg_bot_start()
-public_server.start()
-utils.main_process_task_handler()
+if config.start_vk:
+    vk_bot_start()
+if config.start_tg:
+    tg_bot_start()
+if config.start_public_server:
+    public_server.start()
+if config.start_mainprocess:
+    utils.main_process_task_handler()
