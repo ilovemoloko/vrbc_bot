@@ -11,6 +11,139 @@ info_worker = DBInfoWorker()
 bca_db = BCAccountDB()
 
 
+def _extract_cat_and_levels(text: str):
+    if text is None:
+        return None, (None, None)
+    text = text.strip()
+    if not text:
+        return None, (None, None)
+    m = re.match(r'^"([^"]+)"\s*(.*)$', text)
+    if m:
+        cat_part, rest = m.group(1).strip(), m.group(2).strip()
+    else:
+        parts = text.split(None, 1)
+        cat_part = parts[0] if parts else None
+        rest = parts[1].strip() if len(parts) > 1 else ""
+
+    if not rest:
+        return cat_part, (None, None)
+    m2 = re.match(r'^(\d+)\s*\+\s*(\d+)$', rest)
+    if m2:
+        return cat_part, (int(m2.group(1)), int(m2.group(2)))
+    m3 = re.match(r'^\+\s*(\d+)$', rest)
+    if m3:
+        return cat_part, (0, int(m3.group(1)))
+    m4 = re.match(r'^(\d+)$', rest)
+    if m4:
+        return cat_part, (int(m4.group(1)), 0)
+    return cat_part, (None, None)
+
+
+def _find_upgrade_index(cart: dict, cat_id: int):
+    """Return (idx, is_list, key) if found; else (None, None, None)
+    Works with cart keys possibly as str or int and entries possibly list or single value.
+    Each upgrade entry is expected to be a string like 'cat base plus' or similar.
+    """
+    if not cart:
+        return None, None, None
+    for key in (str(48), 48):
+        if key in cart:
+            upgrades = cart.get(key)
+            if isinstance(upgrades, list):
+                for idx, entry in enumerate(upgrades):
+                    try:
+                        if str(entry).split()[0] == str(cat_id):
+                            return idx, True, key
+                    except Exception:
+                        continue
+            else:
+                try:
+                    if str(upgrades).split()[0] == str(cat_id):
+                        return 0, False, key
+                except Exception:
+                    pass
+    return None, None, None
+
+
+def _delete_upgrade_by_cat_mut(context: MessageContext, cat_id: int):
+    """Mutate cart stored in info_worker by removing upgrade entries for cat_id.
+    Returns True if anything was removed.
+    """
+    cart = info_worker.get_value(context, 'cart') or {}
+    key = str(48) if str(48) in cart else 48 if 48 in cart else None
+    if not key:
+        return False
+    val = cart.get(key)
+    if isinstance(val, list):
+        new = [e for e in val if str(e).split()[0] != str(cat_id)]
+        if len(new) == len(val):
+            return False
+        if len(new) == 1:
+            cart[key] = new[0]
+        elif len(new) == 0:
+            cart.pop(key, None)
+        else:
+            cart[key] = new
+    else:
+        if str(val).split()[0] == str(cat_id):
+            cart.pop(key, None)
+        else:
+            return False
+    info_worker.set_value(context, 'cart', cart)
+    return True
+
+
+def _ensure_upgrade_in_cart(context: MessageContext, cat_id: int, base: int, plus: int):
+    """Add or update upgrade entry in cart in a defensive way.
+    This will attempt to handle different ways the backend stores keys (str/int) and list/single entries.
+    """
+    cart = info_worker.get_value(context, 'cart') or {}
+    entry = f"{cat_id} {base} {plus}"
+    if str(48) in cart:
+        key = str(48)
+    elif 48 in cart:
+        key = 48
+    else:
+        cart[str(48)] = entry
+        info_worker.set_value(context, 'cart', cart)
+        return True
+    val = cart.get(key)
+    if isinstance(val, list):
+        for idx, e in enumerate(val):
+            if str(e).split()[0] == str(cat_id):
+                val[idx] = entry
+                cart[key] = val
+                info_worker.set_value(context, 'cart', cart)
+                return True
+        val.append(entry)
+        cart[key] = val
+        info_worker.set_value(context, 'cart', cart)
+        return True
+    else:
+        if str(val).split()[0] == str(cat_id):
+            cart[key] = entry
+            info_worker.set_value(context, 'cart', cart)
+            return True
+        cart[key] = [val, entry]
+        info_worker.set_value(context, 'cart', cart)
+        return True
+
+
+def _upgrade_present_in_cart(context: MessageContext, cat_id: int) -> bool:
+    cart = info_worker.get_value(context, 'cart') or {}
+    for key in (str(48), 48):
+        if key in cart:
+            v = cart[key]
+            if isinstance(v, list):
+                for e in v:
+                    if str(e).split()[0] == str(cat_id):
+                        return True
+            else:
+                if str(v).split()[0] == str(cat_id):
+                    return True
+    return False
+
+
 @bot.command(["предметы", "cart", "!каталог.*", "каталог.*"], ignore_case=True)
 def cart(context: MessageContext):
     fsm_db.update_state(context, "*")
@@ -171,6 +304,9 @@ def chooseitem2(context: MessageContext):
     if item_id == 27:
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
         buttons.insert(0, "Поиск котов", "find_cat")
+    elif item_id == 48:
+        answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите прокачать")
+        buttons.insert(0, "Поиск котов", "find_cat")
     else:
         answer.addText(f"Введите количество предмета, которое вы хотите добавить на аккаунт\n")
         answer.addText(f"Лимит: {limit_amount}")
@@ -194,7 +330,7 @@ def find_cat_2(context: MessageContext):
     fsm_db.update_state(context, "additem 27")
 
 
-@bot.command(r"find .*", ignore_case=True)
+@bot.command(r"find .*")
 def find_cat(context: MessageContext):
     query = context.text.split(" ", 1)[1]
     context.text = query
@@ -203,13 +339,17 @@ def find_cat(context: MessageContext):
 
 @bot.command(r"setlocal.*")
 def setlocal(context: MessageContext):
-    answer = MessageBuilder().setReplyMode(context)
     arg = context.text.split(" ", 1)[1]
     value = False
     if arg == "ja":
         value = True
 
     info_worker.set_value(context, "japan_user", value)
+
+    buttons = ButtonsBuilder()
+    buttons.add("Смотреть категории предметов", "cart")
+    buttons.add("Посмотреть корзину", "viewcart")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     answer.addText(f"Бот переключил ваш поиск котов на {arg} версию.")
     answer.reply()
@@ -244,7 +384,7 @@ def addcat(context: MessageContext):
             if not is_jp:
                 buttons.add("Включить японский поиск", "setlocal ja")
                 answer.addText("Этого кота нет в глобальной версии игры.\n"
-                                "Если вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
+                               "Если вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
             else:
                 buttons.add("Включить английский поиск", "setlocal en")
                 answer.addText("Этого кота нет в японской версии игры.\n"
@@ -262,11 +402,11 @@ def addcat(context: MessageContext):
         if not is_jp:
             buttons.add("Включить японский поиск", "setlocal ja")
             answer.addText("Этого кота нет в глобальной версии игры.\n"
-                           "Если вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
+                           "Если вы играете на японской версии, то вы можете попытаться добавить кота после включения японской версии поиска")
         else:
-            buttons.add("Включить английский поиск", "setlocal en")
+            buttons.add("Включить английскую версию поиска", "setlocal en")
             answer.addText("Этого кота нет в японской версии игры.\n"
-                           "Если вы играете на английской версии, то вы можете попытаться добавить кота после включения английского поиска")
+                           "Если вы играете на английской версии поиска, то вы можете попытаться добавить кота после включения японской версии поиска")
         return answer.reply()
 
     fsm_db.update_state(context, f"chooseitem {items_data[2]}")
@@ -283,6 +423,8 @@ def additem(context: MessageContext):
     item_id = int(context.fsm[0])
     if item_id == 27:
         return addcat(context)
+    if item_id == 48:
+        return additem48(context)
     items_data = info_worker.get_bot_values(context)['items'][item_id]
 
     buttons = ButtonsBuilder()
@@ -309,6 +451,24 @@ def additem(context: MessageContext):
 
 def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n -- ", show_id=True, cats_names=None):
     id_text = f" (ID: {item_id})" if show_id else ""
+    if item_id == 48:
+        try:
+            parts = str(amount).split()
+            if len(parts) >= 3:
+                cat_id, base, plus = parts[0], parts[1], parts[2]
+                name = cats_names.get(str(cat_id), '???') if cats_names is not None else '???'
+                message.addText(f"Прокачка кота {name} #{cat_id} до уровня {base}+{plus}", start=start)
+            else:
+                # fallback
+                message.addText(str(amount), start=start)
+                message.addText(item_name, start=" ")
+        except Exception:
+            message.addText(str(amount), start=start)
+            message.addText(item_name, start=" ")
+        if show_id:
+            message.addText(f"{id_text}", start=" ")
+        return message
+
     message.addText(f"{amount}", start=start)
     message.addText(f"{item_name}", start=" ")
     if item_id == 27:
@@ -450,3 +610,144 @@ def removeitem2(context: MessageContext):
     else:
         answer.addText("Такого предмета нет в корзине")
     answer.reply()
+
+
+@bot.command(".*", level="additem48_levels", weak=True)
+def additem48_levels(context: MessageContext):
+    cat_part = context.fsm[0]
+    text = context.text.strip()
+
+    if not text:
+        base = 0
+        plus = 0
+    else:
+        m2 = re.match(r'^(\d+)\s*\+\s*(\d+)$', text)
+        if m2:
+            base = int(m2.group(1)); plus = int(m2.group(2))
+        else:
+            m3 = re.match(r'^\+\s*(\d+)$', text)
+            if m3:
+                base = 0; plus = int(m3.group(1))
+            else:
+                m4 = re.match(r'^(\d+)$', text)
+                if m4:
+                    base = int(m4.group(1)); plus = 0
+                else:
+                    # fallback: maybe user provided both cat and levels in one line
+                    _, (base, plus) = _extract_cat_and_levels(text)
+
+    if base is None and plus is None:
+        buttons = ButtonsBuilder()
+        buttons.add("Посмотреть корзину", "viewcart")
+        buttons.add("Смотреть категории предметов", "cart")
+        return MessageBuilder().setReplyMode(context).setButtons(buttons).addText('Неправильный формат уровней. Используйте: 1+10, +10 или 1').reply()
+
+    is_jp = info_worker.get_value(context, 'japan_user')
+    if str(cat_part).isnumeric():
+        cat_id = int(cat_part)
+    else:
+        search = utils.search_cat(cat_part, is_jp)
+        if not search:
+            buttons = ButtonsBuilder()
+            buttons.add("Искать ещё раз", "find_cat")
+            buttons.add("Посмотреть корзину", "viewcart")
+            return MessageBuilder().setReplyMode(context).setButtons(buttons).addText('Кот не найден').reply()
+        cat_id = search[0][1]
+
+    base = base or 0
+    plus = plus or 0
+
+    _delete_upgrade_by_cat_mut(context, cat_id)
+
+    info_worker.add_to_cart(context, 48, f'{cat_id} {base} {plus}')
+    if not _upgrade_present_in_cart(context, cat_id):
+        _ensure_upgrade_in_cart(context, cat_id, base, plus)
+
+    cats_names = local_server.get_cats_names(is_jp=is_jp)
+    icons = local_server.get_icons(is_jp=is_jp)
+
+    buttons = ButtonsBuilder()
+    buttons.insert(0, 'Начать взлом', 'starthack')
+    buttons.insert(0, 'Посмотреть корзину', 'viewcart')
+
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    if str(cat_id) not in icons:
+        answer.addText('В базе данных бота пока что ещё нет такого кота\n')
+        max_id = local_server.max_cat_ja
+        if cat_id > max_id:
+            return answer.reply()
+        buttons.add('Включить японский поиск', 'setlocal ja' if not is_jp else 'setlocal en')
+        answer.addText('Этого кота нет в нужной версии игры. Попробуйте переключить поиск')
+        return answer.reply()
+    img = icons.get(str(cat_id))
+
+    if img:
+        answer.setPreviewUrl(img)
+    name = cats_names.get(str(cat_id), '???')
+    answer.addText(f'Прокачка кота {name} {cat_id} (уровни {base}+{plus}) добавлен(а) в корзину').reply()
+    fsm_db.update_state(context, '*')
+
+
+def additem48(context: MessageContext):
+    text = context.text.strip()
+    item_id = 48
+    items_data = info_worker.get_bot_values(context)['items'][item_id]
+    buttons = ButtonsBuilder()
+    buttons.insert(0, 'Начать взлом', 'starthack')
+    buttons.insert(0, 'Посмотреть корзину', 'viewcart')
+    buttons.add('Смотреть предметы', f'selectcategory {items_data[2]}')
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    cat_part, levels = _extract_cat_and_levels(text)
+    base, plus = levels if levels != (None, None) else (None, None)
+    is_jp = info_worker.get_value(context, 'japan_user')
+    if cat_part is None:
+        fsm_db.update_state(context, f'additem48_levels {""}')
+        context.fsm = [""]
+        answer.addText('Введите ID или имя кота')
+        return answer.reply()
+
+    if str(cat_part).isnumeric():
+        cat_id = int(cat_part)
+    else:
+        search = utils.search_cat(cat_part, is_jp)
+        if not search:
+            if base is None and plus is None:
+                fsm_db.update_state(context, f'additem48_levels {cat_part}')
+                context.fsm = [cat_part]
+                answer.addText('Кот не найден. Введите корректный ID или имя кота')
+                return answer.reply()
+            return answer.addText('Кот не найден').reply()
+        cat_id = search[0][1]
+
+    icons = local_server.get_icons(is_jp=is_jp)
+    if str(cat_id) not in icons:
+        answer.addText('В базе данных бота пока что ещё нет такого кота\n')
+        max_id = local_server.max_cat_ja
+        if cat_id > max_id:
+            return answer.reply()
+        buttons.add('Включить японский поиск', 'setlocal ja' if not is_jp else 'setlocal en')
+        answer.addText('Этого кота нет в нужной версии игры. Попробуйте переключить поиск')
+        return answer.reply()
+
+    if base is None and plus is None:
+        fsm_db.update_state(context, f'additem48_levels {cat_part}')
+        context.fsm = [cat_part]
+        answer.addText('Введите уровни в формате: 1+10, +10 или 1 (base+plus)')
+        return answer.reply()
+
+    base = base or 0
+    plus = plus or 0
+
+    _delete_upgrade_by_cat_mut(context, cat_id)
+    info_worker.add_to_cart(context, item_id, f'{cat_id} {base} {plus}')
+    if not _upgrade_present_in_cart(context, cat_id):
+        _ensure_upgrade_in_cart(context, cat_id, base, plus)
+
+    cats_names = local_server.get_cats_names(is_jp=is_jp)
+    img = icons[str(cat_id)]
+    answer.setPreviewUrl(img)
+    name = cats_names.get(str(cat_id), '???')
+    answer.addText(f'Прокачка кота {name} {cat_id} (уровни {base}+{plus}) добавлена в корзину').reply()
+    fsm_db.update_state(context, '*')

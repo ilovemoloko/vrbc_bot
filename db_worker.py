@@ -614,9 +614,9 @@ class DBInfoWorker(metaclass=SingletonMeta):
         if item in cart:
             if amount is not None:
                 if isinstance(cart[item], list):
-                    if amount not in cart[item]:
+                    if amount not in [int(x.split()[0]) for x in cart[item]]:
                         return False
-                    cart[item].remove(amount)
+                    cart[item].remove([x for x in cart[item] if int(x.split()[0]) == amount][0])
                     if len(cart[item]) == 0:
                         cart.pop(item)
                     self.set_value(context, 'cart', cart)

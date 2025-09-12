@@ -72,8 +72,11 @@ def add_last_cart(context: MessageContext):
 
     item_queries = []
     for item in last_cart.splitlines():
-        item_id, amount = item.split()
-        item_queries.append((int(item_id), int(amount)))
+        item_id, amount = item.split(" ", 1)
+        amnt = amount
+        if item_id != "48":
+            amnt = int(amnt)
+        item_queries.append((int(item_id), amnt))
     n = info_worker.mass_add_to_cart(context, item_queries)
 
     message.setText(f"Предметы из прошлой корзины ({n} штук) добавлены").reply()
