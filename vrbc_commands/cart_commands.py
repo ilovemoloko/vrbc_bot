@@ -552,8 +552,20 @@ def additem48_levels(context: MessageContext):
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
+    lv_data = local_server.cats_lvdata
+    if is_jp:
+        lv_data = local_server.cats_lvdata_ja
+    cat_lv_data = lv_data[str(cat_id)]
+
     base = base or 0
     plus = plus or 0
+
+    base_min = 0
+    base_max = cat_lv_data['base_max']
+    plus_min = 0
+    plus_max = cat_lv_data['plus_max']
+    base = min(base_max, max(base, base_min))
+    plus = min(plus_max, max(plus, plus_min))
 
     user_bot_values = info_worker.get_bot_values(context)
     spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
@@ -641,8 +653,20 @@ def additem48(context: MessageContext):
         answer.addText('Введите уровни в формате: 1+10, +10 или 1 (base+plus)')
         return answer.reply()
 
+    lv_data = local_server.cats_lvdata
+    if is_jp:
+        lv_data = local_server.cats_lvdata_ja
+    cat_lv_data = lv_data[str(cat_id)]
+
     base = base or 0
     plus = plus or 0
+
+    base_min = 0
+    base_max = cat_lv_data['base_max']
+    plus_min = 0
+    plus_max = cat_lv_data['plus_max']
+    base = min(base_max, max(base, base_min))
+    plus = min(plus_max, max(plus, plus_min))
 
     spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
     boosts_server = user_bot_values['boosts']
