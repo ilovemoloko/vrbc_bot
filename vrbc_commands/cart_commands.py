@@ -509,9 +509,10 @@ def additem48_levels(context: MessageContext):
     text = context.text.strip()
     item_id = 48
 
+    # Parse input levels (supports formats: base+plus, +plus, base)
     if not text:
-        base = 0
-        plus = 0
+        base = None
+        plus = None
     else:
         m2 = re.match(r'^(\d+)\s*\+\s*(\d+)$', text)
         if m2:
@@ -528,12 +529,7 @@ def additem48_levels(context: MessageContext):
                     # fallback: maybe user provided both cat and levels in one line
                     _, (base, plus) = _extract_cat_and_levels(text)
 
-    if base is None and plus is None:
-        buttons = ButtonsBuilder()
-        buttons.add("Посмотреть корзину", "viewcart")
-        buttons.add("Смотреть категории предметов", "cart")
-        return MessageBuilder().setReplyMode(context).setButtons(buttons).addText('Неправильный формат уровней. Используйте: 1+10, +10 или 1').reply()
-
+    # If parsing failed entirely, offer concise help with available limits
     is_jp = info_worker.get_value(context, 'japan_user')
     if str(cat_part).isnumeric():
         cat_id = int(cat_part)
@@ -546,45 +542,91 @@ def additem48_levels(context: MessageContext):
             return MessageBuilder().setReplyMode(context).setButtons(buttons).addText('Кот не найден').reply()
         cat_id = search[0][1]
 
+    # Prepare buttons and answer
     buttons = ButtonsBuilder()
     buttons.insert(0, 'Начать взлом', 'starthack')
     buttons.insert(0, 'Посмотреть корзину', 'viewcart')
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
+    # Level limits for this cat
     lv_data = local_server.cats_lvdata
     if is_jp:
         lv_data = local_server.cats_lvdata_ja
-    cat_lv_data = lv_data[str(cat_id)]
-
-    base = base or 0
-    plus = plus or 0
+    cat_lv_data = lv_data.get(str(cat_id))
+    if not cat_lv_data:
+        answer.addText('Данные по уровням для этого кота отсутствуют в базе.').reply()
+        return
 
     base_min = 0
     base_max = cat_lv_data['base_max']
     plus_min = 0
     plus_max = cat_lv_data['plus_max']
-    base = min(base_max, max(base, base_min))
-    plus = min(plus_max, max(plus, plus_min))
 
+    # Compute current spending and limits
     user_bot_values = info_worker.get_bot_values(context)
     spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
     boosts_server = user_bot_values['boosts']
     user_cart = info_worker.get_value(context, "cart")
+    # current spending for this cat (sum of levels for this cat in cart)
     spending = info_worker.get_spendable_amount(None, user_cart.get(item_id, []), set(str(cat_id)))
     limit_spend = info_worker.get_limit_spend(spendable_boosts, item_id, boosts_server)
+    available = max(0, limit_spend - spending)
 
-    res = info_worker.add_to_cart(context, 48, f'{cat_id} {base} {plus}')
+    # If user didn't provide levels yet — show short, clear prompt with available info
+    if base is None and plus is None:
+        cats_names = local_server.get_cats_names(is_jp=is_jp)
+        name = cats_names.get(str(cat_id), '???')
+        answer.addText(f"Прокачка кота {name} #{cat_id}\n")
+        answer.addText(f"Доступно уровней: {available} (в корзине уже занято: {spending}, лимит: {limit_spend})")
+        answer.addText("Формат ввода: base+plus, +plus или base (например: 1+10, +10, 1).")
+        # show per-cat limits briefly
+        answer.addText(f"Ограничения: base {base_min}–{base_max}, plus {plus_min}–{plus_max}")
+        fsm_db.update_state(context, f'additem48_levels {cat_part}')
+        context.fsm = [cat_part]
+        return answer.reply()
+
+    # Normalize None to 0 for computation (we will clamp later)
+    base = base or 0
+    plus = plus or 0
+
+    # Clamp to per-cat max/min
+    base = min(base_max, max(base, base_min))
+    plus = min(plus_max, max(plus, plus_min))
+
+    total_to_add = base + plus
+    if total_to_add <= 0:
+        buttons = ButtonsBuilder()
+        buttons.add("Посмотреть корзину", "viewcart")
+        buttons.add("Смотреть категории предметов", "cart")
+        return MessageBuilder().setReplyMode(context).setButtons(buttons).addText('Неверный формат уровней или указано 0. Используйте: 1+10, +10 или 1').reply()
+
+    # Check if there is already an entry for this cat in cart (to inform user about overwrite)
+    user_cart = info_worker.get_value(context, "cart")
+    existing_entries = user_cart.get(item_id, []) if user_cart else []
+    existing_for_cat = False
+    for e in existing_entries:
+        try:
+            if isinstance(e, str) and e.startswith(f"{cat_id} "):
+                existing_for_cat = True
+                break
+        except Exception:
+            continue
+
+    # Directly delegate to add_to_cart (it contains needed logic, including overwrite handling)
+    add_value = f'{cat_id} {base} {plus}'
+    res = info_worker.add_to_cart(context, item_id, add_value)
     if not res:
-        answer.addText(f'У вас недостаточно доступных уровней для добавления такой прокачки.\n'
-                       f'Убедитесь, что сумма уровней котов в корзине не превышает доступное вам число\n\n'
+        answer.addText(f'Не удалось добавить прокачку — проверьте доступные уровни и корзину.\n'
                        f'Текущая сумма в корзине: {spending} (всего доступно {limit_spend})')
         return answer.reply()
-    spending += base + plus
+
+    # Recompute spending for this cat after adding (to show accurate numbers)
+    new_spending = info_worker.get_spendable_amount(None, info_worker.get_value(context, "cart").get(item_id, []), set(str(cat_id)))
+    available_after = max(0, limit_spend - new_spending)
 
     cats_names = local_server.get_cats_names(is_jp=is_jp)
     icons = local_server.get_icons(is_jp=is_jp)
-
     if str(cat_id) not in icons:
         answer.addText('В базе данных бота пока что ещё нет такого кота\n')
         max_id = local_server.max_cat_ja
@@ -594,13 +636,15 @@ def additem48_levels(context: MessageContext):
         answer.addText('Этого кота нет в нужной версии игры. Попробуйте переключить поиск')
         return answer.reply()
     img = icons.get(str(cat_id))
-
     if img:
         answer.setPreviewUrl(img)
     name = cats_names.get(str(cat_id), '???')
-    answer.addText(f'Прокачка кота {name} {cat_id} (уровни {base}+{plus}) добавлена в корзину\n\n'
-                   f'Всего в корзине улучшений на {spending} уровней, '
-                   f'доступно ещё {limit_spend-spending}').reply()
+
+    if existing_for_cat:
+        answer.addText(f'Прокачка кота {name} #{cat_id} ({base}+{plus}) перезаписана в корзине.')
+    else:
+        answer.addText(f'Прокачка кота {name} #{cat_id} ({base}+{plus}) добавлена в корзину.')
+    answer.addText(f'В корзине улучшений: {new_spending}/{limit_spend} уровней (осталось {available_after}).').reply()
     fsm_db.update_state(context, '*')
 
 
@@ -647,12 +691,28 @@ def additem48(context: MessageContext):
         answer.addText('Этого кота нет в нужной версии игры. Попробуйте переключить поиск')
         return answer.reply()
 
+    # If no levels in the same message: show available numbers right away
     if base is None and plus is None:
+        # compute available
+        spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
+        boosts_server = user_bot_values['boosts']
+        user_cart = info_worker.get_value(context, "cart")
+        spending = info_worker.get_spendable_amount(None, user_cart.get(item_id, []), set(str(cat_id)))
+        limit_spend = info_worker.get_limit_spend(spendable_boosts, item_id, boosts_server)
+        available = max(0, limit_spend - spending)
+
+        cats_names = local_server.get_cats_names(is_jp=is_jp)
+        name = cats_names.get(str(cat_id), '???')
+        img = icons[str(cat_id)]
+        if img:
+            answer.setPreviewUrl(img)
+        answer.addText(f"Прокачка кота {name} #{cat_id}\nДоступно уровней: {available} (в корзине: {spending}, лимит: {limit_spend})")
+        answer.addText("Введите уровни в формате: 1+10, +10 или 1 (base+plus).")
         fsm_db.update_state(context, f'additem48_levels {cat_part}')
         context.fsm = [cat_part]
-        answer.addText('Введите уровни в формате: 1+10, +10 или 1 (base+plus)')
         return answer.reply()
 
+    # If levels are provided inline, continue with the normal flow:
     lv_data = local_server.cats_lvdata
     if is_jp:
         lv_data = local_server.cats_lvdata_ja
@@ -674,19 +734,42 @@ def additem48(context: MessageContext):
     spending = info_worker.get_spendable_amount(None, user_cart.get(item_id, []), set(str(cat_id)))
     limit_spend = info_worker.get_limit_spend(spendable_boosts, item_id, boosts_server)
 
-    res = info_worker.add_to_cart(context, item_id, f'{cat_id} {base} {plus}')
+    total_to_add = base + plus
+    # Check existing to inform about overwrite
+    existing_entries = user_cart.get(item_id, []) if user_cart else []
+    existing_for_cat = False
+    for e in existing_entries:
+        try:
+            if isinstance(e, str) and e.startswith(f"{cat_id} "):
+                existing_for_cat = True
+                break
+        except Exception:
+            continue
+
+    # Delegate to add_to_cart directly (it handles logic and overwrite)
+    add_value = f'{cat_id} {base} {plus}'
+    res = info_worker.add_to_cart(context, item_id, add_value)
     if not res:
         answer.addText(f'У вас недостаточно доступных уровней для добавления такой прокачки.\n'
-                       f'Убедитесь, что сумма уровней котов в корзине не превышает доступное вам число\n\n'
+                       f'Попробуйте добавить не более доступного числа уровней.\n\n'
                        f'Текущая сумма в корзине: {spending} (всего доступно {limit_spend})')
         return answer.reply()
-    spending += base + plus
+
+    # Recompute spending after successful add
+    new_spending = info_worker.get_spendable_amount(None, info_worker.get_value(context, "cart").get(item_id, []), set(str(cat_id)))
+    available_after = max(0, limit_spend - new_spending)
 
     cats_names = local_server.get_cats_names(is_jp=is_jp)
     img = icons[str(cat_id)]
     answer.setPreviewUrl(img)
     name = cats_names.get(str(cat_id), '???')
-    answer.addText(f'Прокачка кота {name} {cat_id} (уровни {base}+{plus}) добавлена в корзину\n\n'
-                   f'Всего в корзине улучшений на {spending} уровней, '
-                   f'доступно ещё {limit_spend-spending}').reply()
+
+    if existing_for_cat:
+        answer.addText(f'Прокачка кота {name} {cat_id} (уровни {base}+{plus}) перезаписана в корзине\n\n'
+                       f'Всего в корзине улучшений: {new_spending} уровней, '
+                       f'доступно ещё {available_after}').reply()
+    else:
+        answer.addText(f'Прокачка кота {name} {cat_id} (уровни {base}+{plus}) добавлена в корзину\n\n'
+                       f'Всего в корзине улучшений: {new_spending} уровней, '
+                       f'доступно ещё {available_after}').reply()
     fsm_db.update_state(context, '*')
