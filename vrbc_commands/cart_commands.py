@@ -469,15 +469,14 @@ def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n --
             message.addText(f"{id_text}", start=" ")
         return message
 
-    message.addText(f"{amount}", start=start)
-    message.addText(f"{item_name}", start=" ")
+
     if item_id == 27:
         if cats_names is not None:
-            if str(amount) not in cats_names:
-                name = "??? (Имя кота не найдено, смените версию поиска)"
-            else:
-                name = cats_names[str(amount)]
-            message.addText(f"{name}", start=" ")
+            name = cats_names.get(str(amount), '???') if cats_names is not None else '???'
+            message.addText(f"Получение кота {name} #{amount}", start=start)
+    else:
+        message.addText(f"{amount}", start=start)
+        message.addText(f"{item_name}", start=" ")
     if show_id:
         message.addText(f"{id_text}", start=" ")
     return message
