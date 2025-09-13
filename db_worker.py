@@ -1,5 +1,8 @@
 import copy
+import logging
 import sqlite3
+from collections import defaultdict
+
 import local_server
 import os
 import threading
@@ -549,25 +552,138 @@ class DBInfoWorker(metaclass=SingletonMeta):
             stackable = item_info[-1].get('stackable', False)
         return stackable
 
+    def get_spendable_amount(self, amount, list_items: list, ids_used=None):
+        if ids_used is None:
+            ids_used = set()
+
+        final_amount = 0
+        if amount is not None:
+            conj_items = [amount] + list_items
+        else:
+            conj_items = list_items.copy()
+
+        for amnt in conj_items:
+            if isinstance(amnt, str):
+                id_c = amnt.split(" ")[0]
+                if id_c in ids_used:
+                    continue
+                ids_used.add(id_c)
+                nums = list(map(int, amnt.split(" ")))
+                final_amount += sum(nums[1:])
+            elif isinstance(amnt, int):
+                final_amount += 1
+            elif isinstance(amnt, list):
+                id_c = amnt[0]
+                if id_c in ids_used:
+                    continue
+                ids_used.add(id_c)
+                final_amount += sum(amnt[1:])
+            else:
+                logging.log(logging.ERROR, "i dont really know what to do with this one")
+        return final_amount
+
+    def _do_amount_fits(self, amount, list_items, limit):
+        final_amount = self.get_spendable_amount(amount, list_items)
+        return final_amount <= limit
+
+    def get_limit_spend(self, spendable_boosts, item_id, boosts_server):
+        spendable_remains = []
+        for bid in spendable_boosts:
+            boost = boosts_server[bid]
+            effects = boost['effects']
+            for effect in effects:
+                if effect['type'] != 'add_item':
+                    continue
+                boost_item_id = effect['params'][0]
+                if boost_item_id != item_id:
+                    continue
+                spendable_remains.append(spendable_boosts[bid])
+
+        limit_spend = -1
+        if len(spendable_remains) > 0:
+            limit_spend = sum(spendable_remains)
+
+        return limit_spend
+
+    def _stack_control(self, items_array):
+        items = set()
+        result = []
+
+        for item in items_array:
+            item_distinct = None
+            if isinstance(item, str):
+                item_distinct = item.split(" ")[0]
+            elif isinstance(item, list):
+                item_distinct = item[0]
+            elif isinstance(item, int):
+                item_distinct = item
+
+            if item_distinct not in items:
+                items.add(item_distinct)
+                result.append(item)
+
+        return result
+
+
+    @return_false_on_error
+    def _add_single_item_to_cart(self, cart, item_id, amount, item_info,
+                                 cart_size, cart_max_size, spendable_boosts,
+                                 boosts_server, ignore_max=False,
+                                 enforce_limit=False):
+        if cart_size >= cart_max_size:
+            if not ignore_max:
+                return False, cart_size, cart
+
+        limit_spend = self.get_limit_spend(spendable_boosts, item_id, boosts_server)
+
+        if limit_spend != -1:
+            if not self._do_amount_fits(amount, cart.get(item_id, []), limit_spend):
+                return False, cart_size, cart
+
+        if enforce_limit:
+            limit = item_info[0]
+            if isinstance(limit, int):
+                if amount > limit:
+                    amount = limit
+
+        stackable = self.check_stackable(item_info)
+        if not stackable:
+            cart[item_id] = amount
+        else:
+            items_array = cart.get(item_id, [])
+            items_array = [amount] + items_array
+            items_array = self._stack_control(items_array)
+            cart[item_id] = items_array
+
+        cart_size += 1
+        return True, cart_size, cart
+
     @return_false_on_error
     def add_to_cart(self, context, item, amount, ignore_max=False):
         user_bot_values = self.get_bot_values(context)
         cart_size = self.get_cart_size(context)
         cart_max_size = self.get_value(context, 'cart_size', src=user_bot_values['default_user'])
         cart = self.get_value(context, 'cart')
-        item_info = user_bot_values['items'][item]
-        if cart_size >= cart_max_size:
-            if not ignore_max:
-                return False
+        spendable_boosts = self.get_value(context, 'spendable_boosts')
+        boosts_server = user_bot_values['boosts']
 
-        stackable = self.check_stackable(item_info)
-        if not stackable:
-            cart[item] = amount
-        else:
-            items_array = cart.get(item, [])
-            items_array.append(amount)
-            items_array = list(set(items_array))
-            cart[item] = items_array
+        item_info = user_bot_values['items'][item]
+
+        added, _, cart = self._add_single_item_to_cart(
+            cart=cart,
+            item_id=item,
+            amount=amount,
+            item_info=item_info,
+            cart_size=cart_size,
+            cart_max_size=cart_max_size,
+            ignore_max=ignore_max,
+            enforce_limit=False,
+            spendable_boosts=spendable_boosts,
+            boosts_server=boosts_server
+        )
+
+        if not added:
+            return False
 
         self.set_value(context, 'cart', cart)
         return True
@@ -578,6 +694,8 @@ class DBInfoWorker(metaclass=SingletonMeta):
         cart_size = self.get_cart_size(context)
         cart_max_size = self.get_value(context, 'cart_size', src=user_bot_values['default_user'])
         cart = self.get_value(context, 'cart')
+        spendable_boosts = self.get_value(context, 'spendable_boosts')
+        boosts_server = user_bot_values['boosts']
 
         added = 0
         for item_id, amount in queries:
@@ -587,22 +705,27 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
             if item_id not in user_bot_values['items']:
                 continue
+
             item_info = user_bot_values['items'][item_id]
-            limit = item_info[0]
-            if isinstance(limit, int):
-                if amount > limit:
-                    amount = limit
 
-            stackable = self.check_stackable(item_info)
-            if not stackable:
-                cart[item_id] = amount
-            else:
-                items_array = cart.get(item_id, [])
-                items_array.append(amount)
-                items_array = list(set(items_array))
-                cart[item_id] = items_array
+            was_added, cart_size, cart = self._add_single_item_to_cart(
+                cart=cart,
+                item_id=item_id,
+                amount=amount,
+                item_info=item_info,
+                cart_size=cart_size,
+                cart_max_size=cart_max_size,
+                ignore_max=ignore_max,
+                enforce_limit=True,
+                spendable_boosts=spendable_boosts,
+                boosts_server=boosts_server
+            )
 
-            cart_size += 1
+            if not was_added:
+                if cart_size >= cart_max_size and not ignore_max:
+                    break
+                continue
+
             added += 1
 
         self.set_value(context, 'cart', cart)
@@ -641,6 +764,48 @@ class DBInfoWorker(metaclass=SingletonMeta):
 
     def clear_boosts(self, context):
         self.set_value(context, 'active_boosts', [])
+
+    def spend_from_boosts(self, context, success_items: dict):
+        if not success_items:
+            return
+        default_values = local_server.get_default_values()
+        default_values = copy.deepcopy(default_values)
+
+        boosts_server = default_values['boosts']
+        spendable_boosts = self.get_value(context, 'spendable_boosts') # {bid: remaining}
+        user_boosts = self.get_value(context, 'boosts')
+
+        boosts_candidates = defaultdict(list)
+        for bid in spendable_boosts:
+            boost = boosts_server[bid]
+            effects = boost['effects']
+            for effect in effects:
+                if effect['type'] != 'add_item':
+                    continue
+                item_id = effect['params'][0]
+                if str(item_id) not in success_items:
+                    continue
+                boosts_candidates[item_id].append(bid)
+
+        for itemid, amount in success_items.items():
+            itemid = int(itemid)
+            if itemid not in boosts_candidates:
+                continue
+            for bid in boosts_candidates[itemid]:
+                if amount == 0:
+                    break
+                remaining = spendable_boosts[bid]
+                spend = min(amount, remaining)
+                amount -= spend
+                remaining -= spend
+
+                spendable_boosts[bid] = remaining
+                if remaining == 0:
+                    spendable_boosts.pop(bid)
+                    user_boosts.pop(bid)
+
+        self.set_value(context, 'spendable_boosts', spendable_boosts)
+        self.set_value(context, 'boosts', user_boosts)
 
     @staticmethod
     def get_donate_boost_id(donate_amount, donate_server):

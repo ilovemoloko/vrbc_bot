@@ -269,6 +269,7 @@ def starthack2(context: MessageContext, retry=False):
 
     if hack_result['status'] == 1:
         transfer, confirmation = hack_result['codes']
+        success_status = hack_result['success_status']
         answer.setText("Взлом успешен. Ваши коды:").reply()
         answer.setText(transfer).reply()
         answer.setText(confirmation).reply()
@@ -278,6 +279,7 @@ def starthack2(context: MessageContext, retry=False):
         info_worker.set_preset(context, "last_cart", cart_str)
         info_worker.clear_cart(context)
         info_worker.clear_boosts(context)
+        info_worker.spend_from_boosts(context, success_status)
         info_worker.set_value(context, 'last_use', current_time)
         fsm_db.update_state(context, "first_msg")
 
