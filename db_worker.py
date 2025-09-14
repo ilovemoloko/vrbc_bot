@@ -49,7 +49,7 @@ def return_false_on_error(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except:
+        except Exception:
             return False
 
     return wrapper
@@ -737,9 +737,9 @@ class DBInfoWorker(metaclass=SingletonMeta):
         if item in cart:
             if amount is not None:
                 if isinstance(cart[item], list):
-                    if amount not in [int(x.split()[0]) for x in cart[item]]:
+                    if amount not in [int(str(x).split()[0]) for x in cart[item]]:
                         return False
-                    cart[item].remove([x for x in cart[item] if int(x.split()[0]) == amount][0])
+                    cart[item].remove([x for x in cart[item] if int(str(x).split()[0]) == amount][0])
                     if len(cart[item]) == 0:
                         cart.pop(item)
                     self.set_value(context, 'cart', cart)
