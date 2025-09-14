@@ -67,6 +67,7 @@ def boosts(context: MessageContext):
 @bot.command("passiveboosts")
 def passiveboosts(context: MessageContext):
     boosts = info_worker.get_value(context, 'boosts')
+    spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
     boosts_server = local_server.get_default_values()['boosts']
 
     buttons = ButtonsBuilder()
@@ -75,7 +76,10 @@ def passiveboosts(context: MessageContext):
     for boost in boosts:
         if boosts_server[boost]['type'] == "passive":
             addBoost(answer, boosts_server[boost], boost, desc=True)
-            answer.addText(f"Количество: {boosts[boost]}\n")
+            if boost in spendable_boosts:
+                answer.addText(f"Количество: {spendable_boosts[boost]}\n")
+            else:
+                answer.addText(f"Количество: {boosts[boost]}\n")
             answer.addText("\n")
     if len(boosts) == 0:
         answer.addText("У вас пока нет активируемых бустов")
