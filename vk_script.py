@@ -163,8 +163,6 @@ class VkBotScript(sc.BotScript):
         super().start()
 
     def start_massmsg(self):
-        print("UEEEET дружище ты кудааа")
-        return
         try:
             userids = []
             for x in self.get_users(1000):

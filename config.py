@@ -1,4 +1,4 @@
-is_AVTOMOIKA = 1
+is_AVTOMOIKA = 0
 
 if is_AVTOMOIKA:
     token_vk = ("***REMOVED***")
@@ -14,9 +14,9 @@ mod_channel = -***REMOVED***
 min_version = 130600
 
 start_vk = True
-start_tg = False
-start_massmsg = False
-start_public_server = False
-start_mainprocess = False
+start_tg = True
+start_massmsg = True
+start_public_server = True
+start_mainprocess = True
 
 initialize_server_data = True
