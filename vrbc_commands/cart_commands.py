@@ -199,6 +199,9 @@ def chooseitem2(context: MessageContext):
     if item_id == 27:
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите добавить на аккаунт")
         buttons.insert(0, "Поиск котов", "find_cat")
+    elif item_id == 47:
+        answer.addText("Введите примерное имя кота (либо его ID), которому вы хотите выдать тру форму (эволюцию)")
+        buttons.insert(0, "Поиск котов", "find_cat")
     elif item_id == 48:
         answer.addText("Введите примерное имя кота (либо его ID), которого вы хотите прокачать")
         buttons.insert(0, "Поиск котов", "find_cat")
@@ -310,12 +313,114 @@ def addcat(context: MessageContext):
     return answer.addText(f"Кот {cats_names[str(cat_id)]} {cat_id} добавлен в корзину").reply()
 
 
+def addtf(context: MessageContext):
+    text = context.text
+    item_id = 47
+    items_data = info_worker.get_bot_values(context)['items'][item_id]
+    buttons = ButtonsBuilder()
+    buttons.add("Смотреть предметы", f"selectcategory {items_data[2]}")
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    is_jp = info_worker.get_value(context, "japan_user")
+
+    if text.isnumeric():
+        cat_id = int(text)
+    else:
+        cat_id = utils.search_cat(text, is_jp)
+        if len(cat_id) == 0:
+            cat_id = -1
+        else:
+            cat_id = cat_id[0][1]
+
+    cats_names = local_server.get_cats_names(is_jp=is_jp)
+
+    # Check whether this cat exists in names db
+    if not str(cat_id) in cats_names:
+        answer.addText("В базе данных бота пока что ещё нет такого кота\n")
+        max_id = local_server.max_cat_ja
+        if cat_id > max_id:
+            return answer.reply()
+        if not is_jp:
+            buttons.add("Включить японский поиск", "setlocal ja")
+            answer.addText("Этого кота нет в глобальной версии игры.\nЕсли вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
+        else:
+            buttons.add("Включить английский поиск", "setlocal en")
+            answer.addText("Этого кота нет в японской версии игры.\nЕсли вы играете на английской версии, то вы можете попытаться добавить кота после включения японского поиска")
+        return answer.reply()
+
+    buttons.insert(0, "Начать взлом", "starthack")
+    buttons.insert(0, "Посмотреть корзину", "viewcart")
+    icons = local_server.get_icons(is_jp=is_jp)
+    if str(cat_id) not in icons:
+        answer.addText("В базе данных бота пока что ещё нет такого кота\n")
+        max_id = local_server.max_cat_ja
+        if cat_id > max_id:
+            return answer.reply()
+        if not is_jp:
+            buttons.add("Включить японский поиск", "setlocal ja")
+            answer.addText("Этого кота нет в глобальной версии игры.\nЕсли вы играете на японской версии, то вы можете попытаться добавить кота после включения японского поиска")
+        else:
+            buttons.add("Включить английскую версию поиска", "setlocal en")
+            answer.addText("Этого кота нет в японской версии игры.\nЕсли вы играете на английской версии поиска, то вы можете попытаться добавить кота после включения японской версии поиска")
+        return answer.reply()
+
+    lv_data = local_server.cats_lvdata
+    if is_jp:
+        lv_data = local_server.cats_lvdata_ja
+    cat_lv_data = lv_data.get(str(cat_id))
+    if not cat_lv_data or not cat_lv_data.get('tf_available', False):
+        answer.addText("Для этого кота тру форма в базе данных недоступна.")
+        if not is_jp:
+            buttons.add("Включить японский поиск", "setlocal ja")
+        else:
+            buttons.add("Включить английский поиск", "setlocal en")
+        return answer.reply()
+
+    # --- NEW: treat item 47 as spendable (like item 48) ---
+    user_bot_values = info_worker.get_bot_values(context)
+    spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
+    boosts_server = user_bot_values['boosts']
+    user_cart = info_worker.get_value(context, "cart")
+
+    # current spending for this cat (how many TF entries for this cat are already in cart)
+    spending = info_worker.get_spendable_amount(None, user_cart.get(item_id, []), set(str(cat_id)))
+    limit_spend = info_worker.get_limit_spend(spendable_boosts, item_id, boosts_server)
+    available = max(0, limit_spend - spending)
+
+    if available <= 0:
+        # no capacity to add another TF
+        cats_names = local_server.get_cats_names(is_jp=is_jp)
+        name = cats_names.get(str(cat_id), '???')
+        answer.addText(f"Невозможно добавить тру-форму кота {name} #{cat_id} — исчерпаны доступные слоты для таких предметов.\n")
+        answer.addText(f"В корзине уже: {spending}. Лимит: {limit_spend}. Доступно: 0.")
+        return answer.reply()
+
+    # add to cart (same as before) and then report new counts
+    fsm_db.update_state(context, f"chooseitem {items_data[2]}")
+    res = info_worker.add_to_cart(context, item_id, cat_id)
+    if not res:
+        answer.addText("Не удалось добавить предмет в корзину — проверьте корзину и доступные слоты.").reply()
+        return
+
+    # recompute spending after add
+    new_spending = info_worker.get_spendable_amount(None, info_worker.get_value(context, "cart").get(item_id, []), set(str(cat_id)))
+    available_after = max(0, limit_spend - new_spending)
+
+    img = icons[str(cat_id)]
+    answer.setPreviewUrl(img)
+    return answer.addText(f"Тру форма кота {cats_names[str(cat_id)]} #{cat_id} добавлена в корзину.\n"
+                          f"В корзине таких предметов: {new_spending}/{limit_spend} (осталось {available_after}).").reply()
+
+
+
 @bot.command(".*", level="additem", weak=True)
 def additem(context: MessageContext):
     text = context.text
     item_id = int(context.fsm[0])
     if item_id == 27:
         return addcat(context)
+    if item_id == 47:
+        return addtf(context)
     if item_id == 48:
         return additem48(context)
     items_data = info_worker.get_bot_values(context)['items'][item_id]
@@ -366,6 +471,10 @@ def addItemStr(message: MessageBuilder, amount, item_name, item_id, start="\n --
         if cats_names is not None:
             name = cats_names.get(str(amount), '???') if cats_names is not None else '???'
             message.addText(f"Получение кота {name} #{amount}", start=start)
+    elif item_id == 47:
+        if cats_names is not None:
+            name = cats_names.get(str(amount), '???') if cats_names is not None else '???'
+            message.addText(f"Тру форма кота {name} #{amount}", start=start)
     else:
         message.addText(f"{amount}", start=start)
         message.addText(f"{item_name}", start=" ")
