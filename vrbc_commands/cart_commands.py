@@ -865,7 +865,8 @@ def additem48(context: MessageContext):
         return answer.reply()
 
     # Recompute spending after successful add
-    new_spending = info_worker.get_spendable_amount(None, info_worker.get_value(context, "cart").get(item_id, []), set(str(cat_id)))
+    user_cart = info_worker.get_value(context, "cart")
+    new_spending = info_worker.get_spendable_amount(None, user_cart.get(item_id, []))
     available_after = max(0, limit_spend - new_spending)
 
     cats_names = local_server.get_cats_names(is_jp=is_jp)
