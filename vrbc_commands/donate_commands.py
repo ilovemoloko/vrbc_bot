@@ -1,3 +1,5 @@
+import copy
+
 from bot_script import bot, addBoost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase, CouponDB
@@ -13,11 +15,19 @@ mrdb = MonthlyReportDatabase()
 coupon_db = CouponDB()
 
 
-def give_boost(context: MessageContext, boost_id, amount=1):
+def give_boost(context: MessageContext, boost_id, spendable_amount=0):
     user_boosts = info_worker.get_value(context, 'boosts')
     if boost_id not in user_boosts:
         user_boosts[boost_id] = 0
     user_boosts[boost_id] += 1
+
+    if spendable_amount > 0:
+        spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
+        if boost_id not in spendable_boosts:
+            spendable_boosts[boost_id] = 0
+        spendable_boosts[boost_id] += spendable_amount
+        info_worker.set_value(context, 'spendable_boosts', spendable_boosts)
+
     info_worker.set_value(context, 'boosts', user_boosts)
 
 
@@ -57,6 +67,7 @@ def boosts(context: MessageContext):
 @bot.command("passiveboosts")
 def passiveboosts(context: MessageContext):
     boosts = info_worker.get_value(context, 'boosts')
+    spendable_boosts = info_worker.get_value(context, 'spendable_boosts')
     boosts_server = local_server.get_default_values()['boosts']
 
     buttons = ButtonsBuilder()
@@ -65,7 +76,10 @@ def passiveboosts(context: MessageContext):
     for boost in boosts:
         if boosts_server[boost]['type'] == "passive":
             addBoost(answer, boosts_server[boost], boost, desc=True)
-            answer.addText(f"Количество: {boosts[boost]}\n")
+            if boost in spendable_boosts:
+                answer.addText(f"Количество: {spendable_boosts[boost]}\n")
+            else:
+                answer.addText(f"Количество: {boosts[boost]}\n")
             answer.addText("\n")
     if len(boosts) == 0:
         answer.addText("У вас пока нет активируемых бустов")
@@ -271,7 +285,16 @@ def buyboost(context: MessageContext):
 
             info_worker.set_value(context, 'boosts', boosts)
 
-    give_boost(context, boost_id)
+    default_values = local_server.get_default_values()
+    default_values = copy.deepcopy(default_values)
+    boosts_server = default_values['boosts']
+
+    spendable_amount = 0
+    boost_data = boosts_server[boost_id]
+    if "spendable" in boost_data:
+        spendable_amount = boost_data.get("default_buy_pack", 1)
+
+    give_boost(context, boost_id, spendable_amount)
 
     buttons.insert(0, "Бусты", "boosts")
     boosts = local_server.get_default_values()['boosts']

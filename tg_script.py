@@ -1,5 +1,6 @@
 import time
 
+import config
 import script_base as sc
 from config import token_tg
 from script_base import MessageBuilder, MessageContext
@@ -58,6 +59,9 @@ class TgBotScript(sc.BotScript):
                         return
                 else:
                     self.started_sent[peer_id] = time_now
+                    if not config.start_massmsg:
+                        print("[TG MASSMSG BLOCKED] -> Это может стать проблемным местом, если так и не будет протестировано")
+                        return
                     return self.bot.send_message(peer_id, "Бот перезапущен. Вы можете попробовать снова.")
 
         if not self.check_subscription(action):

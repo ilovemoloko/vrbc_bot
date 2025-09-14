@@ -1,5 +1,6 @@
 import requests
 import json
+import config
 
 base_url = "http://127.0.0.1:5000"
 api_url = f"{base_url}/api/hack"
@@ -22,6 +23,8 @@ cats_names = {}
 cats_names_ja = {}
 cats_icons = {}
 cats_icons_ja = {}
+cats_lvdata = {}
+cats_lvdata_ja = {}
 
 
 def categorize_items(items):
@@ -164,7 +167,8 @@ max_cat_ja = 0
 
 
 def update_variables():
-    global bot_variables, cats, cats_names, updated_cats, cats_icons, cats_names_ja, cats_icons_ja, cats_ja, max_cat_en, max_cat_ja
+    global bot_variables, cats, cats_names, updated_cats, cats_icons, cats_names_ja, \
+        cats_icons_ja, cats_ja, max_cat_en, max_cat_ja, cats_lvdata, cats_lvdata_ja
     r = requests.get(get_variables_url)
     bot_variables = r.json()
 
@@ -179,10 +183,12 @@ def update_variables():
     cats = cats_vars['all_forms']
     cats_names = cats_vars['cat_names']
     cats_icons = cats_vars['icons']
+    cats_lvdata = cats_vars['lvdata']
 
     cats_ja = cats_vars['cats_ja']['all_forms']
     cats_names_ja = cats_vars['cats_ja']['cat_names']
     cats_icons_ja = cats_vars['icons_ja']
+    cats_lvdata_ja = cats_vars['lvdata_ja']
 
     for cat_icon_id in cats_icons:
         if int(cat_icon_id) > max_cat_en:
@@ -196,8 +202,8 @@ def update_variables():
 
     return True
 
-
-update_variables()
+if config.initialize_server_data:
+    update_variables()
 
 
 def get_cats_names(is_jp=False):

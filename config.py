@@ -12,3 +12,11 @@ token_tg = ("***REMOVED***")
 mod_channel = -***REMOVED***
 
 min_version = 130600
+
+start_vk = True
+start_tg = True
+start_massmsg = True
+start_public_server = True
+start_mainprocess = True
+
+initialize_server_data = True
