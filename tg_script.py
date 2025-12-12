@@ -16,6 +16,8 @@ class TgBotScript(sc.BotScript):
         self.subchannel = "@vorontbc"
 
     def check_subscription(self, action):
+        if config.is_AVTOMOIKA:
+            return True
         user_id = action.user_id
 
         try:

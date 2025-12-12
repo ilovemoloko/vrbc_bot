@@ -2,7 +2,7 @@ import requests
 import json
 import config
 
-base_url = "http://127.0.0.1:5000"
+base_url = config.localserver_url
 api_url = f"{base_url}/api/hack"
 wait_time_url = f"{base_url}/api/wait"
 unban_url = f"{base_url}/api/ub"
