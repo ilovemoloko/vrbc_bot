@@ -289,6 +289,7 @@ def starthack2(context: MessageContext, retry=False):
         uses_count = info_worker.get_uses(context)
         if uses_count == 0:
             buttons.add("Как активировать аккаунт?", "tccc_help")
+        buttons.add("Не получается ввести коды", "help_enter")
         buttons.add("Уменьшить время ожидания", "reducecd")
 
         user_bot_values = info_worker.get_bot_values(context)['default_user']
