@@ -24,6 +24,9 @@ def handle_payment():
         if data.get("currency") != "RUB":
             return "-1"
 
+        if data.get("type") != "payment_success":
+            return "-1"
+
         # Разбираем payload: {src}_{user_id}
         payload = data.get("payload", "")
         if "_" not in payload:

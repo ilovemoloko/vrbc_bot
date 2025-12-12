@@ -1,6 +1,7 @@
 from telebot import types
 from db_worker import SingletonMeta, fsm_db
 from script_base import MessageBuilder, MessageContext, ButtonsBuilder
+import requests  # Добавляем импорт для HTTP запросов
 
 
 class LittleContext:
@@ -13,6 +14,8 @@ class LittleContext:
         self.attachments = attachments
         self.answer: MessageBuilder = answer
         self.original_message = ""
+        self.src = None  # Добавляем поле для хранения src
+        self.user_id = None  # Добавляем поле для хранения user_id
 
 
 escape_characters = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
@@ -42,6 +45,10 @@ class Modbot(metaclass=SingletonMeta):
 
         src_context = context.src
         user_id = context.user_id
+
+        # Сохраняем src и user_id в контексте для использования в платежах
+        ctx.src = src_context
+        ctx.user_id = user_id
 
         formatted_message = (
             f"Пользователь: {ctx.name}\n"
@@ -78,8 +85,8 @@ class Modbot(metaclass=SingletonMeta):
         # Добавление inline-кнопок для команд модераторов
         markup = types.InlineKeyboardMarkup()
         reply_button = types.InlineKeyboardButton("Ответить", callback_data=f"reply_{sent_message.message_id}")
-        unban_button = types.InlineKeyboardButton("Разбанить", callback_data=f"unban_{ctx.local_uid}")
-        markup.add(reply_button, unban_button)
+        deposit_button = types.InlineKeyboardButton("Пополнить баланс", callback_data=f"deposit_{sent_message.message_id}")
+        markup.add(reply_button, deposit_button)
         self.bot.edit_message_reply_markup(
             self.mod_channel_id,
             sent_message.message_id,
@@ -88,7 +95,7 @@ class Modbot(metaclass=SingletonMeta):
 
     def handle_reply(self, call):
         """
-        Обрабатывает ответы модераторов и пересылает их пользователю.
+        Обрабатывает ответы модераторов и пополнение баланса.
         """
         if call.data.startswith("reply_"):
             message_id = call.data.split("_")[1]
@@ -99,10 +106,15 @@ class Modbot(metaclass=SingletonMeta):
                 self.bot.register_next_step_handler(msg, self.process_reply, ctx)
             else:
                 self.bot.answer_callback_query(call.id, "Сообщение не найдено.")
-        elif call.data.startswith("unban_"):
-            local_uid = call.data.split("_")[1]
-            self.unban_user(local_uid)
-            self.bot.answer_callback_query(call.id, "Пользователь разбанен!")
+        elif call.data.startswith("deposit_"):
+            message_id = call.data.split("_")[1]
+            ctx = self.user_messages.get(int(message_id))
+            if ctx:
+                # Отправка запроса на ввод суммы пополнения
+                msg = self.bot.send_message(call.message.chat.id, f"Введите сумму для пополнения баланса пользователя {ctx.name}:")
+                self.bot.register_next_step_handler(msg, self.process_deposit, ctx)
+            else:
+                self.bot.answer_callback_query(call.id, "Сообщение не найдено.")
 
     def process_reply(self, message, ctx: LittleContext):
         """
@@ -140,9 +152,54 @@ class Modbot(metaclass=SingletonMeta):
         else:
             answer.setText("Пустой ответ не отправлен.").reply()
 
-    def unban_user(self, local_uid):
+    def process_deposit(self, message, ctx: LittleContext):
         """
-        Разбанивает пользователя по его локальному ID.
+        Обрабатывает пополнение баланса пользователя.
         """
-        # Реализуйте логику разбана здесь (например, обновление базы данных)
-        print(f"Пользователь с ID {local_uid} разбанен.")
+        try:
+            amount = float(message.text)
+            if amount <= 0:
+                self.bot.send_message(message.chat.id, "Сумма должна быть положительным числом.")
+                return
+        except ValueError:
+            self.bot.send_message(message.chat.id, "Пожалуйста, введите корректную сумму (число).")
+            return
+
+        # Подготавливаем данные для запроса
+        payload_data = {
+            "currency": "RUB",
+            "payload": f"{ctx.src}_{ctx.user_id}",
+            "amount": amount,
+            "type": "payment_success"
+        }
+
+        try:
+            # Отправляем POST-запрос на localhost:8000
+            response = requests.post('http://localhost:8000', json=payload_data)
+
+            if response.status_code == 200:
+                self.bot.send_message(
+                    message.chat.id,
+                    f"Баланс пользователя {ctx.name} успешно пополнен на {amount} RUB."
+                )
+                self.bot.answer_callback_query(message.id, "Баланс успешно пополнен!")
+            elif response.text == "-1":
+                self.bot.send_message(
+                    message.chat.id,
+                    "Ошибка при обработке платежа: неверные данные."
+                )
+            else:
+                self.bot.send_message(
+                    message.chat.id,
+                    f"Ошибка при обработке платежа. Статус: {response.status_code}"
+                )
+        except requests.exceptions.ConnectionError:
+            self.bot.send_message(
+                message.chat.id,
+                "Не удалось подключиться к платежному сервису. Попробуйте позже."
+            )
+        except Exception as e:
+            self.bot.send_message(
+                message.chat.id,
+                f"Произошла ошибка: {str(e)}"
+            )
