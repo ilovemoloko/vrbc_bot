@@ -2,7 +2,6 @@ from flask import Flask, request, Response
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase
 from script_base import MessageContext, ButtonsBuilder
 import utils
-import hashlib
 from multiprocessing import Process
 
 fsm_db = FSMDatabase()
@@ -13,34 +12,43 @@ mr_db = MonthlyReportDatabase()
 
 app = Flask(__name__)
 
-SECRET_WORD = "***REMOVED***"
-
-
 @app.route('/', methods=['POST'])
-def trololo():
-    data = request.form
+def handle_payment():
     try:
-        if int(data['currency']) != 643:
-            return "-1"
-        platform, platform_id = data['label'].split('_')
-        platform_id = int(platform_id)
-        amount = float(data['withdraw_amount'])
-
-        hash_string = f"{data['notification_type']}&{data['operation_id']}&{data['amount']}&{data['currency']}&{data['datetime']}&{data['sender']}&{data['codepro']}&{SECRET_WORD}&{data['label']}"
-        calculated_sha1_hash = hashlib.sha1(hash_string.encode('utf-8')).hexdigest()
-        if calculated_sha1_hash != data['sha1_hash']:
-            print("Wrong hash")
+        data = request.json
+        if not data:
             return "-1"
 
-        ctx = MessageContext(platform).setUserId(platform_id)
+        # Проверка валюты
+        if data.get("currency") != "RUB":
+            return "-1"
+
+        # Разбираем payload: {src}_{user_id}
+        payload = data.get("payload", "")
+        if "_" not in payload:
+            return "-1"
+        src, platform_id_str = payload.split("_", 1)
+        platform_id = int(platform_id_str)
+
+        # Сумма платежа
+        amount = float(data.get("amount", 0))
+
+        # Обработка платежа
+        ctx = MessageContext(src).setUserId(platform_id)
         info_worker.add_donate(ctx, amount)
+
+        # Кнопки
         buttons = ButtonsBuilder()
         buttons.add("Донат", "donate")
-        utils.sendmsg(platform, platform_id, f'Пришло пожертвование в {amount} рублей. Спасибо!', buttons=buttons)
+        utils.sendmsg(src, platform_id, f'Пришло пожертвование {amount} рублей. Спасибо за поддержку бота!', buttons=buttons)
+
+        # Обновляем отчет
         mr_db.add_payment(amount)
+
         return Response(status=200)
+
     except Exception as e:
-        print(e)
+        print("Ошибка обработки платежа:", e)
         return Response(status=500)
 
 
@@ -51,12 +59,10 @@ def pr():
 
 pserv_process: Process = None
 
-
 def start():
     global pserv_process
     pserv_process = Process(target=app.run, kwargs={'port': 8000, 'host': '0.0.0.0', 'threaded': True})
     pserv_process.start()
-
 
 def kill():
     global pserv_process

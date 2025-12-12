@@ -290,8 +290,24 @@ def humanize_time(seconds):
     return result
 
 
-def get_donate_url(user_id, amount, src):
-    return f"https://yoomoney.ru/quickpay/confirm?receiver=***REMOVED***&quickpay-form=shop&targets=a&sum={amount}&label={src}_{user_id}"
+API_URL = "http://***REMOVED***:8080/payments/link"
+API_TOKEN = "***REMOVED***"
+
+def get_donate_url(user_id, amount, src, template_id=2, currency="RUB"):
+    headers = {
+        "Authorization": f"Bearer {API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "amount": amount,
+        "template_id": template_id,
+        "payload": f"{src}_{user_id}",
+        "currency": currency
+    }
+    response = requests.post(API_URL, json=data, headers=headers)
+    response.raise_for_status()
+    result = response.json()
+    return result["link"]
 
 
 def to_latin(text):
