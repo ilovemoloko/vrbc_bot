@@ -135,6 +135,10 @@ def select_account_afterconf(context: MessageContext):
 @bot.command("help_enter", level=["first_msg", "*"])
 def help_enter(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
-    answer.setText("Если у вас не получается зайти в меню для ввода кодов, "
-                   "то это значит, что вам нужно сбросить данные игры\n"
-                   "Это можно сделать в настройках устройства, очистив все данные приложения").reply()
+    answer.setText("""
+Пожалуйста, сначала прочтите этот пост:
+https://vk.ru/lib5436874?w=wall-***REMOVED***_5314
+
+Если ошибка, показанная в посте полностью не совпадает с вашей, то сразу приступите ко второму способу.
+Если это не помогло, обратитесь в тех. поддержку бота (напишите боту !отправить)
+""").reply()
