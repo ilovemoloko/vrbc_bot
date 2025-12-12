@@ -27,9 +27,10 @@ modbot = techsup.Modbot()
 modbot.config(script_tg.bot, config.mod_channel)
 
 
-@script_tg.bot.callback_query_handler(func=lambda call: call.message.chat.id == config.mod_channel)
-def callback_query(call):
-    modbot.handle_reply(call)
+if config.start_modbot:
+    @script_tg.bot.callback_query_handler(func=lambda call: call.message.chat.id == config.mod_channel)
+    def callback_query(call):
+        modbot.handle_reply(call)
 
 
 @thread
