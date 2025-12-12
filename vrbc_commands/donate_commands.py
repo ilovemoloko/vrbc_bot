@@ -206,21 +206,45 @@ def donate2(context: MessageContext):
 @bot.command(r"\d+", level="donate2", weak=True)
 def donate3(context: MessageContext):
     buttons = ButtonsBuilder()
+    buttons.add("Альтернативные способы оплаты", "donate_alt")
+    buttons.add("Главное меню", "start")
     buttons.add("Назад", "reducecd")
+
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
     regex = re.search(r"\d+", context.text)
     if not regex:
         return answer.addText("Введите число").reply()
 
-    donate_url = utils.get_donate_url(context.user_id, int(regex.group(0)), context.src)
-    answer.addText("Этот сервис оплаты часто может выдавать техническую ошибку.\n"
-                   "В первую очередь перепроверьте корректность ввода данных\n"
-                   "Если вы убедились, что все данные правильные, но всё равно не можете перевести, "
-                   "то обратитесь в поддержку бота с помощью команды !отправить\n"
-                   "Вам отправят альтернативные способы оплаты (В том числе для тех, кто не живет в РФ)\n")
-    answer.addText("Ссылка на оплату: " + donate_url).reply()
-    fsm_db.update_state(context, "first_msg")
+    amount = int(regex.group(0))
+
+    if amount < 5:
+        return answer.addText(
+            "Минимальная сумма пополнения — 5 рублей.\n"
+            "Пожалуйста, укажите сумму 5 рублей или больше"
+        ).reply()
+
+    donate_url = utils.get_donate_url(context.user_id, int(amount), context.src)
+
+    return answer.addText(
+        f"Для пополнения баланса используйте ссылку ниже.\n"
+        f"Ссылка для оплаты: {donate_url}\n\n"
+        "Если у вас не получается оплатить по ссылке, выберите альтернативные способы оплаты."
+    ).reply()
+
+
+@bot.command("donate_alt", level="donate2", weak=True)
+def donate_alt(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Написать админам", "letsgo")
+    buttons.add("Назад", "reducecd")
+
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+
+    answer.addText(
+        "Для оплаты прямым переводом по карте/номеру обратитесь в техническую поддержку.\n"
+        "Если вы находитесь не в РФ, сразу сообщите об этом при обращении."
+    ).reply()
 
 
 @bot.command(["boostshop", "!магазин", "магазин"], ignore_case=True)

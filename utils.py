@@ -6,6 +6,8 @@ from PIL import Image, ImageEnhance
 import pytesseract
 import re
 import struct
+
+import config
 import db_worker
 import local_server
 from fuzzywuzzy import process
@@ -22,7 +24,7 @@ import time
 task_queue = multiprocessing.Queue()
 
 TASKS = {}
-proxy = "***REMOVED***"
+proxy = config.PROXY
 proxy = {"http": proxy, "https": proxy}
 
 
@@ -290,8 +292,8 @@ def humanize_time(seconds):
     return result
 
 
-API_URL = "http://***REMOVED***:8080/payments/link"
-API_TOKEN = "***REMOVED***"
+API_URL = config.PAY_API_URL
+API_TOKEN = config.PAY_API_TOKEN
 
 def get_donate_url(user_id, amount, src, template_id=2, currency="RUB"):
     headers = {
