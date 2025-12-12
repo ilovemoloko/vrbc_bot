@@ -3,6 +3,7 @@ from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
 from script_base import MessageContext, ButtonsBuilder
 import utils
 from multiprocessing import Process
+import traceback
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -48,7 +49,7 @@ def handle_payment():
         return Response(status=200)
 
     except Exception as e:
-        print("Ошибка обработки платежа:", e)
+        print("Ошибка обработки платежа:", traceback.format_exc())
         return Response(status=500)
 
 
