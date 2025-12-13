@@ -1,4 +1,4 @@
-is_AVTOMOIKA = 1
+is_AVTOMOIKA = 0
 
 if is_AVTOMOIKA:
     token_vk = ("***REMOVED***")
@@ -17,9 +17,9 @@ else:
 
 min_version = 130600
 
-start_vk = False
+start_vk = True
 start_tg = True
-start_massmsg = False
+start_massmsg = True
 start_public_server = True
 start_mainprocess = True
 start_modbot = True

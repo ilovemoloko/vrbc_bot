@@ -49,7 +49,7 @@ modbot = techsup.Modbot()
 
 @bot.command(".*", level=["letsgo", "first_msg"])
 @level_on_error("start_msg")
-def letsgo(context: MessageContext):
+def letsgo_send_message(context: MessageContext):
     buttons = ButtonsBuilder()
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
     buttons.add("В главное меню", "menu")
@@ -77,3 +77,78 @@ def letsgo(context: MessageContext):
     answer = answer.setButtons(buttons)
     buttons.add("Главное меню", "menu")
     return answer.setText("Сообщение отправлено\nОжидайте ответа").reply()
+
+
+# -------------------------
+# Новая команда: !готово
+# -------------------------
+@bot.command(["!готово.*", "готово.*"], level=["*", "letsgo", "first_msg"])
+def ready_command(context: MessageContext):
+    """
+    Если вместе с командой пришёл скрин (attached_photos) — пересылаем в техподдержку сразу.
+    Иначе — переводим пользователя в режим ожидания скриншота (waiting_screenshot).
+    """
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("В главное меню", "menu")
+
+    # Если есть прикреплённые фото — отправляем сразу
+    if getattr(context, "attached_photos", None) and len(context.attached_photos) > 0:
+        local_user_id = fsm_db.get_local_user_id(context)
+        bot_obj = context.srcobj
+        bot_obj.get_user_description(context)
+
+        # Формируем контекст и отправляем через тот же modbot
+        ctx = techsup.LittleContext(context.peer_id,
+                                    context.text or "",
+                                    context.userData["name"],
+                                    local_user_id,
+                                    context.userData.get("image_url"),
+                                    context.attached_photos,
+                                    answer)
+        modbot.handle_message(ctx)
+
+        # Обновляем время "brawl data"
+        fsm_db.set_brawl_data(context, int(time.time()))
+        fsm_db.update_state(context, "*")
+
+        return answer.setText("Скриншот отправлен в техподдержку.\nОжидайте ответа").reply()
+
+    # Если фото нет — переводим в режим ожидания скриншота
+    fsm_db.update_state(context, "waiting_screenshot")
+    return answer.setText("Отправьте изображение — оно будет переслано в техподдержку.").reply()
+
+
+# Обработчик прихода фото в состоянии ожидания скриншота
+@bot.command(".*", level=["waiting_screenshot"])
+@level_on_error("start_msg")
+def handle_waiting_screenshot(context: MessageContext):
+    buttons = ButtonsBuilder()
+    answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
+    buttons.add("В главное меню", "menu")
+
+    # Если пришёл скрин — пересылаем
+    if getattr(context, "attached_photos", None) and len(context.attached_photos) > 0:
+        local_user_id = fsm_db.get_local_user_id(context)
+        bot_obj = context.srcobj
+        bot_obj.get_user_description(context)
+
+        ctx = techsup.LittleContext(context.peer_id,
+                                    context.text or "",
+                                    context.userData["name"],
+                                    local_user_id,
+                                    context.userData.get("image_url"),
+                                    context.attached_photos,
+                                    answer)
+        modbot.handle_message(ctx)
+
+        fsm_db.set_brawl_data(context, int(time.time()))
+        fsm_db.update_state(context, "*")
+
+        buttons = ButtonsBuilder()
+        answer = answer.setButtons(buttons)
+        buttons.add("Главное меню", "menu")
+        return answer.setText("Скриншот отправлен\nОжидайте ответа").reply()
+
+    # Если фото всё ещё не пришло — попросить прислать
+    return answer.setText("Нужен скриншот (фото). Пожалуйста, отправьте изображение, чтобы переслать его в техподдержку.").reply()
