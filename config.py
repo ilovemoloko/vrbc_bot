@@ -5,13 +5,15 @@ if is_AVTOMOIKA:
     id_vk = ***REMOVED***
 
     token_tg = ("***REMOVED***")
+
+    mod_channel = -***REMOVED***
 else:
     token_vk = ("***REMOVED***")
     id_vk = ***REMOVED***
 
     token_tg = ("***REMOVED***")
 
-mod_channel = -***REMOVED***
+    mod_channel = -***REMOVED***
 
 min_version = 130600
 
@@ -20,7 +22,7 @@ start_tg = True
 start_massmsg = False
 start_public_server = True
 start_mainprocess = True
-start_modbot = False
+start_modbot = True
 
 initialize_server_data = True
 
