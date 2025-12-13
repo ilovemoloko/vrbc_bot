@@ -44,7 +44,7 @@ def handle_payment():
         # Кнопки
         buttons = ButtonsBuilder()
         buttons.add("Донат", "donate")
-        utils.sendmsg(src, platform_id, f'Пришло пожертвование {amount} рублей. Спасибо за поддержку бота!', buttons=buttons)
+        utils.sendmsg(src, platform_id, f'Пришло пожертвование {amount} рублей.\nСпасибо за поддержку бота!', buttons=buttons)
 
         # Обновляем отчет
         mr_db.add_payment(amount)
