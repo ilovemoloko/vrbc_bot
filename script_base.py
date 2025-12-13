@@ -169,10 +169,12 @@ class BotScript:
         try:
             self._send_message(message)
         except Exception as e:
-            print(e)
             if self.TRACEBACK:
-                traceback.print_exc()
-            print(e)
+                exc = traceback.format_exc()
+                if "Can't send messages for users without permission" in exc:
+                    return
+
+                print(exc)
 
     def _send_message(self, message: MessageBuilder):
         pass
