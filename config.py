@@ -33,3 +33,4 @@ PAY_API_URL = "http://***REMOVED***:8080/payments/link"
 PAY_API_TOKEN = "***REMOVED***"
 
 PROXY = "***REMOVED***"
+# PROXY = "***REMOVED***" # solve the problem, host your proxy
