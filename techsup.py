@@ -18,6 +18,8 @@ class LittleContext:
         self.src = None
         self.user_id = None
 
+        self.sent_message_id = None
+
 
 escape_characters = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
 
@@ -35,9 +37,26 @@ class Modbot(metaclass=SingletonMeta):
         self.reply_sessions = {}  # Словарь для хранения активных сессий ответов
         self.deposit_sessions = {}  # Словарь для хранения активных сессий пополнения
 
+    def _normalize_chat_id(self, cid):
+        """
+        Попытка привести переданный мод-чат к int если это возможно.
+        Если это строка вида "@name" — возвращаем строку, иначе int.
+        """
+        if cid is None:
+            return cid
+        # если уже int — вернуть
+        if isinstance(cid, int):
+            return cid
+        # попытка привести к int (поддержит "-100123..." и т.д.)
+        try:
+            return int(cid)
+        except Exception:
+            return cid
+
     def config(self, bot, mod_channel_id):
         self.bot = bot
-        self.mod_channel_id = mod_channel_id
+        # сохраняем нормализованный мод-чат
+        self.mod_channel_id = self._normalize_chat_id(mod_channel_id)
         self.user_messages = {}
         self.reply_sessions = {}
         self.deposit_sessions = {}
@@ -52,31 +71,43 @@ class Modbot(metaclass=SingletonMeta):
         ctx.src = src_context
         ctx.user_id = user_id
 
+        # Тело сообщения
+        escaped_text = escape_markdown_v2(ctx.text)
         formatted_message = (
+            f"_Сообщение_\n"
+            f"```\n{escaped_text}\n```"
+        )
+
+        # Заголовок
+        header = (
             f"Пользователь: {ctx.name}\n"
             f"LOCAL_ID: {ctx.local_uid}\n"
             f"Src Id: {src_context} {user_id}\n"
         )
 
         if ctx.attachments:
-            formatted_message += f"Вложения: {', '.join(ctx.attachments)}\n"
-        formatted_message = escape_markdown_v2(formatted_message)
+            header += f"Вложения: {', '.join(ctx.attachments)}\n"
 
-        escaped_text = escape_markdown_v2(ctx.text)
-        formatted_message += f"\n\n_Сообщение_"
-        formatted_message += f"\n```\n{escaped_text}\n```"
+        header = escape_markdown_v2(header)
+
+        formatted_message += f"\n\n{header}"
+
         ctx.original_message = formatted_message
         return formatted_message
 
+
     def handle_message(self, ctx):
         message = self.format_message(ctx)
+        # используем именованные аргументы для стабильности с разными типами chat_id
         sent_message = self.bot.send_message(
-            self.mod_channel_id,
-            message,
+            chat_id=self.mod_channel_id,
+            text=message,
             parse_mode='MarkdownV2',
             disable_web_page_preview=True
         )
+        ctx.sent_message_id = sent_message.message_id
 
+        # ключ — message_id (как раньше)
         self.user_messages[sent_message.message_id] = ctx
 
         markup = types.InlineKeyboardMarkup()
@@ -96,24 +127,49 @@ class Modbot(metaclass=SingletonMeta):
         self.reply_sessions[session_id] = ctx
         self.deposit_sessions[session_id] = ctx
 
-        self.bot.edit_message_reply_markup(
-            self.mod_channel_id,
-            sent_message.message_id,
-            reply_markup=markup
-        )
+        # используем именованные аргументы при редактировании разметки
+        try:
+            self.bot.edit_message_reply_markup(
+                chat_id=self.mod_channel_id,
+                message_id=sent_message.message_id,
+                reply_markup=markup
+            )
+        except Exception:
+            # на некоторых версиях/ситуациях можно просто игнорировать ошибку редактирования разметки
+            pass
+
+    def _parse_callback(self, data: str):
+        """
+        Безопасно разбирает callback_data вида:
+        reply_<message_id>_<session_id>
+        deposit_<message_id>_<session_id>
+        Использует maxsplit=2 чтобы session_id (UUID с дефисами) не ломал разбор.
+        Возвращает (action, message_id_or_None(int), session_id_or_None(str))
+        """
+        parts = data.split("_", 2)
+        action = parts[0] if len(parts) > 0 else None
+        message_id = None
+        session_id = None
+        if len(parts) > 1:
+            try:
+                message_id = int(parts[1])
+            except Exception:
+                message_id = None
+        if len(parts) > 2:
+            session_id = parts[2]
+        return action, message_id, session_id
 
     def handle_reply(self, call):
-        if call.data.startswith("reply_"):
-            parts = call.data.split("_")
-            message_id = parts[1]
-            session_id = parts[2] if len(parts) > 2 else None
+        action, message_id, session_id = self._parse_callback(call.data)
 
-            # Получаем контекст либо из user_messages, либо из reply_sessions
+        if action == "reply":
+            # Получаем контекст либо из reply_sessions, либо из user_messages по message_id
             ctx = None
             if session_id and session_id in self.reply_sessions:
                 ctx = self.reply_sessions[session_id]
             else:
-                ctx = self.user_messages.get(int(message_id))
+                if message_id is not None:
+                    ctx = self.user_messages.get(message_id)
 
             if ctx:
                 # Генерируем уникальный ID для этой сессии ответа
@@ -121,52 +177,116 @@ class Modbot(metaclass=SingletonMeta):
                 # Сохраняем контекст для этой конкретной сессии
                 self.reply_sessions[unique_session_id] = ctx
 
-                msg = self.bot.send_message(
-                    call.message.chat.id,
-                    f"Введите ответ для пользователя {ctx.name} (ID сессии: {unique_session_id[-8:]}):"
-                )
-                # Регистрируем обработчик с уникальным ID сессии
+                # Формируем текст подсказки и добавляем в конец оригинального модерационного сообщения
+                prompt = f"Введите ответ для пользователя {ctx.name}"
+                # ctx.original_message уже содержит escaped текст (используется при отправке в handle_message)
+                new_text = ctx.original_message + "\n\n" + escape_markdown_v2(prompt)
+
+                # Пытаемся отредактировать оригинальное модерационное сообщение (чтобы туда добавилась подсказка)
+                try:
+                    # используем ctx.sent_message_id (тот же message, что и в user_messages)
+                    if ctx.sent_message_id:
+                        self.bot.edit_message_text(
+                            chat_id=self.mod_channel_id,
+                            message_id=ctx.sent_message_id,
+                            text=new_text,
+                            parse_mode='MarkdownV2',
+                            disable_web_page_preview=True
+                        )
+                    else:
+                        # fallback: если по какой-то причине sent_message_id нет — редактируем call.message
+                        self.bot.edit_message_text(
+                            chat_id=call.message.chat.id,
+                            message_id=call.message.message_id,
+                            text=new_text,
+                            parse_mode='MarkdownV2',
+                            disable_web_page_preview=True
+                        )
+                except Exception:
+                    # не ломаем логику на ошибке редактирования — уведомим модератора в чате
+                    try:
+                        self.bot.send_message(chat_id=call.message.chat.id,
+                                              text="Не удалось добавить подсказку в оригинальное сообщение. Введите ответ в чат.")
+                    except Exception:
+                        pass
+
+                # Регистрируем обработчик следующего сообщения модератора, используя call.message (существующее сообщение)
+                # Так нам не нужно создавать новое сообщение-промпт видимое в чате
                 self.bot.register_next_step_handler(
-                    msg,
-                    lambda m: self.process_reply(m, unique_session_id)
+                    call.message,
+                    lambda m: self.process_reply(m, unique_session_id, call.message)
                 )
             else:
                 self.bot.answer_callback_query(call.id, "Сообщение не найдено.")
 
-        elif call.data.startswith("deposit_"):
-            parts = call.data.split("_")
-            message_id = parts[1]
-            session_id = parts[2] if len(parts) > 2 else None
-
+        if action == "deposit":
             ctx = None
             if session_id and session_id in self.deposit_sessions:
                 ctx = self.deposit_sessions[session_id]
             else:
-                ctx = self.user_messages.get(int(message_id))
+                if message_id is not None:
+                    ctx = self.user_messages.get(message_id)
 
             if ctx:
                 unique_session_id = str(uuid.uuid4())
                 self.deposit_sessions[unique_session_id] = ctx
 
-                msg = self.bot.send_message(
-                    call.message.chat.id,
-                    f"Введите сумму для пополнения баланса пользователя {ctx.name} (ID сессии: {unique_session_id[-8:]}):"
-                )
+                # Формируем подсказку и добавляем её в конец оригинального модерационного сообщения
+                prompt = f"Введите сумму для пополнения баланса пользователя {ctx.name}"
+                new_text = ctx.original_message + "\n\n" + escape_markdown_v2(prompt)
+
+                try:
+                    if ctx.sent_message_id:
+                        self.bot.edit_message_text(
+                            chat_id=self.mod_channel_id,
+                            message_id=ctx.sent_message_id,
+                            text=new_text,
+                            parse_mode='MarkdownV2',
+                            disable_web_page_preview=True
+                        )
+                    else:
+                        self.bot.edit_message_text(
+                            chat_id=call.message.chat.id,
+                            message_id=call.message.message_id,
+                            text=new_text,
+                            parse_mode='MarkdownV2',
+                            disable_web_page_preview=True
+                        )
+                except Exception:
+                    try:
+                        self.bot.send_message(chat_id=call.message.chat.id,
+                                              text="Не удалось добавить подсказку в оригинальное сообщение. Введите сумму в чат.")
+                    except Exception:
+                        pass
+
+                # Регистрируем обработчик следующего сообщения модератора
                 self.bot.register_next_step_handler(
-                    msg,
-                    lambda m: self.process_deposit(m, unique_session_id)
+                    call.message,
+                    lambda m: self.process_deposit(m, unique_session_id, call.message)
                 )
             else:
                 self.bot.answer_callback_query(call.id, "Сообщение не найдено.")
 
-    def process_reply(self, message, session_id):
+
+    def process_reply(self, message, session_id, anchor):
         """
         Обрабатывает введённый модератором ответ с использованием session_id.
         """
         # Получаем контекст по session_id
+
+        reply_message_id = message.reply_to_message.message_id
+        selected_message_id = self.reply_sessions[session_id].sent_message_id
+
+        if reply_message_id != selected_message_id:
+            return self.bot.register_next_step_handler(
+                anchor,
+                lambda m: self.process_reply(m, session_id, anchor)
+            )
+
+
         ctx = self.reply_sessions.pop(session_id, None)
         if not ctx:
-            self.bot.send_message(message.chat.id, "Сессия ответа не найдена или истекла.")
+            self.bot.send_message(chat_id=message.chat.id, text="Сессия ответа не найдена или истекла.")
             return
 
         reply_text = message.text
@@ -188,12 +308,19 @@ class Modbot(metaclass=SingletonMeta):
                     break
 
             if message_id_old:
-                self.bot.edit_message_text(
-                    text=original_message,
-                    chat_id=self.mod_channel_id,
-                    message_id=message_id_old,
-                    parse_mode='MarkdownV2'
-                )
+                try:
+                    self.bot.edit_message_text(
+                        text=original_message,
+                        chat_id=self.mod_channel_id,
+                        message_id=message_id_old,
+                        parse_mode='MarkdownV2'
+                    )
+                except Exception:
+                    # если редактирование не удалось — не ломаем логику; просто уведомим модератора
+                    self.bot.send_message(
+                        chat_id=message.chat.id,
+                        text="Не удалось обновить сообщение модерационной панели (редактирование)."
+                    )
 
                 # Удаляем контекст из user_messages
                 self.user_messages.pop(message_id_old, None)
@@ -202,36 +329,46 @@ class Modbot(metaclass=SingletonMeta):
                 self._cleanup_sessions_for_context(ctx)
 
                 self.bot.send_message(
-                    self.mod_channel_id,
-                    f"Ответ отправлен пользователю {ctx.name}.",
+                    chat_id=self.mod_channel_id,
+                    text=f"Ответ отправлен пользователю {ctx.name}.",
                     reply_to_message_id=message.message_id
                 )
                 fsm_db.set_brawl_data(ctx.answer.context, -1)
             else:
-                self.bot.send_message(message.chat.id, "Не удалось найти исходное сообщение.")
+                self.bot.send_message(chat_id=message.chat.id, text="Не удалось найти исходное сообщение.")
         else:
             answer.setText("Пустой ответ не отправлен.").reply()
             # Возвращаем контекст обратно в сессию для повторной попытки
             self.reply_sessions[session_id] = ctx
 
-    def process_deposit(self, message, session_id):
+    def process_deposit(self, message, session_id, anchor):
         """
         Обрабатывает пополнение баланса пользователя с использованием session_id.
         """
+
+        reply_message_id = message.reply_to_message.message_id
+        selected_message_id = self.reply_sessions[session_id].sent_message_id
+
+        if reply_message_id != selected_message_id:
+            return self.bot.register_next_step_handler(
+                anchor,
+                lambda m: self.process_reply(m, session_id, anchor)
+            )
+
         ctx = self.deposit_sessions.pop(session_id, None)
         if not ctx:
-            self.bot.send_message(message.chat.id, "Сессия пополнения не найдена или истекла.")
+            self.bot.send_message(chat_id=message.chat.id, text="Сессия пополнения не найдена или истекла.")
             return
 
         try:
             amount = float(message.text)
             if amount <= 0:
-                self.bot.send_message(message.chat.id, "Сумма должна быть положительным числом.")
+                self.bot.send_message(chat_id=message.chat.id, text="Сумма должна быть положительным числом.")
                 # Возвращаем контекст для повторной попытки
                 self.deposit_sessions[session_id] = ctx
                 return
         except ValueError:
-            self.bot.send_message(message.chat.id, "Пожалуйста, введите корректную сумму (число).")
+            self.bot.send_message(chat_id=message.chat.id, text="Пожалуйста, введите корректную сумму (число).")
             self.deposit_sessions[session_id] = ctx
             return
 
@@ -246,34 +383,65 @@ class Modbot(metaclass=SingletonMeta):
             response = requests.post('http://localhost:8000', json=payload_data)
 
             if response.status_code == 200:
+                # Находим message_id_old в user_messages
+                message_id_old = 0
+                for mid in list(self.user_messages.keys()):
+                    if self.user_messages[mid] == ctx:
+                        message_id_old = mid
+                        break
+
+                if message_id_old:
+                    # Формируем обновленное сообщение с пометкой о пополнении
+                    deposit_message = f"||{ctx.original_message}||"
+                    try:
+                        self.bot.edit_message_text(
+                            text=deposit_message,
+                            chat_id=self.mod_channel_id,
+                            message_id=message_id_old,
+                            parse_mode='MarkdownV2'
+                        )
+                    except Exception:
+                        # если редактирование не удалось — просто уведомим
+                        self.bot.send_message(
+                            chat_id=message.chat.id,
+                            text="Не удалось обновить сообщение модерационной панели (редактирование)."
+                        )
+
+                    # Удаляем контекст из user_messages
+                    self.user_messages.pop(message_id_old, None)
+
+                # Очищаем сессии для этого контекста
+                self._cleanup_sessions_for_context(ctx)
+
                 self.bot.send_message(
-                    message.chat.id,
-                    f"Баланс пользователя {ctx.name} успешно пополнен на {amount} RUB."
+                    chat_id=self.mod_channel_id,
+                    text=f"Баланс пользователя {ctx.name} пополнен на {amount} RUB.",
+                    reply_to_message_id=message.message_id
                 )
-                # Удаляем контекст из user_messages и сессий
-                self._cleanup_context(ctx)
+                fsm_db.set_brawl_data(ctx.answer.context, -1)
+
             elif response.text == "-1":
                 self.bot.send_message(
-                    message.chat.id,
-                    "Ошибка при обработке платежа: неверные данные."
+                    chat_id=message.chat.id,
+                    text="Ошибка при обработке платежа: неверные данные."
                 )
                 self.deposit_sessions[session_id] = ctx
             else:
                 self.bot.send_message(
-                    message.chat.id,
-                    f"Ошибка при обработке платежа. Статус: {response.status_code}"
+                    chat_id=message.chat.id,
+                    text=f"Ошибка при обработке платежа. Статус: {response.status_code}"
                 )
                 self.deposit_sessions[session_id] = ctx
         except requests.exceptions.ConnectionError:
             self.bot.send_message(
-                message.chat.id,
-                "Не удалось подключиться к платежному сервису. Попробуйте позже."
+                chat_id=message.chat.id,
+                text="Не удалось подключиться к платежному сервису. Попробуйте позже."
             )
             self.deposit_sessions[session_id] = ctx
         except Exception as e:
             self.bot.send_message(
-                message.chat.id,
-                f"Произошла ошибка: {str(e)}"
+                chat_id=message.chat.id,
+                text=f"Произошла ошибка: {str(e)}"
             )
             self.deposit_sessions[session_id] = ctx
 
