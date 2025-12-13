@@ -400,10 +400,6 @@ class Modbot(metaclass=SingletonMeta):
 
         try:
             amount = float(message.text)
-            if amount <= 0:
-                self.bot.send_message(chat_id=message.chat.id, text="Сумма должна быть положительным числом.")
-                self.deposit_sessions[session_id] = ctx
-                return
         except ValueError:
             self.bot.send_message(chat_id=message.chat.id, text="Пожалуйста, введите корректную сумму (число).")
             self.deposit_sessions[session_id] = ctx
