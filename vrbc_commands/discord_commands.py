@@ -1,9 +1,12 @@
 from bot_script import bot, level_on_error
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+from vrbc_commands.menu_commands import menu_message
 import techsup
 import time
 import utils
+
+print(1)
 
 fsm_db = FSMDatabase()
 local_user_db = LocalUsersDatabase()
@@ -155,13 +158,6 @@ def handle_waiting_screenshot(context: MessageContext):
 
 
 @bot.command("menu", level=["waiting_screenshot"])
-def menu_message(context: MessageContext):
-    buttons = ButtonsBuilder()
-    buttons.add("Восстановление/Сохранение аккаунтов", "recovery_menu")
-    buttons.add("Пресеты", "presets")
-    buttons.add("Донаты", "donate")
-    buttons.add("Бусты", "boosts")
-
+def menu_message2(context: MessageContext):
     fsm_db.update_state(context, "*")
-
-    MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
+    menu_message(context)
