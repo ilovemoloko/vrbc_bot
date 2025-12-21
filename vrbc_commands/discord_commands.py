@@ -82,7 +82,7 @@ def letsgo_send_message(context: MessageContext):
 # -------------------------
 # Новая команда: !готово
 # -------------------------
-@bot.command(["!готово.*", "готово.*"], level=["*", "letsgo", "first_msg"])
+@bot.command(["!готово.*", "готово.*", "!Готово.*", "Готово.*"], level=["*", "letsgo", "first_msg"])
 def ready_command(context: MessageContext):
     """
     Если вместе с командой пришёл скрин (attached_photos) — пересылаем в техподдержку сразу.
@@ -152,3 +152,16 @@ def handle_waiting_screenshot(context: MessageContext):
 
     # Если фото всё ещё не пришло — попросить прислать
     return answer.setText("Нужен скриншот (фото). Пожалуйста, отправьте изображение, чтобы переслать его в техподдержку.").reply()
+
+
+@bot.command("menu", level=["waiting_screenshot"])
+def menu_message(context: MessageContext):
+    buttons = ButtonsBuilder()
+    buttons.add("Восстановление/Сохранение аккаунтов", "recovery_menu")
+    buttons.add("Пресеты", "presets")
+    buttons.add("Донаты", "donate")
+    buttons.add("Бусты", "boosts")
+
+    fsm_db.update_state(context, "*")
+
+    MessageBuilder().setText("Выберите пункт меню").setReplyMode(context).setButtons(buttons).reply()
