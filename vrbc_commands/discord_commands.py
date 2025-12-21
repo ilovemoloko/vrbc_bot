@@ -122,6 +122,13 @@ def ready_command(context: MessageContext):
     return answer.setText("Отправьте изображение — оно будет переслано в техподдержку.").reply()
 
 
+
+@bot.command("menu", level=["waiting_screenshot"])
+def menu_message2(context: MessageContext):
+    fsm_db.update_state(context, "*")
+    menu_message(context)
+
+
 # Обработчик прихода фото в состоянии ожидания скриншота
 @bot.command(".*", level=["waiting_screenshot"])
 @level_on_error("start_msg")
@@ -155,9 +162,3 @@ def handle_waiting_screenshot(context: MessageContext):
 
     # Если фото всё ещё не пришло — попросить прислать
     return answer.setText("Нужен скриншот (фото). Пожалуйста, отправьте изображение, чтобы переслать его в техподдержку.").reply()
-
-
-@bot.command("menu", level=["waiting_screenshot"])
-def menu_message2(context: MessageContext):
-    fsm_db.update_state(context, "*")
-    menu_message(context)
