@@ -876,7 +876,8 @@ class DBInfoWorker(metaclass=SingletonMeta):
             "cfruit_ext": [50, 5],
             "ce_ext": [20, 6],
             "tsr_ext": [40, 5],
-            "gam_ext": [50, 4]
+            "gam_ext": [50, 4],
+            "bb_ext": [30, 4]
         }
 
         for boost_id in extenders:
