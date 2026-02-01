@@ -227,9 +227,11 @@ def donate3(context: MessageContext):
     donate_url = utils.get_donate_url(context.user_id, int(amount), context.src)
 
     return answer.addText(
-        f"Для пополнения баланса используйте ссылку ниже.\n"
-        f"Ссылка для оплаты: {donate_url}\n\n"
-        "Если у вас не получается оплатить по ссылке, выберите альтернативные способы оплаты."
+        f"Номер (БСПБ/Сбер): ***REMOVED***\n\n"
+        f"1. Переведите нужную сумму\n"
+        f"2. Сделайте скриншот чека\n"
+        f"3. Отправьте командой !готово\n\n"
+        f"Если вы не из России → \"Альтернативные способы\""
     ).reply()
 
 
@@ -241,9 +243,23 @@ def donate_alt(context: MessageContext):
 
     answer = MessageBuilder().setReplyMode(context).setButtons(buttons)
 
+    regex = re.search(r"\d+", context.text)
+    if not regex:
+        return answer.addText("Введите число").reply()
+
+    amount = int(regex.group(0))
+
+    if amount < 5:
+        return answer.addText(
+            "Минимальная сумма пополнения — 5 рублей.\n"
+            "Пожалуйста, укажите сумму 5 рублей или больше"
+        ).reply()
+
+    donate_url = utils.get_donate_url(context.user_id, int(amount), context.src)
+
     answer.addText(
-        "Для оплаты прямым переводом по карте/номеру обратитесь в техническую поддержку (либо же возьмите реквизиты у бота по ссылке выше).\n"
-        "Если вы находитесь не в РФ, сразу сообщите об этом при обращении."
+        f"В боте также доступна оплата ботом: {donate_url}\n"
+        f"Бот может предложить другие варианты, которые совместимы с переводами в вашей стране (Kaspi, Steam)"
     ).reply()
 
 
