@@ -206,7 +206,6 @@ def donate2(context: MessageContext):
 @bot.command(r"\d+", level="donate2", weak=True)
 def donate3(context: MessageContext):
     buttons = ButtonsBuilder()
-    buttons.add("Альтернативные способы оплаты", "donate_alt")
     buttons.add("Главное меню", "start")
     buttons.add("Назад", "reducecd")
 
@@ -224,10 +223,10 @@ def donate3(context: MessageContext):
             "Пожалуйста, укажите сумму 5 рублей или больше"
         ).reply()
 
-    donate_url = utils.get_donate_url(context.user_id, int(amount), context.src)
+    buttons.insert(0, "Альтернативные способы оплаты", f"donate_alt {amount}")
 
     return answer.addText(
-        f"Номер (БСПБ/Сбер): ***REMOVED***\n\n"
+        f"Номер для оплаты (БСПБ/Сбер): ***REMOVED***\n\n"
         f"1. Переведите нужную сумму\n"
         f"2. Сделайте скриншот чека\n"
         f"3. Отправьте командой !готово\n\n"
@@ -235,7 +234,7 @@ def donate3(context: MessageContext):
     ).reply()
 
 
-@bot.command("donate_alt", level="donate2", weak=True)
+@bot.command("donate_alt \d+", level="donate2", weak=True)
 def donate_alt(context: MessageContext):
     buttons = ButtonsBuilder()
     buttons.add("Написать админам", "letsgo")
@@ -259,7 +258,8 @@ def donate_alt(context: MessageContext):
 
     answer.addText(
         f"В боте также доступна оплата ботом: {donate_url}\n"
-        f"Бот может предложить другие варианты, которые совместимы с переводами в вашей стране (Kaspi, Steam)"
+        f"Бот может предложить другие варианты, которые совместимы с переводами в вашей стране (Kaspi, Steam)\n\n"
+        f"Обратитесь к нам, если эти способы вам не подходят"
     ).reply()
 
 
