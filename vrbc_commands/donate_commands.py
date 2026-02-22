@@ -226,7 +226,8 @@ def donate3(context: MessageContext):
     buttons.insert(0, "Альтернативные способы оплаты", f"donate_alt {amount}")
 
     return answer.addText(
-        f"Номер для оплаты (БСПБ/Сбер): ***REMOVED***\n\n"
+        f"Номер для оплаты (БСПБ): ***REMOVED***\n"
+        f"Либо банк OZON: ***REMOVED***\n"
         f"1. Переведите нужную сумму\n"
         f"2. Сделайте скриншот чека\n"
         f"3. Отправьте командой !готово\n\n"
