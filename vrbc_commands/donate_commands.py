@@ -3,6 +3,7 @@ import copy
 from bot_script import bot, addBoost
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase, CouponDB
+import config
 import local_server
 import utils
 import re
@@ -225,9 +226,14 @@ def donate3(context: MessageContext):
 
     buttons.insert(0, "Альтернативные способы оплаты", f"donate_alt {amount}")
 
+    payment_info = ""
+    if config.DONATE_PHONE:
+        payment_info += f"Номер для оплаты (БСПБ): {config.DONATE_PHONE}\n"
+    if config.DONATE_CARD:
+        payment_info += f"Либо банк OZON: {config.DONATE_CARD}\n"
+
     return answer.addText(
-        f"Номер для оплаты (БСПБ): ***REMOVED***\n"
-        f"Либо банк OZON: ***REMOVED***\n"
+        f"{payment_info}"
         f"1. Переведите нужную сумму\n"
         f"2. Сделайте скриншот чека\n"
         f"3. Отправьте командой !готово\n\n"

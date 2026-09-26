@@ -60,6 +60,8 @@ unidecode
 | `TG_TOKEN` | Токен Telegram-бота. |
 | `VK_TOKEN` | Токен ВКонтакте. |
 | `PAY_API_TOKEN` | Токен платёжного API. |
+| `DONATE_PHONE` | Номер телефона для приёма донатов. |
+| `DONATE_CARD` | Номер карты для приёма донатов. |
 | `PROXY` | Прокси для исходящих запросов. |
 | `TG_TOKEN_AVTOMOIKA`, `VK_TOKEN_AVTOMOIKA` | Токены тестового окружения. |
 
@@ -69,6 +71,8 @@ unidecode
 export TG_TOKEN="..."
 export VK_TOKEN="..."
 export PAY_API_TOKEN="..."
+export DONATE_PHONE="..."
+export DONATE_CARD="..."
 export PROXY=""
 ```
 

@@ -34,4 +34,7 @@ localserver_url = "http://127.0.0.1:5000"
 PAY_API_URL = "http://pay.***REMOVED***:8080/payments/link"
 PAY_API_TOKEN = os.environ.get("PAY_API_TOKEN", "")
 
+DONATE_PHONE = os.environ.get("DONATE_PHONE", "")
+DONATE_CARD = os.environ.get("DONATE_CARD", "")
+
 PROXY = os.environ.get("PROXY", "")
