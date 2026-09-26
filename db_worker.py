@@ -3,13 +3,14 @@ import logging
 import sqlite3
 from collections import defaultdict
 
+import config
 import local_server
 import os
 import threading
 from datetime import datetime
 import json
 
-db_path = 'db/userdata.db'
+db_path = config.DB_PATH
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 conn = sqlite3.connect(db_path, check_same_thread=False)
 lock = threading.RLock()

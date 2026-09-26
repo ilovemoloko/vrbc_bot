@@ -16,13 +16,13 @@ bca_db = BCAccountDB()
 @bot.command("tcccget_help")
 def tcccget_help(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
-    answer.addText("Прочтите первую часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
+    answer.addText(f"Прочтите первую часть текста по ссылке\n\nhttps://vk.com/topic-{config.id_vk}_48144534").reply()
 
 
 @bot.command("tccc_help")
 def tccc_help(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
-    answer.addText("Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-***REMOVED***_48144534").reply()
+    answer.addText(f"Прочтите последнюю часть текста по ссылке\n\nhttps://vk.com/topic-{config.id_vk}_48144534").reply()
 
 
 @bot.command('tccc_ncorrect')

@@ -1,6 +1,7 @@
 from telebot import types
 from db_worker import SingletonMeta, fsm_db
 from script_base import MessageBuilder, MessageContext, ButtonsBuilder
+import config
 import requests
 import uuid
 import io
@@ -413,7 +414,7 @@ class Modbot(metaclass=SingletonMeta):
         }
 
         try:
-            response = requests.post('http://localhost:8000', json=payload_data)
+            response = requests.post(config.PUBLIC_SERVER_URL, json=payload_data)
 
             if response.status_code == 200:
                 message_id_old = None

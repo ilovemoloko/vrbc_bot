@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, MonthlyReportDatabase
 from script_base import MessageContext, ButtonsBuilder
+import config
 import utils
 from multiprocessing import Process
 import traceback
@@ -65,7 +66,7 @@ pserv_process: Process = None
 
 def start():
     global pserv_process
-    pserv_process = Process(target=app.run, kwargs={'port': 8000, 'host': '0.0.0.0', 'threaded': True})
+    pserv_process = Process(target=app.run, kwargs={'port': config.PUBLIC_SERVER_PORT, 'host': config.PUBLIC_SERVER_HOST, 'threaded': True})
     pserv_process.start()
 
 def kill():

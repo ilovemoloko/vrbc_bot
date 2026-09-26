@@ -53,26 +53,49 @@ unidecode
 
 ## Настройка
 
-Секреты не хранятся в репозитории и читаются из переменных окружения (см. `config.py`):
+Секреты, идентификаторы и инфраструктурные адреса не хранятся в репозитории и читаются из переменных окружения (см. `config.py`):
 
 | Переменная | Описание |
 | --- | --- |
 | `TG_TOKEN` | Токен Telegram-бота. |
 | `VK_TOKEN` | Токен ВКонтакте. |
+| `VK_GROUP_ID` | ID сообщества ВКонтакте. |
+| `MOD_CHANNEL` | ID канала/чата для модбота. |
+| `ADMIN_VK_ID` | ID администратора ВКонтакте. |
 | `PAY_API_TOKEN` | Токен платёжного API. |
+| `PAY_API_URL` | Адрес платёжного API. |
 | `DONATE_PHONE` | Номер телефона для приёма донатов. |
 | `DONATE_CARD` | Номер карты для приёма донатов. |
+| `LOCALSERVER_URL` | Адрес сервера изменения аккаунтов. |
+| `GAME_API_URL` | Базовый адрес API сохранений игры. |
+| `PUBLIC_SERVER_HOST` | Хост Flask-сервера приёма платежей. |
+| `PUBLIC_SERVER_PORT` | Порт Flask-сервера приёма платежей. |
+| `PUBLIC_SERVER_URL` | Публичный адрес Flask-сервера платежей. |
+| `DB_PATH` | Путь к файлу базы данных. |
+| `BOT_WORKDIR` | Рабочий каталог бота. |
 | `PROXY` | Прокси для исходящих запросов. |
 | `TG_TOKEN_AVTOMOIKA`, `VK_TOKEN_AVTOMOIKA` | Токены тестового окружения. |
+| `VK_GROUP_ID_AVTOMOIKA`, `MOD_CHANNEL_AVTOMOIKA` | ID тестового окружения. |
 
 Пример:
 
 ```bash
 export TG_TOKEN="..."
 export VK_TOKEN="..."
+export VK_GROUP_ID="..."
+export MOD_CHANNEL="..."
+export ADMIN_VK_ID="..."
 export PAY_API_TOKEN="..."
+export PAY_API_URL="..."
 export DONATE_PHONE="..."
 export DONATE_CARD="..."
+export LOCALSERVER_URL="http://127.0.0.1:5000"
+export GAME_API_URL="https://nyanko-save.ponosgames.com"
+export PUBLIC_SERVER_HOST="0.0.0.0"
+export PUBLIC_SERVER_PORT="8000"
+export PUBLIC_SERVER_URL="http://localhost:8000"
+export DB_PATH="db/userdata.db"
+export BOT_WORKDIR="."
 export PROXY=""
 ```
 

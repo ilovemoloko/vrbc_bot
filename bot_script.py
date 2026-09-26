@@ -1,4 +1,5 @@
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
+import config
 import utils
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, bca_db, SingletonMeta
 
@@ -67,7 +68,7 @@ def level_on_error(level):
 def check_admin(context: MessageContext):
     is_admin = info_worker.get_value(context, 'is_admin')
     if not is_admin:
-        if not (context.user_id == ***REMOVED*** and context.src == "vk"):
+        if not (context.user_id == config.ADMIN_VK_ID and context.src == "vk"):
             return False
     return True
 

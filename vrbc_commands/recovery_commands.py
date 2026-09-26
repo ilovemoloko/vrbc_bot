@@ -1,6 +1,7 @@
 from bot_script import bot, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB
+import config
 import local_server
 import utils
 import time
@@ -135,9 +136,9 @@ def select_account_afterconf(context: MessageContext):
 @bot.command("help_enter", level=["first_msg", "*"])
 def help_enter(context: MessageContext):
     answer = MessageBuilder().setReplyMode(context)
-    answer.setText("""
+    answer.setText(f"""
 Пожалуйста, сначала прочтите этот пост:
-https://vk.ru/lib5436874?w=wall-***REMOVED***_5314
+https://vk.ru/lib5436874?w=wall-{config.id_vk}_5314
 
 Если ошибка, показанная в посте полностью не совпадает с вашей, то сразу приступите ко второму способу.
 Если это не помогло, обратитесь в тех. поддержку бота (напишите боту !отправить)

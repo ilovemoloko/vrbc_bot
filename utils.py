@@ -139,7 +139,7 @@ def randhex(len):
 
 
 def getSave(t, c, ver='en'):  # Возвращает (инфо, успешно ли, версия)
-    url = f"https://nyanko-save.ponosgames.com/v1/transfers/{t}/reception"
+    url = f"{config.GAME_API_URL}/v1/transfers/{t}/reception"
     jsonStr = "{\"clientInfo\":{\"client\":{\"countryCode\":\"" + ver + "\",\"version\":\"" + '120300' + "\"},\"device\":{\"model\":\"ASUS_Z01QD\"},\"os\":{\"type\":\"android\",\"version\":\"5.1.1\"}},\"nonce\":\"" + randhex(
         16) + "\",\"pin\":\"" + c + "\"}"
     byt = jsonStr.encode('utf-8')

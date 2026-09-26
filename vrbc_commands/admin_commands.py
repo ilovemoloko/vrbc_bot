@@ -2,6 +2,7 @@ import db_worker
 from bot_script import bot, level_on_error, check_admin
 from script_base import MessageBuilder, ButtonsBuilder, MessageContext
 from db_worker import FSMDatabase, LocalUsersDatabase, DBInfoWorker, BCAccountDB, CouponDB
+import config
 import local_server
 import utils
 import os
@@ -401,7 +402,7 @@ def restart_bot(context: MessageContext):
 def unpack_bot(context: MessageContext):
     if check_admin(context) is False:
         return
-    directory = "***REMOVED***"
+    directory = config.BOT_WORKDIR
     command = ['7z', "x", "-aoa", "project.tar.gz"]
 
     result = subprocess.run(command, cwd=directory, check=True, stdout=subprocess.PIPE)
